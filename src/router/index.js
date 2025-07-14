@@ -12,7 +12,7 @@ export default new Router({
         {
             path: '/main',
             component: () => import(/* webpackChunkName: "home" */ '../components/common/Home.vue'),
-            meta: { title: '自述文件' },
+            meta: { title: '首页' },
             children: [
                 {
                 //企业端
@@ -43,73 +43,152 @@ export default new Router({
                             component: () => import(/* webpackChunkName: "recommendJob" */ '../job/views/recommendJob.vue'),
                             meta: { title: '职位推荐' }
                         },
-                        {
-                            path: '/home',
-                            component: () => import(/* webpackChunkName: "home" */ '../job/views/Home.vue'),
-                            meta: { title: 'home' }
-                        },
-                        {
-                            path: '/user',
-                            component: () => import(/* webpackChunkName: "user" */ '../job/views/User.vue'),
-                            meta: { title: 'user' }
-                        },
-                        {
-                            path: '/profile',
-                            component: () => import(/* webpackChunkName: "profile" */ '../job/views/Profile.vue'),
-                            meta: { title: 'profile' }
-                        },
-                        {
-                            path: '/findJob',
-                            component: () => import(/* webpackChunkName: "findJob" */ '../job/views/JobRec.vue'),
-                            meta: { title: 'findJob' }
-                        },
-                        {
-                            path: '/sendResume',
-                            component: () => import(/* webpackChunkName: "sendResume" */ '../job/views/recruit.vue'),
-                            meta: { title: 'sendResume' }
-                        },
-                        {
-                            path: '/usercenter',
-                            component: () => import(/* webpackChunkName: "usercenter" */ '../job/views/UserCenter.vue'),
-                            meta: { title: 'usercenter' }
-                        },
+                        // {
+                        //     path: '/home',
+                        //     component: () => import(/* webpackChunkName: "home" */ '../job/views/Home.vue'),
+                        //     meta: { title: '/home' }
+                        // },
+                        // {
+                        //     path: '/user',
+                        //     component: () => import(/* webpackChunkName: "user" */ '../job/views/User.vue'),
+                        //     meta: { title: 'user' }
+                        // },
+                        // {
+                        //     path: '/profile',
+                        //     component: () => import(/* webpackChunkName: "profile" */ '../job/views/Profile.vue'),
+                        //     meta: { title: 'profile' }
+                        // },
+                        // {
+                        //     path: '/findJob',
+                        //     component: () => import(/* webpackChunkName: "findJob" */ '../job/views/JobRec.vue'),
+                        //     meta: { title: 'findJob' }
+                        // },
+                        // {
+                        //     path: '/sendResume',
+                        //     component: () => import(/* webpackChunkName: "sendResume" */ '../job/views/recruit.vue'),
+                        //     meta: { title: 'sendResume' }
+                        // },
+                        // {
+                        //     path: '/usercenter',
+                        //     component: () => import(/* webpackChunkName: "usercenter" */ '../job/views/UserCenter.vue'),
+                        //     meta: { title: 'usercenter' }
+                        // },
                     ]
                 },
                 {
+                    // 系统首页
                     path: '/dashboard',
                     component: () => import(/* webpackChunkName: "dashboard" */ '../components/page/Dashboard.vue'),
                     meta: { title: '系统首页' }
                 },
                 {
-                    path: '/form',
-                    component: () => import(/* webpackChunkName: "form" */ '../components/page/BaseForm.vue'),
-                    meta: { title: '文本转语音' }
-                },
-                {
-                    // markdown组件
-                    path: '/markdown1',
+                    // 基于XXTS模型的语音克隆
+                    path: '/VoiceCloningXxts',
                     component: () => import(/* webpackChunkName: "markdown" */ '../components/page/BaseForm.vue'),
                     meta: { title: '基于XXTS模型的语音克隆' }
                 },
                 {
-                    // markdown组件
-                    path: '/markdown',
+                    // 基于FreeVC的语音克隆
+                    path: '/VoiceCloningFreeVC',
                     component: () => import(/* webpackChunkName: "markdown" */ '../components/page/Markdown.vue'),
                     meta: { title: '基于FreeVC的语音克隆' }
                 },
                 {
-                    // 图片上传组件
-                    path: '/upload',
+                    // 文本转语音
+                    path: '/TextToSpeech',
+                    component: () => import(/* webpackChunkName: "form" */ '../components/page/BaseForm.vue'),
+                    meta: { title: '文本转语音' }
+                },
+                {
+                    // 批量文本转语音
+                    path: '/TextToSpeechs',
                     component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
                     meta: { title: '批量文本转语音' }
                 },
                 {
-                    // 图片上传组件
-                    path: '/upload1',
+                    // 互动
+                    path: '/interaction',
                     component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
                     meta: { title: '互动' }
                 },
-                
+                {
+                    // 知识点检索
+                    path: '/KnowledgeRetrieval',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '知识点检索' }
+                },
+                {
+                    // 大纲匹配
+                    path: '/OutlineMatching',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '大纲匹配' }
+                },
+                {
+                    // 智能备课
+                    path: '/IntelligentLessonPreparation',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '智能备课' }
+                },
+                {
+                    // 智能复习
+                    path: '/IntelligentReview',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '智能复习' }
+                },
+                {
+                    // 自动化测评
+                    path: '/AutomatedEvaluation',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '自动化测评' }
+                },
+                {
+                    // 课堂到课率和抬头率
+                    path: '/car',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '课堂到课率和抬头率' }
+                },
+                {
+                    // 智能课堂数据采集
+                    path: '/icdc',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '智能课堂数据采集' }
+                },
+                {
+                    // 多智能体协同督导
+                    path: '/macs',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '多智能体协同督导' }
+                },
+                {
+                    // 实体识别
+                    path: '/EntityRecognition',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '实体识别' }
+                },
+                {
+                    // 关系抽取
+                    path: '/RelationExtraction',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '关系抽取' }
+                },
+                {
+                    // 知识融合
+                    path: '/KnowledgeFusion',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '知识融合' }
+                },
+                {
+                    // 数据采集
+                    path: '/DataAcquisition',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '数据采集' }
+                },
+                {
+                    // 图谱构建
+                    path: '/GeneticMapping',
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    meta: { title: '图谱构建' }
+                },
                 {
                     path: '/404',
                     component: () => import(/* webpackChunkName: "404" */ '../components/page/404.vue'),

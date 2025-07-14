@@ -72,25 +72,25 @@ export default {
                             title: '语音克隆',
                             subs: [
                                 {
-                                    index: 'markdown1',
+                                    index: 'VoiceCloningXxts',
                                     title: '基于XXTS模型的语音克隆'
                                 },
                                 {
-                                    index: 'markdown',
+                                    index: 'VoiceCloningFreeVC',
                                     title: '基于FreeVC的语音克隆'
                                 }
                             ]
                         },
                         {
-                            index: 'form',
+                            index: 'TextToSpeech',
                             title: '文本转语音'
                         },
                         {
-                            index: 'upload',
+                            index: 'TextToSpeechs',
                             title: '批量文本转语音'
                         },
                         {
-                            index: '/upload1',
+                            index: 'interaction',
                             title: '互动'
                         }
                     ]
@@ -103,6 +103,92 @@ export default {
                         {
                             index: 'recommendJob',
                             title: '职位推荐'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-rank',
+                    index: '7',
+                    title: '知识点分析',
+                    subs: [
+                        {
+                            index: 'KnowledgeRetrieval',
+                            title: '知识点检索'
+                        },
+                        {
+                            index: 'OutlineMatching',
+                            title: '大纲匹配'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-rank',
+                    index: '8',
+                    title: '智课工坊',
+                    subs: [
+                        {
+                            index: 'IntelligentLessonPreparation',
+                            title: '智能备课'
+                        },
+                        {
+                            index: 'IntelligentReview',
+                            title: '智能复习'
+                        },
+                        {
+                            index: 'AutomatedEvaluation',
+                            title: '自动化测评'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-rank',
+                    index: '9',
+                    title: '智能督导',
+                    subs: [
+                        {
+                            index: 'car',
+                            title: '课堂到课率和抬头率'
+                        },
+                        {
+                            index: 'icdc',
+                            title: '智能课堂数据采集'
+                        },
+                        {
+                            index: 'macs',
+                            title: '多智能体协同督导'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-lx-calendar',
+                    index: '10',
+                    title: '知识图谱',
+                    subs: [
+                        {
+                            index: '10-1',
+                            title: '知识处理',
+                            subs: [
+                                {
+                                    index: 'EntityRecognition',
+                                    title: '实体识别'
+                                },
+                                {
+                                    index: 'RelationExtraction',
+                                    title: '关系抽取'
+                                },
+                                {
+                                    index: 'KnowledgeFusion',
+                                    title: '知识融合'
+                                }
+                            ]
+                        },
+                        {
+                            index: 'DataAcquisition',
+                            title: '数据采集'
+                        },
+                        {
+                            index: 'GeneticMapping',
+                            title: '图谱构建'
                         }
                     ]
                 },
