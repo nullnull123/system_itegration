@@ -43,36 +43,6 @@ export default new Router({
                             component: () => import(/* webpackChunkName: "recommendJob" */ '../job/views/recommendJob.vue'),
                             meta: { title: '职位推荐' }
                         },
-                        // {
-                        //     path: '/home',
-                        //     component: () => import(/* webpackChunkName: "home" */ '../job/views/Home.vue'),
-                        //     meta: { title: '/home' }
-                        // },
-                        // {
-                        //     path: '/user',
-                        //     component: () => import(/* webpackChunkName: "user" */ '../job/views/User.vue'),
-                        //     meta: { title: 'user' }
-                        // },
-                        // {
-                        //     path: '/profile',
-                        //     component: () => import(/* webpackChunkName: "profile" */ '../job/views/Profile.vue'),
-                        //     meta: { title: 'profile' }
-                        // },
-                        // {
-                        //     path: '/findJob',
-                        //     component: () => import(/* webpackChunkName: "findJob" */ '../job/views/JobRec.vue'),
-                        //     meta: { title: 'findJob' }
-                        // },
-                        // {
-                        //     path: '/sendResume',
-                        //     component: () => import(/* webpackChunkName: "sendResume" */ '../job/views/recruit.vue'),
-                        //     meta: { title: 'sendResume' }
-                        // },
-                        // {
-                        //     path: '/usercenter',
-                        //     component: () => import(/* webpackChunkName: "usercenter" */ '../job/views/UserCenter.vue'),
-                        //     meta: { title: 'usercenter' }
-                        // },
                     ]
                 },
                 {
