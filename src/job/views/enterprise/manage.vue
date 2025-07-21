@@ -195,7 +195,7 @@
 		jobSearch,
 		jobAdd,
 		jobDelete,
-		myJob,
+		myJob,  //
 		jobUpdate
 	} from '../../api/job.js';
 	import {
@@ -263,6 +263,7 @@
 			//获取职位列表
 			getList() {
 				myJob().then(response => {
+					// console.log(123);
 					console.log(response);
 					this.tableData = response.data;
 				})

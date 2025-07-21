@@ -50,10 +50,10 @@
 <script>
 	import {
 		login
-	} from '../../api/user';
+	} from '../../api/user';  //
 	import {
 		register
-	} from '@/job/api/company';
+	} from '@/job/api/company';  //
 	export default {
 		name: 'LoginRegister',
 		data() {

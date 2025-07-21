@@ -36,8 +36,8 @@
 
 <script>
 	import {
-		coldRecommend,
-		clickJob
+		coldRecommend,  //
+		clickJob  //
 	} from '../api/job';
 	export default {
 		data() {

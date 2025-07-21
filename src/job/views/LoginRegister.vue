@@ -52,7 +52,7 @@
 	import {
 		login,
 		casLogin,
-		getToken
+		getToken  //
 	} from '@/job/api/user';
 	import {
 		jobList
