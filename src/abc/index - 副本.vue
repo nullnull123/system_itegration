@@ -57,8 +57,7 @@
             管理选项
           </div>
           <div class="card-body">
-            <router-link to="/DataAcquisition" class="btn btn-primary">进入管理面板</router-link>
-            <!-- <a href="/admin" class="btn btn-primary">进入管理面板</a> -->
+            <a href="/admin" class="btn btn-primary">进入管理面板</a>
           </div>
         </div>
 
@@ -68,7 +67,7 @@
             实体类型
           </div>
           <div class="card-body">
-            <div id="entity-types" class = "text">
+            <div id="entity-types">
               <span 
                 v-for="(count, type) in statistics.entityTypes" 
                 :key="type"
@@ -1028,20 +1027,13 @@ body {
 .container-fluid {
   padding: 0;
 }
-.row{
-  display: flex; /* 启用 Flexbox */
-  justify-content: space-between; /* 左右分布 */
-  width: 100%; /* 确保容器宽度足够 */
-}
 .sidebar {
   background-color: #f0f0f0;
-  width: 25%; /* 1/4 宽度 */
   padding: 15px;
   height: 100vh;
   overflow-y: auto;
 }
 .main-content {
-  width: 75%; /* 1/4 宽度 */
   padding: 0;
   height: 100vh;
   position: relative;
@@ -1114,11 +1106,6 @@ body {
 .query-box {
   margin-bottom: 15px;
 }
-
-.form-control{
-  width: 90%;
-}
-
 .preset-query {
   margin-bottom: 5px;
   text-align: left;
@@ -1163,8 +1150,5 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.text{
-  padding: 8px;
 }
 </style>

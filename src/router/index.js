@@ -54,7 +54,7 @@ export default new Router({
                 {
                     // 基于XXTS模型的语音克隆
                     path: '/VoiceCloningXxts',
-                    component: () => import(/* webpackChunkName: "markdown" */ '../components/page/BaseForm.vue'),
+                    component: () => import(/* webpackChunkName: "markdown" */ '../components/common/Header.vue'),
                     meta: { title: '基于XXTS模型的语音克隆' }
                 },
                 {
@@ -150,7 +150,7 @@ export default new Router({
                 {
                     // 数据采集
                     path: '/DataAcquisition',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../abc/admin.vue'),
                     meta: { title: '数据采集' }
                 },
                 {
