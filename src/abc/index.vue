@@ -203,6 +203,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
+      baseUrl:'http://10.104.52.24:8000/api',
       queryText: '',
       presetQueries: [
         { label: '显示所有知识点', query: '显示所有知识点' },
@@ -606,6 +607,7 @@ export default {
       
       // 隐藏加载中
       this.isLoading = false;
+      console.log(123);
     },
     
     // 自动缩放以适应视图
@@ -741,42 +743,48 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        // fetch('/query', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ query: this.queryText })
-        // })
-        // .then(response => response.json())
-        // .then(data => {
-        //   if (data.success) {
-        //     this.updateGraph(data);
-        //   } else {
-        //     alert('查询错误: ' + data.error);
-        //     this.isLoading = false;
-        //   }
-        // })
+        fetch(this.baseUrl+'/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: this.queryText })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            this.updateGraph(data);
+          } else {
+            alert('查询错误: ' + data.error);
+            this.isLoading = false;
+          }
+        })
+        .catch(error => {
+                    console.error('查询错误:', error);
+                    alert('查询失败: ' + error);
+                    this.isLoading = false;
+                    console.log(123456)
+                });
         
         // 模拟响应数据
-        const mockData = {
-          nodes: [
-            { id: 1, name: '算法', label: 'KnowledgePoint', properties: { description: '解决问题的步骤和方法' } },
-            { id: 2, name: '数据结构', label: 'KnowledgePoint', properties: { description: '数据的组织方式' } },
-            { id: 3, name: '计算机网络', label: 'KnowledgePoint' },
-            { id: 4, name: '操作系统', label: 'KnowledgePoint' },
-            { id: 5, name: '计算机科学导论', label: 'Course' },
-            { id: 6, name: '人工智能', label: 'KnowledgePoint' }
-          ],
-          relationships: [
-            { id: 1, type: 'PREREQUISITE', source: 2, target: 1 },
-            { id: 2, type: 'RELATED_TO', source: 1, target: 6 },
-            { id: 3, type: 'CONTAINS', source: 5, target: 1 },
-            { id: 4, type: 'CONTAINS', source: 5, target: 2 },
-            { id: 5, type: 'RELATED_TO', source: 3, target: 4 }
-          ],
-          success: true
-        };
+        // const mockData = {
+        //   nodes: [
+        //     { id: 1, name: '算法', label: 'KnowledgePoint', properties: { description: '解决问题的步骤和方法' } },
+        //     { id: 2, name: '数据结构', label: 'KnowledgePoint', properties: { description: '数据的组织方式' } },
+        //     { id: 3, name: '计算机网络', label: 'KnowledgePoint' },
+        //     { id: 4, name: '操作系统', label: 'KnowledgePoint' },
+        //     { id: 5, name: '计算机科学导论', label: 'Course' },
+        //     { id: 6, name: '人工智能', label: 'KnowledgePoint' }
+        //   ],
+        //   relationships: [
+        //     { id: 1, type: 'PREREQUISITE', source: 2, target: 1 },
+        //     { id: 2, type: 'RELATED_TO', source: 1, target: 6 },
+        //     { id: 3, type: 'CONTAINS', source: 5, target: 1 },
+        //     { id: 4, type: 'CONTAINS', source: 5, target: 2 },
+        //     { id: 5, type: 'RELATED_TO', source: 3, target: 4 }
+        //   ],
+        //   success: true
+        // };
         
-        this.updateGraph(mockData);
+        // this.updateGraph(mockData);
         this.isLoading = false;
       }, 800);
     },
@@ -871,33 +879,33 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        // fetch('/statistics')
-        // .then(response => response.json())
-        // .then(data => {
-        //   if (data.success) {
-        //     this.statistics.entityCount = data.entity_count;
-        //     this.statistics.relationCount = data.relation_count;
-        //     this.statistics.entityTypes = data.entity_types;
-        //     this.statistics.relationTypes = data.relation_types;
-        //   }
-        // })
+        fetch(this.baseUrl+'/statistics')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            this.statistics.entityCount = data.entity_count;
+            this.statistics.relationCount = data.relation_count;
+            this.statistics.entityTypes = data.entity_types;
+            this.statistics.relationTypes = data.relation_types;
+          }
+        })
         
         // 模拟统计数据
-        this.statistics = {
-          entityCount: 156,
-          relationCount: 278,
-          entityTypes: {
-            KnowledgePoint: 132,
-            Course: 24
-          },
-          relationTypes: {
-            RELATED_TO: 85,
-            PART_OF: 42,
-            PREREQUISITE: 36,
-            INCLUDES: 75,
-            FOLLOWS: 40
-          }
-        };
+        // this.statistics = {
+        //   entityCount: 156,
+        //   relationCount: 278,
+        //   entityTypes: {
+        //     KnowledgePoint: 132,
+        //     Course: 24
+        //   },
+        //   relationTypes: {
+        //     RELATED_TO: 85,
+        //     PART_OF: 42,
+        //     PREREQUISITE: 36,
+        //     INCLUDES: 75,
+        //     FOLLOWS: 40
+        //   }
+        // };
       }, 500);
     },
     
@@ -908,49 +916,50 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        // fetch('/get_graph_data')
-        // .then(response => response.json())
-        // .then(data => {
-        //   this.updateGraph(data);
-        // })
+        fetch(this.baseUrl+'/get_graph_data')
+        .then(response => response.json())
+        .then(data => {
+          this.updateGraph(data);
+        })
         
         // 模拟初始图谱数据
-        const mockData = {
-          nodes: [
-            { id: 1, name: '计算机科学', label: 'KnowledgePoint' },
-            { id: 2, name: '数据结构', label: 'KnowledgePoint' },
-            { id: 3, name: '算法', label: 'KnowledgePoint' },
-            { id: 4, name: '计算机网络', label: 'KnowledgePoint' },
-            { id: 5, name: '操作系统', label: 'KnowledgePoint' },
-            { id: 6, name: '数据库系统', label: 'KnowledgePoint' },
-            { id: 7, name: '软件工程', label: 'KnowledgePoint' },
-            { id: 8, name: '人工智能', label: 'KnowledgePoint' },
-            { id: 9, name: '计算机科学导论', label: 'Course' },
-            { id: 10, name: '数据结构与算法', label: 'Course' },
-            { id: 11, name: '计算机网络基础', label: 'Course' },
-            { id: 12, name: '操作系统原理', label: 'Course' }
-          ],
-          relationships: [
-            { id: 1, type: 'CONTAINS', source: 1, target: 2 },
-            { id: 2, type: 'CONTAINS', source: 1, target: 3 },
-            { id: 3, type: 'CONTAINS', source: 1, target: 4 },
-            { id: 4, type: 'CONTAINS', source: 1, target: 5 },
-            { id: 5, type: 'CONTAINS', source: 1, target: 6 },
-            { id: 6, type: 'CONTAINS', source: 1, target: 7 },
-            { id: 7, type: 'CONTAINS', source: 1, target: 8 },
-            { id: 8, type: 'PREREQUISITE', source: 2, target: 3 },
-            { id: 9, type: 'RELATED_TO', source: 4, target: 5 },
-            { id: 10, type: 'RELATED_TO', source: 5, target: 6 },
-            { id: 11, type: 'CONTAINS', source: 9, target: 1 },
-            { id: 12, type: 'CONTAINS', source: 10, target: 2 },
-            { id: 13, type: 'CONTAINS', source: 10, target: 3 },
-            { id: 14, type: 'CONTAINS', source: 11, target: 4 },
-            { id: 15, type: 'CONTAINS', source: 12, target: 5 }
-          ]
-        };
+        // const mockData = {
+        //   nodes: [
+        //     { id: 1, name: '计算机科学', label: 'KnowledgePoint' },
+        //     { id: 2, name: '数据结构', label: 'KnowledgePoint' },
+        //     { id: 3, name: '算法', label: 'KnowledgePoint' },
+        //     { id: 4, name: '计算机网络', label: 'KnowledgePoint' },
+        //     { id: 5, name: '操作系统', label: 'KnowledgePoint' },
+        //     { id: 6, name: '数据库系统', label: 'KnowledgePoint' },
+        //     { id: 7, name: '软件工程', label: 'KnowledgePoint' },
+        //     { id: 8, name: '人工智能', label: 'KnowledgePoint' },
+        //     { id: 9, name: '计算机科学导论', label: 'Course' },
+        //     { id: 10, name: '数据结构与算法', label: 'Course' },
+        //     { id: 11, name: '计算机网络基础', label: 'Course' },
+        //     { id: 12, name: '操作系统原理', label: 'Course' }
+        //   ],
+        //   relationships: [
+        //     { id: 1, type: 'CONTAINS', source: 1, target: 2 },
+        //     { id: 2, type: 'CONTAINS', source: 1, target: 3 },
+        //     { id: 3, type: 'CONTAINS', source: 1, target: 4 },
+        //     { id: 4, type: 'CONTAINS', source: 1, target: 5 },
+        //     { id: 5, type: 'CONTAINS', source: 1, target: 6 },
+        //     { id: 6, type: 'CONTAINS', source: 1, target: 7 },
+        //     { id: 7, type: 'CONTAINS', source: 1, target: 8 },
+        //     { id: 8, type: 'PREREQUISITE', source: 2, target: 3 },
+        //     { id: 9, type: 'RELATED_TO', source: 4, target: 5 },
+        //     { id: 10, type: 'RELATED_TO', source: 5, target: 6 },
+        //     { id: 11, type: 'CONTAINS', source: 9, target: 1 },
+        //     { id: 12, type: 'CONTAINS', source: 10, target: 2 },
+        //     { id: 13, type: 'CONTAINS', source: 10, target: 3 },
+        //     { id: 14, type: 'CONTAINS', source: 11, target: 4 },
+        //     { id: 15, type: 'CONTAINS', source: 12, target: 5 }
+        //   ]
+        // };
         
-        this.updateGraph(mockData);
+        // this.updateGraph(mockData);
       }, 1000);
+      this.isLoading = false;
     },
     
     // 获取合并的连接标签
