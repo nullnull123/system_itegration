@@ -6,7 +6,7 @@ axios.defaults.headers['Content-Type'] = 'application/json;charset=utf-8'
 // 创建axios实例
 const service = axios.create({
 	// 请求URL公共部分
-	baseURL: process.env.VUE_APP_BASE_API ,
+	baseURL: process.env.VUE_APP_BASE_API +'/JobRec/api',
 	// 超时时间
 	timeout: 10000,
 	// 所有请求携带token

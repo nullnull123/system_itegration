@@ -203,7 +203,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io/',
+      baseUrl:'https://a0fde68b-25b1-429f-bad8-304d68c31660.mock.pstmn.io+',
       queryText: '',
       presetQueries: [
         { label: '显示所有知识点', query: '显示所有知识点' },
@@ -806,7 +806,7 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch('https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io//query', {
+        fetch(this.baseUrl+'//query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: this.queryText })
@@ -942,7 +942,7 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch('https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io//statistics')
+        fetch(this.baseUrl+'//statistics')
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -952,7 +952,9 @@ export default {
             this.statistics.relationTypes = data.relation_types;
           }
         })
-        
+        .catch(error => {
+                    console.error('获取统计信息失败:', error);
+                });
         // 模拟统计数据
         // this.statistics = {
         //   entityCount: 156,
@@ -979,11 +981,26 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch('https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io//get_graph_data')
+        fetch(this.baseUrl+'//get_graph_data')
         .then(response => response.json())
-        .then(data => {
-          this.updateGraph(data);
+        .then(
+          data => {
+              // 如果有足够的数据，显示完整图谱，否则只显示部分
+              if (data.nodes.length > 0) {
+                  if (data.nodes.length > 50) {
+                      // 如果节点数太多，只显示课程
+                      this.executeQuery('显示所有课程');
+                  } else {
+                      this.updateGraph(data);
+                  }
+              } else {
+                  alert('没有可用的图谱数据');
+              }
         })
+        .catch(error => {
+                    console.error('加载图谱数据失败:', error);
+                    alert('加载图谱数据失败: ' + error);
+                });
         
         // 模拟初始图谱数据
         // const mockData = {

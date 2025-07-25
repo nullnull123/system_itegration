@@ -52,34 +52,22 @@ export default new Router({
                     meta: { title: '系统首页' }
                 },
                 {
-                    // 基于XXTS模型的语音克隆
-                    path: '/VoiceCloningXxts',
-                    component: () => import(/* webpackChunkName: "markdown" */ '../components/common/Header.vue'),
-                    meta: { title: '基于XXTS模型的语音克隆' }
-                },
-                {
-                    // 基于FreeVC的语音克隆
-                    path: '/VoiceCloningFreeVC',
-                    component: () => import(/* webpackChunkName: "markdown" */ '../components/page/Markdown.vue'),
-                    meta: { title: '基于FreeVC的语音克隆' }
-                },
-                {
-                    // 文本转语音
-                    path: '/TextToSpeech',
-                    component: () => import(/* webpackChunkName: "form" */ '../components/page/BaseForm.vue'),
-                    meta: { title: '文本转语音' }
+                    // 语音克隆
+                    path: '/VoiceCloning',
+                    component: () => import('../voiceclone/views/VoiceCloning.vue'),
+                    meta: { title: '语音克隆' }
                 },
                 {
                     // 批量文本转语音
                     path: '/TextToSpeechs',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import('../voiceclone/views/TextToSpeechs.vue'),
                     meta: { title: '批量文本转语音' }
                 },
                 {
-                    // 互动
+                    // 留言互动
                     path: '/interaction',
                     component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '互动' }
+                    meta: { title: '留言互动' }
                 },
                 {
                     // 知识点检索

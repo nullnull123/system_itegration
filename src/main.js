@@ -4,6 +4,10 @@ import router from './router';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css'; // 默认主题
 // import './assets/css/theme-green/index.css'; // 浅绿色主题
+
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'   // 可选，JS 组件
+
 import './assets/css/icon.css';
 import './components/common/directives';
 import 'babel-polyfill';

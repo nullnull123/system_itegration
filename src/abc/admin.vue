@@ -130,7 +130,7 @@
 export default {
   data() {
     return {
-      baseUrl:'https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io/',
+      baseUrl:'https://a0fde68b-25b1-429f-bad8-304d68c31660.mock.pstmn.io+',
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,
@@ -184,7 +184,7 @@ export default {
     },
     async fetchProgressInfo() {
       try {
-        const response = await fetch('https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io//get_collection_progress')
+        const response = await fetch(this.baseUrl+'//get_collection_progress')
         const data = await response.json()
         if (data.success) {
           this.updateProgress(data.progress)
@@ -210,7 +210,7 @@ export default {
         const formData = new FormData()
         formData.append('collection_type', type)
         
-        const response = await fetch('https://617315e9-57e5-48d3-a6fa-9afa611495d7.mock.pstmn.io//run_collection', {
+        const response = await fetch(this.baseUrl+'//run_collection', {
           method: 'POST',
           body: formData
         })
@@ -254,8 +254,11 @@ export default {
   height: 25px;
   font-size: 14px;
   font-weight: bold;
+  border-radius: 10px;
   margin: 15px 0;
+  background-color: #ddd; 
 }
+
 .action-buttons {
   margin-top: 20px;
 }

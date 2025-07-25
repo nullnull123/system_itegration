@@ -63,38 +63,24 @@ export default {
                     title: '系统首页'
                 },
                 {
-                    icon: 'el-icon-lx-calendar',
-                    index: '3',
-                    title: '语音克隆',
-                    subs: [
-                        {
-                            index: '3-2',
-                            title: '语音克隆',
-                            subs: [
-                                {
-                                    index: 'VoiceCloningXxts',
-                                    title: '基于XXTS模型的语音克隆'
-                                },
-                                {
-                                    index: 'VoiceCloningFreeVC',
-                                    title: '基于FreeVC的语音克隆'
-                                }
-                            ]
-                        },
-                        {
-                            index: 'TextToSpeech',
-                            title: '文本转语音'
-                        },
-                        {
-                            index: 'TextToSpeechs',
-                            title: '批量文本转语音'
-                        },
-                        {
-                            index: 'interaction',
-                            title: '互动'
-                        }
-                    ]
-                },
+                        icon: 'el-icon-lx-calendar',
+                        index: '3',
+                        title: '语音合成',
+                        subs: [
+                            {
+                                index: 'VoiceCloning',
+                                title: '语音克隆'
+                            },
+                            {
+                                index: 'TextToSpeechs',
+                                title: '批量文本转语音'
+                            },
+                            {
+                                index: 'interaction',
+                                title: '留言互动'
+                            }
+                        ]
+                    },
                 {
                     icon: 'el-icon-rank',
                     index: '6',
