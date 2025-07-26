@@ -198,7 +198,7 @@
 
 <script>
 import * as d3 from 'd3';
-// import request from '../job/api/request'
+
 export default {
   name: 'KnowledgeGraph',
   data() {
@@ -811,7 +811,6 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: this.queryText })
         })
-        // request.post('query', { query: this.queryText })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -944,10 +943,6 @@ export default {
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
         fetch(this.baseUrl+'statistics')
-        // request({
-        //     url: 'statistics',
-        //     method: 'get',
-        //   })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -987,10 +982,6 @@ export default {
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
         fetch(this.baseUrl+'get_graph_data')
-        // request({
-        //     url: 'get_graph_data',
-        //     method: 'get',
-        //   })
         .then(response => response.json())
         .then(
           data => {
