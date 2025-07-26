@@ -203,7 +203,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'https://a0fde68b-25b1-429f-bad8-304d68c31660.mock.pstmn.io+',
+      baseUrl:'https://ee4c5d52-1c9b-4e5f-8e55-9b03940c48e4.mock.pstmn.io/',
       queryText: '',
       presetQueries: [
         { label: '显示所有知识点', query: '显示所有知识点' },
@@ -806,7 +806,7 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'//query', {
+        fetch(this.baseUrl+'query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: this.queryText })
@@ -942,7 +942,7 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'//statistics')
+        fetch(this.baseUrl+'statistics')
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -981,7 +981,7 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'//get_graph_data')
+        fetch(this.baseUrl+'get_graph_data')
         .then(response => response.json())
         .then(
           data => {
