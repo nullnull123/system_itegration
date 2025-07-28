@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/api/request'
 
 // 获取职位列表
 export function jobList(page) {

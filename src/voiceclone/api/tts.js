@@ -1,4 +1,4 @@
-import request from '@/job/api/request'  // 直接复用 job 模块的 axios 封装
+import request from '@/api/request'  // 直接复用 job 模块的 axios 封装
 
 export function getAudioList() {  // 获取可用的音频文件列表
   return request.get('/init')

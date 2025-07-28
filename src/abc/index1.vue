@@ -198,12 +198,12 @@
 
 <script>
 import * as d3 from 'd3';
-// import request from '../job/api/request'
+import request from '@/api/request'
 export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'https://ee4c5d52-1c9b-4e5f-8e55-9b03940c48e4.mock.pstmn.io/',
+      // baseUrl:'https://bb2ad8f0-833e-4da6-b898-42499c259d08.mock.pstmn.io/',
       queryText: '',
       presetQueries: [
         { label: '显示所有知识点', query: '显示所有知识点' },
@@ -806,18 +806,12 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: this.queryText })
-        })
-        // request.post('query', { query: this.queryText })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            this.updateGraph(data);
+        request.post('query', { query: this.queryText })
+        .then(response => {
+          if (response.data.success) {
+            this.updateGraph(response.data);
           } else {
-            alert('查询错误: ' + data.error);
+            alert('查询错误: ' + response.data.error);
             this.isLoading = false;
           }
         })
@@ -825,7 +819,7 @@ export default {
                     console.error('查询错误:', error);
                     alert('查询失败: ' + error);
                     this.isLoading = false;
-                    console.log(123456)
+                    // console.log(123456)
                 });
         
         // 模拟响应数据
@@ -943,19 +937,18 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'statistics')
-        // request({
-        //     url: 'statistics',
-        //     method: 'get',
-        //   })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            this.statistics.entityCount = data.entity_count;
-            this.statistics.relationCount = data.relation_count;
-            this.statistics.entityTypes = data.entity_types;
-            this.statistics.relationTypes = data.relation_types;
+        request({
+            url: 'statistics',
+            method: 'get',
+          })
+        .then(response => {
+          if (response.data.success) {
+            this.statistics.entityCount = response.data.entity_count;
+            this.statistics.relationCount = response.data.relation_count;
+            this.statistics.entityTypes = response.data.entity_types;
+            this.statistics.relationTypes = response.data.relation_types;
           }
+          // console.log("statistics_data", data)
         })
         .catch(error => {
                     console.error('获取统计信息失败:', error);
@@ -986,25 +979,24 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        fetch(this.baseUrl+'get_graph_data')
-        // request({
-        //     url: 'get_graph_data',
-        //     method: 'get',
-        //   })
-        .then(response => response.json())
+        request({
+            url: 'get_graph_data',
+            method: 'get',
+          })
         .then(
-          data => {
+          response => {
               // 如果有足够的数据，显示完整图谱，否则只显示部分
-              if (data.nodes.length > 0) {
-                  if (data.nodes.length > 50) {
+              if (response.data.nodes.length > 0) {
+                  if (response.data.nodes.length > 50) {
                       // 如果节点数太多，只显示课程
                       this.executeQuery('显示所有课程');
                   } else {
-                      this.updateGraph(data);
+                      this.updateGraph(response.data);
                   }
               } else {
                   alert('没有可用的图谱数据');
               }
+              // console.log("get_graph_data", response)
         })
         .catch(error => {
                     console.error('加载图谱数据失败:', error);

@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/api/request'
 
 // 获取学生列表
 export function studentList(page) {

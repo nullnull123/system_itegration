@@ -1,4 +1,4 @@
-import request from './request'
+import request from '@/api/request'
 
 // 创建公司账户
 export function register(form) {
