@@ -126,7 +126,7 @@ export default new Router({
                 {
                     // 关系抽取
                     path: '/RelationExtraction',
-                    component: () => import(/* webpackChunkName: "upload" */ '../abc/index1.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../abc/index.vue'),
                     meta: { title: '关系抽取' }
                 },
                 {

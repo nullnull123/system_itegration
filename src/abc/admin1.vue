@@ -127,11 +127,10 @@
 </template>
 
 <script>
-import request from '@/api/request'
 export default {
-  data: function() {
+  data() {
     return {
-      baseUrl: 'https://37fe7400-49b1-4c51-8699-ceea5e59ff85.mock.pstmn.io',
+      baseUrl:'https://a0fde68b-25b1-429f-bad8-304d68c31660.mock.pstmn.io+',
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,
@@ -146,7 +145,7 @@ export default {
     }
   },
   computed: {
-    statusClass: function() {
+    statusClass() {
       return {
         'status-running': this.currentStatus === 'running',
         'status-completed': this.currentStatus === 'completed',
@@ -154,8 +153,8 @@ export default {
         'status-idle': this.currentStatus === 'idle'
       }
     },
-    statusText: function() {
-      var statusMap = {
+    statusText() {
+      const statusMap = {
         'running': '采集中',
         'completed': '已完成',
         'error': '出错',
@@ -164,172 +163,75 @@ export default {
       return statusMap[this.currentStatus] || '未知'
     }
   },
-  mounted: function() {
-    console.log('组件已挂载，开始初始化...')
-    console.log('当前baseUrl:', this.baseUrl)
-
-    this.fetchProgressInfo()
+  mounted() {
     this.startAutoRefresh()
-
-    console.log('初始化完成')
   },
-  beforeDestroy: function() {
+  beforeDestroy() {
     this.stopAutoRefresh()
   },
   methods: {
-    startAutoRefresh: function() {
+    startAutoRefresh() {
       this.stopAutoRefresh()
       if (this.autoRefreshEnabled) {
-        var self = this
-        this.refreshInterval = setInterval(function() {
-          self.fetchProgressInfo()
-        }, 5000)
+        this.refreshInterval = setInterval(this.fetchProgressInfo, 10000)
       }
     },
-    stopAutoRefresh: function() {
+    stopAutoRefresh() {
       if (this.refreshInterval) {
         clearInterval(this.refreshInterval)
         this.refreshInterval = null
       }
     },
-    fetchProgressInfo: function() {
-      var self = this
+    async fetchProgressInfo() {
       try {
-        request({
-            url: '/get_collection_progress',
-            method: 'get',
-          })
-          .then(function(response) {
-            if (response.data.success) {
-              self.updateProgress(response.data.progress)
-              self.clearMessages()
-            } else {
-              self.errorMessage = response.data.error || '获取进度信息失败'
-            }
-          })
-          .catch(function(error) {
-            console.error('获取进度失败:', error)
-            self.errorMessage = '网络错误：无法获取进度信息'
-          })
+        const response = await fetch(this.baseUrl+'//get_collection_progress')
+        const data = await response.json()
+        if (data.success) {
+          this.updateProgress(data.progress)
+        }
       } catch (error) {
         console.error('获取进度失败:', error)
-        this.errorMessage = '网络错误：无法获取进度信息'
+        this.errorMessage = '获取进度信息失败'
       }
     },
-    updateProgress: function(progress) {
-      // 添加调试信息
-      console.log('更新进度数据:', progress)
-
-      // 安全地提取数据，处理可能的数据格式问题
-      this.lastBatch = this.safeGetNumber(progress.last_batch, 0)
-      this.totalBatches = this.safeGetNumber(progress.total_batches, 20)
+    updateProgress(progress) {
+      this.lastBatch = progress.last_batch || 0
+      this.totalBatches = progress.total_batches || 100
       this.lastUpdated = progress.last_updated || '未知'
-      this.processedTopics = Array.isArray(progress.processed_topics) ? progress.processed_topics : []
-
-      // 计算进度百分比
-      if (this.totalBatches > 0) {
-        this.progressValue = ((this.lastBatch / this.totalBatches) * 100).toFixed(1)
-      } else {
-        // 如果没有批次信息，根据状态设置进度
-        this.progressValue = progress.status === 'completed' ? 100 : 0
-      }
-
+      this.processedTopics = progress.processed_topics || []
+      this.progressValue = progress.total_batches > 0 
+        ? ((progress.last_batch / progress.total_batches) * 100).toFixed(1)
+        : 0
       this.currentStatus = progress.status || 'idle'
-
-      // 根据状态自动停止刷新
-      if (this.currentStatus === 'completed' || this.currentStatus === 'error') {
-        this.isRunning = false
-      }
-
-      console.log('进度更新完成:', {
-        lastBatch: this.lastBatch,
-        totalBatches: this.totalBatches,
-        progressValue: this.progressValue,
-        status: this.currentStatus
-      })
     },
-    runCollection: function(type) {
-      var self = this
+    async runCollection(type) {
       this.isRunning = true
-      this.clearMessages()
-
       try {
-        request.post('/run_collection', {collection_type: type},
-         {headers: 
-          {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': this.getCsrfToken()
-          }
+        const formData = new FormData()
+        formData.append('collection_type', type)
+        
+        const response = await fetch(this.baseUrl+'//run_collection', {
+          method: 'POST',
+          body: formData
         })
-        .then(function(response) {
-          if (response.data.success) {
-            self.successMessage = response.data.message || (type === 'reset' ? '重新' : '继续') + '采集任务已启动'
-            self.currentStatus = 'running'
-
-            setTimeout(function() {
-              self.fetchProgressInfo()
-              self.startAutoRefresh()
-            }, 1000)
-          } else {
-            self.errorMessage = response.data.error || '启动采集任务失败'
-          }
-          self.isRunning = false
-        })
-        .catch(function(error) {
-          console.error('启动采集任务失败:', error)
-          self.errorMessage = '网络错误：' + error.message
-          self.isRunning = false
-        })
+        
+        const data = await response.json()
+        if (data.success) {
+          this.successMessage = data.message
+          this.currentStatus = 'running'
+          setTimeout(this.fetchProgressInfo, 1000)
+        } else {
+          this.errorMessage = data.error
+        }
       } catch (error) {
-        console.error('启动采集任务失败:', error)
-        this.errorMessage = '网络错误：' + error.message
+        this.errorMessage = '请求失败: ' + error.message
+      } finally {
         this.isRunning = false
       }
     },
-    confirmReset: function() {
+    confirmReset() {
       if (confirm('确定要重置所有进度并重新开始采集吗？这将删除当前的采集进度。')) {
         this.runCollection('reset')
-      }
-    },
-
-    // 辅助方法
-    clearMessages: function() {
-      this.successMessage = ''
-      this.errorMessage = ''
-    },
-
-    // 安全获取数字值
-    safeGetNumber: function(value, defaultValue) {
-      if (typeof defaultValue === 'undefined') {
-        defaultValue = 0
-      }
-      var num = parseInt(value)
-      return isNaN(num) ? defaultValue : num
-    },
-
-    getCsrfToken: function() {
-      // 从cookie中获取CSRF token
-      var cookies = document.cookie.split(';')
-      for (var i = 0; i < cookies.length; i++) {
-        var cookie = cookies[i]
-        var parts = cookie.trim().split('=')
-        var name = parts[0]
-        var value = parts[1]
-        if (name === 'csrftoken') {
-          return value
-        }
-      }
-      return ''
-    }
-  },
-
-  watch: {
-    // 监听自动刷新开关
-    autoRefreshEnabled: function(newVal) {
-      if (newVal) {
-        this.startAutoRefresh()
-      } else {
-        this.stopAutoRefresh()
       }
     }
   }
