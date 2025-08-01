@@ -128,10 +128,10 @@
 
 <script>
 import request from '@/api/request'
+import {KL_URL} from '@/api/request'
 export default {
   data: function() {
     return {
-      baseUrl: 'https://37fe7400-49b1-4c51-8699-ceea5e59ff85.mock.pstmn.io',
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,
@@ -196,7 +196,7 @@ export default {
       var self = this
       try {
         request({
-            url: '/get_collection_progress',
+            url: KL_URL+'/get_collection_progress/',
             method: 'get',
           })
           .then(function(response) {
@@ -254,7 +254,7 @@ export default {
       this.clearMessages()
 
       try {
-        request.post('/run_collection', {collection_type: type},
+        request.post(KL_URL+'/run_collection/', {collection_type: type},
          {headers: 
           {
         'Content-Type': 'application/json',

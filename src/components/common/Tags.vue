@@ -27,7 +27,7 @@
     export default {
         data() {
             return {
-                tagsList: []
+                tagsList:  JSON.parse(sessionStorage.getItem('tagsList')) || []
             }
         },
         methods: {
@@ -65,11 +65,14 @@
                     if(this.tagsList.length >= 8){
                         this.tagsList.shift();
                     }
-                    this.tagsList.push({
+                    if(route.fullPath!=='/main')
+                    {
+                        this.tagsList.push({
                         title: route.meta.title,
                         path: route.fullPath,
                         name: route.matched[1].components.default.name
                     })
+                    }
                 }
                 bus.$emit('tags', this.tagsList);
             },
@@ -84,7 +87,14 @@
         },
         watch:{
             $route(newValue, oldValue){
+                // console.log(newValue)
                 this.setTags(newValue);
+            },
+            tagsList: {
+                handler(newVal) {
+                    sessionStorage.setItem('tagsList', JSON.stringify(newVal))
+                },
+                deep: true
             }
         },
         created(){

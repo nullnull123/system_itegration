@@ -199,11 +199,11 @@
 <script>
 import * as d3 from 'd3';
 import request from '@/api/request'
+import {KL_URL} from '@/api/request'
 export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'https://c1e85a8a-6914-485f-9523-0d84ce6a4d60.mock.pstmn.io',
       queryText: '',
       presetQueries: [
         { label: '显示所有知识点', query: '显示所有知识点' },
@@ -806,11 +806,12 @@ export default {
       // 模拟API请求
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
-        request.post('/query', { query: this.queryText })
+        request.post(KL_URL+'/query/', { query: this.queryText })
         .then(response => {
           if (response.data.success) {
             this.updateGraph(response.data);
             this.isLoading = false;
+            // this.loadStatistics();
           } else {
             alert('查询错误: ' + response.data.error);
             this.isLoading = false;
@@ -821,28 +822,6 @@ export default {
                     alert('查询失败，请检查网络连接和后端服务: ' + error.message);
                     this.isLoading = false;
                 });
-        
-        // 模拟响应数据
-        // const mockData = {
-        //   nodes: [
-        //     { id: 1, name: '算法', label: 'KnowledgePoint', properties: { description: '解决问题的步骤和方法' } },
-        //     { id: 2, name: '数据结构', label: 'KnowledgePoint', properties: { description: '数据的组织方式' } },
-        //     { id: 3, name: '计算机网络', label: 'KnowledgePoint' },
-        //     { id: 4, name: '操作系统', label: 'KnowledgePoint' },
-        //     { id: 5, name: '计算机科学导论', label: 'Course' },
-        //     { id: 6, name: '人工智能', label: 'KnowledgePoint' }
-        //   ],
-        //   relationships: [
-        //     { id: 1, type: 'PREREQUISITE', source: 2, target: 1 },
-        //     { id: 2, type: 'RELATED_TO', source: 1, target: 6 },
-        //     { id: 3, type: 'CONTAINS', source: 5, target: 1 },
-        //     { id: 4, type: 'CONTAINS', source: 5, target: 2 },
-        //     { id: 5, type: 'RELATED_TO', source: 3, target: 4 }
-        //   ],
-        //   success: true
-        // };
-        
-        // this.updateGraph(mockData);
       }, 800);
     },
     
@@ -937,7 +916,7 @@ export default {
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
         request({
-            url: '/statistics',
+            url: KL_URL+'/statistics/',
             method: 'get',
           })
         .then(response => {
@@ -958,22 +937,6 @@ export default {
                       relationTypes: {}
                     };
                 });
-        // 模拟统计数据
-        // this.statistics = {
-        //   entityCount: 156,
-        //   relationCount: 278,
-        //   entityTypes: {
-        //     KnowledgePoint: 132,
-        //     Course: 24
-        //   },
-        //   relationTypes: {
-        //     RELATED_TO: 85,
-        //     PART_OF: 42,
-        //     PREREQUISITE: 36,
-        //     INCLUDES: 75,
-        //     FOLLOWS: 40
-        //   }
-        // };
       }, 500);
     },
     
@@ -985,7 +948,7 @@ export default {
       setTimeout(() => {
         // 在实际应用中，这里应该是真实的API请求
         request({
-            url: '/get_graph_data',
+            url: KL_URL+'/get_graph_data/',
             method: 'get',
           })
         .then(
@@ -997,8 +960,8 @@ export default {
                       const courseData = {
                         nodes: response.data.nodes.filter(node => node.label === 'Course'),
                         relationships: response.data.relationships.filter(rel => {
-                          const sourceIsCourse = data.nodes.find(n => n.id === rel.source && n.label === 'Course');
-                          const targetIsCourse = data.nodes.find(n => n.id === rel.target && n.label === 'Course');
+                          const sourceIsCourse = response.data.nodes.find(n => n.id === rel.source && n.label === 'Course');
+                          const targetIsCourse = response.data.nodes.find(n => n.id === rel.target && n.label === 'Course');
                           return sourceIsCourse && targetIsCourse;
                         })
                       };
@@ -1019,43 +982,6 @@ export default {
                     alert('加载图谱数据失败，请检查后端服务是否正常运行: ' + error.message);
                     this.isLoading = false;
                 });
-        
-        // 模拟初始图谱数据
-        // const mockData = {
-        //   nodes: [
-        //     { id: 1, name: '计算机科学', label: 'KnowledgePoint' },
-        //     { id: 2, name: '数据结构', label: 'KnowledgePoint' },
-        //     { id: 3, name: '算法', label: 'KnowledgePoint' },
-        //     { id: 4, name: '计算机网络', label: 'KnowledgePoint' },
-        //     { id: 5, name: '操作系统', label: 'KnowledgePoint' },
-        //     { id: 6, name: '数据库系统', label: 'KnowledgePoint' },
-        //     { id: 7, name: '软件工程', label: 'KnowledgePoint' },
-        //     { id: 8, name: '人工智能', label: 'KnowledgePoint' },
-        //     { id: 9, name: '计算机科学导论', label: 'Course' },
-        //     { id: 10, name: '数据结构与算法', label: 'Course' },
-        //     { id: 11, name: '计算机网络基础', label: 'Course' },
-        //     { id: 12, name: '操作系统原理', label: 'Course' }
-        //   ],
-        //   relationships: [
-        //     { id: 1, type: 'CONTAINS', source: 1, target: 2 },
-        //     { id: 2, type: 'CONTAINS', source: 1, target: 3 },
-        //     { id: 3, type: 'CONTAINS', source: 1, target: 4 },
-        //     { id: 4, type: 'CONTAINS', source: 1, target: 5 },
-        //     { id: 5, type: 'CONTAINS', source: 1, target: 6 },
-        //     { id: 6, type: 'CONTAINS', source: 1, target: 7 },
-        //     { id: 7, type: 'CONTAINS', source: 1, target: 8 },
-        //     { id: 8, type: 'PREREQUISITE', source: 2, target: 3 },
-        //     { id: 9, type: 'RELATED_TO', source: 4, target: 5 },
-        //     { id: 10, type: 'RELATED_TO', source: 5, target: 6 },
-        //     { id: 11, type: 'CONTAINS', source: 9, target: 1 },
-        //     { id: 12, type: 'CONTAINS', source: 10, target: 2 },
-        //     { id: 13, type: 'CONTAINS', source: 10, target: 3 },
-        //     { id: 14, type: 'CONTAINS', source: 11, target: 4 },
-        //     { id: 15, type: 'CONTAINS', source: 12, target: 5 }
-        //   ]
-        // };
-        
-        // this.updateGraph(mockData);
       }, 1000);
     },
     

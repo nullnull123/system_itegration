@@ -1,10 +1,10 @@
 import request from '@/api/request'
-
+import {JOB_URL} from '@/api/request'
 
 // 用户登录
 export function login(username, password) {
 	return request({
-		url: '/user/login/',
+		url: JOB_URL+'/user/login/',
 		method: 'post',
 		data: {
 			'username': username,
@@ -16,7 +16,7 @@ export function login(username, password) {
 // 学生统一身份认证登录
 export function casLogin() {
 	return request({
-		url: '/user/casLogin/',
+		url: JOB_URL+'/user/casLogin/',
 		method: 'get',
 	})
 }
@@ -24,7 +24,7 @@ export function casLogin() {
 //根据票据获取token
 export function getToken(uid, name) {
 	return request({
-		url: '/user/getToken/?uid=' + uid + '&name=' + name,
+		url: JOB_URL+'/user/getToken/?uid=' + uid + '&name=' + name,
 		method: 'get',
 	})
 }
@@ -32,7 +32,7 @@ export function getToken(uid, name) {
 // 学生修改密码
 export function changePassword(oldPassword, newPassword) {
 	return request({
-		url: '/user/changePassword',
+		url: JOB_URL+'/user/changePassword',
 		method: 'post',
 		data: {
 			'oldPassword': oldPassword,
@@ -44,7 +44,7 @@ export function changePassword(oldPassword, newPassword) {
 // 获取学生信息
 export function getStudentInfo() {
 	return request({
-		url: '/user/studentInfo/',
+		url: JOB_URL+'/user/studentInfo/',
 		method: 'get',
 	})
 }
@@ -52,7 +52,7 @@ export function getStudentInfo() {
 // 修改学生信息
 export function updateStudentInfo(student) {
 	return request({
-		url: '/user/updateStudent/',
+		url: JOB_URL+'/user/updateStudent/',
 		method: 'post',
 		data: student
 	})

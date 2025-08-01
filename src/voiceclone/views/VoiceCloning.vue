@@ -88,32 +88,45 @@
                 <div class="p-2">
                     <label class="form-label">要克隆的音色:</label>
                     <select v-model="stsVoice" class="form-select w-auto">
-                        <option v-for="file in audioFiles" :key="file" :value="file">{{ file }}</option>
+                        <option v-for="v in audioFiles" :key="v" :value="v">{{ v }}</option>
                     </select>
                 </div>
-                <div id="dropaudio" @drop.prevent="handleFileDrop" @dragover.prevent @click="triggerFileInput"
-                    class="border m-2 p-5 text-center" style="cursor: pointer;">
-                    拖拽或点击将音频 wav/mp3/flac 文件上传
+                <!-- 上传灰框：拖拽或点击 -->
+                <div ref="dropZone" class="border m-2 p-5 text-center" style="cursor:pointer;"
+                    @drop.prevent="handleFileUpload" @dragover.prevent @click="triggerFileInput">
+                    {{ stsFileName ? '✅ 已上传：' + stsFileName : '拖拽或点击将音频 wav/mp3/flac 文件上传' }}
                 </div>
+
+                <!-- 隐藏 file input -->
                 <input type="file" accept=".mp3,.wav,.flac" ref="stsFileInput" class="d-none"
-                    @change="handleFileChange" />
+                    @change="handleFileUpload">
                 <div class="text-center mt-3">
                     <button @click="startSTS" class="btn btn-danger">立即开始转换</button>
                 </div>
             </div>
-        </div>
 
-        <div class="text-danger text-center my-2" v-if="warningMessage">{{ warningMessage }}</div>
-        <div class="text-danger text-center my-2" v-if="tipsMessage">{{ tipsMessage }}</div>
-        <div class="text-center my-4">
-            <audio ref="resultAudio" controls class="d-none"></audio>
+            <div class="text-danger text-center my-2" v-if="warningMessage">{{ warningMessage }}</div>
+            <div class="text-danger text-center my-2" v-if="tipsMessage">{{ tipsMessage }}</div>
+            <div class="text-center my-4">
+                <audio ref="resultAudio" controls class="d-none"></audio>
+            </div>
+
+
         </div>
     </div>
 </template>
 
 <script>
-import { getAudioList, getLanguageList, getModelStatus } from '@/voiceclone/api/tts'
-import axios from 'axios'
+const MEDIA_BASE = 'http://127.0.0.1:9988/media';   // 统一的媒体前缀
+import {
+    toggleModelStatus,
+    uploadAudioFile,
+    runTTS,
+    runSTS,
+    getAudioList,
+    getLanguageList,
+    getModelStatus,
+} from '@/voiceclone/api/tts'
 
 export default {
     name: 'TTS',
@@ -131,6 +144,7 @@ export default {
             recorded: false,
             textInput: '',
             stsVoice: '',
+            stsFileName: '',
             mediaRecorder: null,
             audioChunks: [],
             synthesisTimer: null,
@@ -139,6 +153,7 @@ export default {
             recordTimer: null,
             warningMessage: '',
             tipsMessage: '',
+            user_id: 'test_user_001',  // 默认测试用户 ID
             langlist: {
                 "lang1": "必须选择要试听的声音",
                 "lang2": "录制中",
@@ -165,10 +180,30 @@ export default {
         this.initAudioList();
         this.initLanguageList();
         this.checkModelStatus();
+        this.fetchLanguages();
+        this.fetchAudioFiles();
+        this.getSessionUser();  // 获取用户 session ID（预留）
     },
     methods: {
         toggle(type) {
             this.mode = type;
+        },
+        setWarning(msg) {
+            this.warningMessage = msg
+            this.tipsMessage = ''
+        },
+        setTips(msg) {
+            this.tipsMessage = msg
+            this.warningMessage = ''
+        },
+        buildFormData() {
+            const fd = new FormData()
+            fd.append('text', this.textInput)
+            fd.append('voice', this.voiceFile)
+            fd.append('language', this.language)
+            fd.append('model', this.model)
+            fd.append('speed', this.speed)
+            return fd
         },
         showGuide(type) {
             const images = {
@@ -181,6 +216,38 @@ export default {
                 '操作指南',
                 { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' }
             );
+        },
+        setVoice(event) {
+            const name = event.target.value;
+            const foundModel = this.models.find(m => m.name === name);
+            const modelStatus = foundModel ? foundModel.status : null;
+
+            if (name !== 'default') {
+                this.$refs.audioSelect.disabled = true;
+                this.$refs.startRecord.disabled = true;
+            } else {
+                this.$refs.audioSelect.disabled = false;
+                this.$refs.startRecord.disabled = false;
+            }
+
+            if (name !== 'default' && modelStatus !== 'on') {
+                this.$alert('该模型还没有启动，请启动后使用', '提示');
+            }
+        },
+        async fetchLanguages() {
+            const { data } = await getLanguageList()
+            this.languageList = data.languages
+            if (this.languageList.length) {
+                this.language = this.languageList[0].language_code
+            }
+        },
+        async fetchAudioFiles() {
+            const { data } = await getAudioList()
+            this.audioFiles = Array.isArray(data) ? data : data.files
+            if (this.audioFiles.length) {
+                this.voiceFile = this.audioFiles[0]
+                this.stsVoice = this.audioFiles[0]
+            }
         },
         uploadSrtFile(event) {
             const file = event.target.files[0];
@@ -197,7 +264,7 @@ export default {
         async updateModelStatus(modelName, el) {
             try {
                 const newStatus = el.status === 'on' ? 'off' : 'on';
-                const res = await axios.post('/onoroff', { status_new: newStatus, name: modelName });
+                const res = await toggleModelStatus({ status_new: newStatus, name: modelName });
                 if (res.data && res.data.code === 0) {
                     this.$message.success(res.data.msg);
                     this.checkModelStatus();
@@ -210,13 +277,11 @@ export default {
         },
         playSelectedVoice() {
             if (!this.voiceFile) {
-                this.$alert(this.langlist['lang1'], '提示');
-                return;
+                return this.$alert(this.langlist.lang1, '提示')
             }
-            const audio = new Audio(`/static/audiofile/${this.voiceFile}`);
-            audio.play().catch(() => {
-                this.$message.error('音频播放失败');
-            });
+            /* 只试听 voicelist 下的音色 */
+            const url = `${MEDIA_BASE}/voicelist/${this.voiceFile}?t=${Date.now()}`
+            new Audio(url).play().catch(() => this.$message.error('音频播放失败'))
         },
         startRecording() {
             this.audioChunks = [];
@@ -259,124 +324,130 @@ export default {
         },
         async uploadRecording() {
             if (!this.recordedBlob) {
-                this.$alert(this.langlist['lang6'], '提示');
-                return;
+                return this.$alert(this.langlist.lang6, '提示')
             }
-            const formData = new FormData();
-            formData.append('audio', this.recordedBlob, 'recorded_audio.wav');
-            try {
-                const res = await axios.post('/upload', formData);
-                if (res.data && res.data.code === 0) {
-                    this.$message.success('录音上传成功');
-                    await this.initAudioList();
-                    this.voiceFile = res.data.data;
-                    this.recorded = false;
-                } else {
-                    this.$message.error(res.data.msg || '上传失败');
-                }
-            } catch {
-                this.$message.error('上传请求失败');
+            const fd = new FormData()
+            fd.append('audio', this.recordedBlob, 'record.wav')  // 不写 save_dir → voicelist
+
+            const { data } = await uploadAudioFile(fd)
+            if (data.code === 0) {
+                this.$message.success('录音上传成功')
+                this.voiceFile = data.data                        // 文件名
+                this.recorded = false
+                await this.initAudioList()                        // 刷新下拉框
+            } else {
+                this.$message.error(data.msg || '上传失败')
             }
         },
-        uploadFromLocal(event) {
-            const file = event.target.files[0];
-            if (!file) {
-                this.$alert(this.langlist['lang7'], '提示');
-                return;
+        async uploadFromLocal(e) {
+            const file = e.target.files[0]
+            if (!file) return this.$alert(this.langlist.lang7, '提示')
+
+            const fd = new FormData()
+            fd.append('audio', file)                            // 默认进 voicelist
+            const { data } = await uploadAudioFile(fd)
+
+            if (data.code === 0) {
+                this.$message.success('上传成功')
+                this.voiceFile = data.data
+                await this.initAudioList()
+            } else {
+                this.$message.error(data.msg || '上传失败')
             }
-            const formData = new FormData();
-            formData.append('audio', file);
-            axios.post('/upload', formData).then(res => {
-                if (res.data && res.data.code === 0) {
-                    this.$message.success('上传成功');
-                    this.initAudioList();
-                    this.voiceFile = res.data.data;
-                } else {
-                    this.$message.error(res.data.msg || '上传失败');
-                }
-            }).catch(() => {
-                this.$message.error('上传请求失败');
-            });
         },
+
+        /* ---------- 文本 → 语音 ---------- */
         async startSynthesis() {
-            if (!this.voiceFile) {
-                this.$alert(this.langlist['lang10'], '提示');
-                return;
-            }
-            if (!this.textInput) {
-                this.$alert(this.langlist['lang11'], '提示');
-                return;
-            }
-            if (this.speed < 0.1 || this.speed > 2.0) {
-                this.$alert(this.langlist['lang16'], '提示');
-                return;
-            }
-            const payload = {
-                voice: this.voiceFile,
-                model: this.model,
-                text: this.textInput,
-                language: this.language,
-                speed: this.speed
-            };
-            this.$message.info(this.langlist['lang13']);
-            this.synthesisSeconds = 0;
+            // 1. 基础校验（保持原判空逻辑）
+            if (!this.voiceFile) return this.setWarning(this.langlist.lang10)
+            if (!this.textInput) return this.setWarning(this.langlist.lang11)
+            if (this.speed < 0.1 || this.speed > 2.0)
+                return this.setWarning(this.langlist.lang16)
+
+            // 2. 提示计时
+            this.synthesisSeconds = 0
+            this.setTips(`${this.langlist.lang13}：0 秒`)
             this.synthesisTimer = setInterval(() => {
-                this.synthesisSeconds++;
-                this.$message.info(`合成中：${this.synthesisSeconds} 秒`);
-            }, 1000);
+                this.synthesisSeconds++
+                this.setTips(`${this.langlist.lang13}：${this.synthesisSeconds} 秒`)
+            }, 1000)
+
             try {
-                const res = await axios.post('/tts', payload);
-                clearInterval(this.synthesisTimer);
-                if (res.data && res.data.code === 0) {
-                    this.$message.success('合成成功');
-                    this.$refs.resultAudio.src = `/static/ttslist/${res.data.name}`;
-                    this.$refs.resultAudio.classList.remove('d-none');
-                } else {
-                    this.$message.error(res.data.msg || '合成失败');
+                const { data } = await runTTS(this.buildFormData())
+                clearInterval(this.synthesisTimer)
+                console.log('TTS response', data)          // 调试
+
+                if (data.code !== 0 || !data.file_url) {   // ← 只认 file_url
+                    return this.setWarning(data.msg || '合成失败')
                 }
-            } catch {
-                clearInterval(this.synthesisTimer);
-                this.$message.error('合成请求失败');
+
+                const audio = this.$refs.resultAudio
+                if (!audio) { console.error('audio ref 未找到'); return }
+                audio.src = data.file_url                  // ★ 关键一行
+                audio.load()
+                audio.classList.remove('d-none')
+                this.setTips('合成成功！')
+
+            } catch (err) {
+                clearInterval(this.synthesisTimer)
+                this.setWarning('合成请求失败')
+                console.error(err)
             }
         },
+
+        /* ---------- 语音 → 语音 ---------- */
         async startSTS() {
-            if (!this.stsVoice) {
-                this.$alert(this.langlist['lang12'], '提示');
-                return;
-            }
+            if (!this.stsVoice) return this.setWarning('请选择要克隆的音色')
+            if (!this.stsFileName) return this.setWarning('请先上传原始音频')
+
+            /* ---- 计时开始 ---- */
+            this.synthesisSeconds = 0
+            this.setTips(`转换用时：0 秒`)
+            this.synthesisTimer = setInterval(() => {
+                this.synthesisSeconds++
+                this.setTips(`转换用时：${this.synthesisSeconds} 秒`)
+            }, 1000)
+
+            const fd = new FormData()
+            fd.append('voice', this.stsVoice)
+            fd.append('name', this.stsFileName)
+
             try {
-                const res = await axios.post('/sts', { voice: this.stsVoice, name: this.stsVoice });
-                if (res.data && res.data.code === 0) {
-                    this.$message.success('声音转声音成功');
-                    this.$refs.resultAudio.src = `/static/ttslist/${res.data.name}`;
-                    this.$refs.resultAudio.classList.remove('d-none');
-                } else {
-                    this.$message.error(res.data.msg || '转换失败');
-                }
-            } catch {
-                this.$message.error('转换请求失败');
+                const { data } = await runSTS(fd)
+                clearInterval(this.synthesisTimer)        // 停表
+
+                if (data.code !== 0 || !data.file_url)
+                    return this.setWarning(data.msg || '转换失败')
+
+                const audio = this.$refs.resultAudio
+                audio.src = data.file_url
+                audio.load()
+                audio.classList.remove('d-none')
+                this.setTips('转换成功！')
+
+            } catch (e) {
+                clearInterval(this.synthesisTimer)        // 停表
+                this.setWarning('转换请求失败')
+                console.error(e)
             }
         },
-        handleFileDrop(event) {
-            const file = event.dataTransfer.files[0];
-            if (!file) {
-                this.$alert(this.langlist['lang5'], '提示');
-                return;
+        /* 拖拽 / 选择文件后上传到 tmp/ 并记录文件名 */
+        async handleFileUpload(event) {
+            const file = (event.dataTransfer || event.target).files[0]
+            if (!file) return
+
+            const fd = new FormData()
+            fd.append('audio', file)
+            fd.append('save_dir', 'tmp')           // 让后端存 TMP_DIR
+
+            const { data } = await uploadAudioFile(fd)   // /upload_audio
+            if (data.code !== 0) {
+                return this.setWarning(data.msg || '上传失败')
             }
-            const formData = new FormData();
-            formData.append('audio', file);
-            formData.append('save_dir', 'tmp');
-            axios.post('/upload', formData).then(res => {
-                if (res.data && res.data.code === 0) {
-                    this.$message.success('上传成功');
-                    this.stsVoice = res.data.data;
-                } else {
-                    this.$message.error(res.data.msg || '上传失败');
-                }
-            }).catch(() => {
-                this.$message.error('上传请求失败');
-            });
+
+            this.stsFileName = data.data || ''     // 后端统一用 data 字段
         },
+
         triggerFileInput() {
             this.$refs.stsFileInput.click();
         },
@@ -415,7 +486,23 @@ export default {
             } catch {
                 this.$message.error('获取模型状态失败');
             }
-        }
+        },
+
+
+
+        //  预留接口，用于登录后自动获取 session 中的 user_id
+        getSessionUser() {
+            // 示例代码，请根据你后端实际路径改动
+            // axios.get('/check_login/')
+            //     .then(({ data }) => {
+            //         if (data && data.user_id) {
+            //             this.user_id = data.user_id;
+            //         }
+            //     });
+
+            // 默认先使用测试 ID
+            this.user_id = 'test_user_001';
+        },
     }
 };
 </script>
