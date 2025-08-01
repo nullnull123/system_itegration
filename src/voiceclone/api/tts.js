@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 /* ========= 基础路径 ========= */
-const BASE_URL = 'http://localhost:9988/'
+const BASE_URL = 'http://10.104.52.24:8000/voiceclone/'
 
 /* ========= 模型与配置 ========= */
 export const getModelStatus = () => axios.get(`${BASE_URL}isstart/`)
