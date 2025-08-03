@@ -33,7 +33,7 @@ export function jobRecommend(key) {
 }
 // export function jobRecommend() {
 // 	return request({
-// 		url: '/job/recommend_jobs',
+// 		url: JOB_URL+'/job/recommend_jobs',
 // 		method: 'get',
 // 	})
 // }
@@ -86,7 +86,7 @@ export function jobDelete(job_id) {
 // 获取热门职位列表
 export function hotList() {
 	return request({
-		url: '/job/hotList/',
+		url: JOB_URL+'/job/hotList/',
 		method: 'get',
 	})
 }
@@ -102,7 +102,7 @@ export function workList(page) {
 // 企业获取自己创建的所有职位
 export function myJob(page) {
 	return request({
-		url: '/job/myJob/',
+		url: JOB_URL+'/job/myJob/',
 		method: 'get',
 	})
 }

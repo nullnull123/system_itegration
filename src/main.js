@@ -22,7 +22,7 @@ Vue.use(ElementUI, {
 Vue.prototype.$baseUrl = process.env.VUE_APP_BASE_API
 
 // 1. 初始化时从 localStorage 读取值（若无则用默认值 true）
-const initialIsStu = localStorage.getItem('isStu');
+const initialIsStu = sessionStorage.getItem('isStu');
 export const globalState = Vue.observable({
   isStu: initialIsStu ? JSON.parse(initialIsStu) : true
 });
@@ -42,7 +42,7 @@ new Vue({
     this.$watch(
       () => this.$global.isStu,
       (newVal) => {
-        localStorage.setItem('isStu', JSON.stringify(newVal));
+        sessionStorage.setItem('isStu', JSON.stringify(newVal));
       },
       { immediate: true } // 立即触发一次以确保初始值同步
     );

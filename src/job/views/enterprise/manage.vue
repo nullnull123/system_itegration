@@ -263,7 +263,6 @@
 			//获取职位列表
 			getList() {
 				myJob().then(response => {
-					// console.log(123);
 					console.log(response);
 					this.tableData = response.data;
 				})
@@ -334,7 +333,7 @@
 					return;
 				}
 				jobSearch(this.key).then(response => {
-					console.log(response.data);
+					// console.log(response.data);
 					this.tableData = response.data;
 					this.total = response.data.length;
 					this.pageSize = 10;
