@@ -1,6 +1,6 @@
 <template>
 	<div class="login-register-container">
-		<h1 style="color: white;">双向就业推荐系统学生端</h1>
+		<h1 style="color: white;">学生端登录</h1>
 		<el-card class="box">
 			<div>
 				<el-form :model="activeForm" ref="loginForm" class="login-form"

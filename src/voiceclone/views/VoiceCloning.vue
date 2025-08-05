@@ -117,7 +117,7 @@
 </template>
 
 <script>
-const MEDIA_BASE = 'http://10.104.52.24:8000/voiceclone/media';   // 统一的媒体前缀
+const MEDIA_BASE = 'http://10.104.52.24:8000/media';   // 统一的媒体前缀
 import {
     toggleModelStatus,
     uploadAudioFile,

@@ -144,7 +144,7 @@ export default new Router({
                 {
                     // 图谱构建
                     path: '/GeneticMapping',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../abc/index.vue'),
                     meta: { title: '图谱构建' }
                 },
                 {

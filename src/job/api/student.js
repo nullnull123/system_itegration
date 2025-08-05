@@ -65,7 +65,7 @@ export function getResume() {
 // 根据id获取学生简历
 export function getResumeById(id) {
 	return request({
-		url: '/resume/getResumeById/?id=' + id,
+		url: JOB_URL+'/resume/getResumeById/?id=' + id,
 		method: 'get'
 	})
 }

@@ -4,7 +4,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
       <div class="container-fluid">
         <!-- <a class="navbar-brand" href="/">计算机专业知识图谱</a> -->
-        <router-link to="/RelationExtraction" class="navbar-brand">计算机专业知识图谱</router-link>
+        <router-link to="/GeneticMapping" class="navbar-brand">计算机专业知识图谱</router-link>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -12,7 +12,7 @@
           <ul class="navbar-nav">
             <li class="nav-item">
               <!-- <a class="nav-link" href="/">知识图谱</a> -->
-              <router-link to="/RelationExtraction" class="nav-link">知识图谱</router-link>
+              <router-link to="/GeneticMapping" class="nav-link">知识图谱</router-link>
             </li>
             <li class="nav-item">
               <!-- <a class="nav-link active" href="/admin">管理面板</a> -->

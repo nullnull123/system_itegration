@@ -1,6 +1,6 @@
 <template>
 	<div class="login-register-container">
-		<h1 style="color: white;">双向就业推荐系统企业端</h1>
+		<h1 style="color: white;">企业端登录</h1>
 		<el-card class="box">
 			<el-form :model="activeForm" :rules="rules" ref="loginForm" class="login-form"
 				@submit.native.prevent="handleFormSubmit">

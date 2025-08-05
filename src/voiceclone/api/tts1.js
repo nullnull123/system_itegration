@@ -27,24 +27,9 @@ export const runSTS = fd => axios.post(
   fd,
   { headers: { 'Content-Type': 'multipart/form-data' } }
 )
-export const runBatchTTS = data => axios.post(`${BASE_URL}start_tts_batch/`, data)
+export const runBatchTTS = data => axios.post(`${BASE_URL}ttslist/`, data)
 export const getBatchProgress = (user_id = 'guest') =>
   axios.get(`${BASE_URL}ttslistjindu/`, { params: { user_id } })
-
-// ====================== 上传 TXT & 下载 ZIP ======================
-
-// 上传多个 TXT 文件
-export const uploadTxtFiles = fd =>
-  axios.post(`${BASE_URL}upload_txt/`, fd, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-
-// 下载打包的 ZIP 音频文件
-export const downloadZip = (filenames, user_id = 'guest') =>
-  axios.post(`${BASE_URL}download_tts_zip/`, { filenames }, {
-    params: { user_id }
-  });
-
 
 /* ========= 日志 ========= */
 export const writeLog = data => axios.post(`${BASE_URL}log/`, data)
