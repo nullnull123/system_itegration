@@ -11,7 +11,9 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'   // 可选，JS 组件
 import './assets/css/icon.css';
 import './components/common/directives';
 import 'babel-polyfill';
-import store from './job/store'
+import jobstore from './job/store'
+import store from './aicalss/store'
+import request from './api/request'
 
 Vue.config.productionTip = false;
 Vue.use(ElementUI, {
@@ -28,10 +30,15 @@ export const globalState = Vue.observable({
 });
  
 // 2. 挂载到 Vue 原型
-Vue.prototype.$global = globalState;
+Vue.prototype.$axios = request
 
+Vue.config.productionTip = false
+
+Vue.prototype.$global = globalState;
+// console.log('Store Structure:', store.state.smartPrep)
 new Vue({
     router,
+    jobstore,
     store,
     render: h => h(App)
 }).$mount('#app');

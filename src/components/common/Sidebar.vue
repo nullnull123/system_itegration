@@ -113,16 +113,16 @@ export default {
                     title: '智课工坊',
                     subs: [
                         {
-                            index: 'IntelligentLessonPreparation',
+                            index: 'SmartPrep',
                             title: '智能备课'
                         },
                         {
-                            index: 'IntelligentReview',
-                            title: '智能复习'
+                            index: 'NoteCompletion',
+                            title: '笔记补全'
                         },
                         {
-                            index: 'AutomatedEvaluation',
-                            title: '自动化测评'
+                            index: 'ExerciseAssessment',
+                            title: '习题测评'
                         }
                     ]
                 },

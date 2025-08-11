@@ -83,21 +83,82 @@ export default new Router({
                 },
                 {
                     // 智能备课
-                    path: '/IntelligentLessonPreparation',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '智能备课' }
+                    path: '/SmartPrep',
+                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/SmartPrep/index.vue'),
+                    meta: { title: '智能备课' },
+                    children: [
+                        {
+                        path: '',
+                        component: () => import('../aicalss/views/SmartPrep/Upload.vue'),
+                        meta: { title: '上传教案',}
+                        },
+                        {
+                        path: 'upload',
+                        component: () => import('../aicalss/views/SmartPrep/Upload.vue'),
+                        meta: { title: '上传教案' }
+                        },
+                        {
+                        path: 'detail/:id',
+                        component: () => import(/* webpackChunkName: "enterprisehome" */ '../aicalss/views/SmartPrep/Detail.vue'),
+                        meta: { title: '教案详情' }
+                        },
+                    ]
                 },
                 {
-                    // 智能复习
-                    path: '/IntelligentReview',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '智能复习' }
+                    // 笔记补全
+                    path: '/NoteCompletion',
+                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/NoteCompletion/index.vue'),
+                    meta: { title: '笔记补全' },
+                    children: [
+                            {
+                                path: '',
+                                component: () => import('../aicalss/views/NoteCompletion/Upload.vue'),
+                                meta: {title: '上传笔记',}
+                            },
+                            {
+                                path: 'upload',
+                                component: () => import('../aicalss/views/NoteCompletion/Upload.vue'),
+                                meta: { title: '上传笔记',}
+                            },
+                            {
+                                path: 'detail/:id',
+                                component: () => import('../aicalss/views/NoteCompletion/Detail.vue'),
+                                meta: { title: '笔记详情',}
+                            }
+                            ]
                 },
                 {
-                    // 自动化测评
-                    path: '/AutomatedEvaluation',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '自动化测评' }
+                    // 习题测评
+                    path: '/ExerciseAssessment',
+                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/ExerciseAssessment/index.vue'),
+                    meta: { title: '习题测评' },
+                    children: [
+                            {
+                                path: '',
+                                component: () => import('../aicalss/views/ExerciseAssessment/List.vue'),
+                                meta: {title: '习题列表',}
+                            },
+                            {
+                                path: 'list',
+                                component: () => import('../aicalss/views/ExerciseAssessment/List.vue'),
+                                meta: { title: '习题列表',}
+                            },
+                            {
+                                path: 'create',
+                                component: () => import('../aicalss/views/ExerciseAssessment/Create.vue'),
+                                meta: { title: '创建习题',}
+                            },
+                            {
+                                path: 'submit',
+                                component: () => import('../aicalss/views/ExerciseAssessment/Submit.vue'),
+                                meta: { title: '提交答案',}
+                            },
+                            {
+                                path: 'submissions',
+                                component: () => import('../aicalss/views/ExerciseAssessment/Submissions.vue'),
+                                meta: { title: '提交记录',}
+                            }
+                            ]
                 },
                 {
                     // 课堂到课率和抬头率

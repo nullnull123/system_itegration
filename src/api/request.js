@@ -6,11 +6,9 @@ axios.defaults.headers['Content-Type'] = 'application/json;charset=utf-8'
 // 创建axios实例
 const service = axios.create({
 	// 请求URL公共部分
-	// baseURL: process.env.VUE_APP_BASE_API +'/JobRec/api',
 	baseURL: process.env.VUE_APP_BASE_API,
-	// baseURL: 'https://dd0e70ff-f589-4399-b77e-dbc14f2fdfa1.mock.pstmn.io',
 	// 超时时间
-	timeout: 10000,
+	timeout: 60000,
 	// 所有请求携带token
 	// headers: {
 	// 	'Authorization': 'Token ' + localStorage.getItem('token'),
