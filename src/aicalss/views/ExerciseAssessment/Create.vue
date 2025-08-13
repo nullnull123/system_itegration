@@ -202,20 +202,40 @@ export default {
       this.$refs.exerciseForm.validate(async valid => {
         if (valid) {
           try {
-            // 处理正确答案格式
+            // 处理正确答案格式 - 修正逻辑
             let correctAnswer = this.exerciseForm.correct_answer
-            if (Array.isArray(correctAnswer)) {
-              // 将索引转换为字母
-              correctAnswer = correctAnswer
-                .sort()
-                .map(index => String.fromCharCode(65 + index))
-                .join('')
+            
+            if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+              // 如果是数组索引，转换为实际的选项内容
+              if (typeof correctAnswer[0] === 'number') {
+                // 索引转换为实际选项内容
+                correctAnswer = correctAnswer
+                  .map(index => this.exerciseForm.options[index])
+                  .filter(answer => answer !== undefined)
+              } else {
+                // 如果已经是选项内容，直接使用
+                correctAnswer = correctAnswer.join(',') // 多选题用逗号分隔
+              }
+            } else if (typeof correctAnswer === 'number') {
+              // 单个索引转换
+              correctAnswer = this.exerciseForm.options[correctAnswer] || ''
+            }
+            
+            // 如果是单选题且只有一个答案，取第一个
+            if (Array.isArray(correctAnswer) && correctAnswer.length === 1) {
+              correctAnswer = correctAnswer[0]
             }
             
             const formData = {
               ...this.exerciseForm,
               correct_answer: correctAnswer
             }
+            
+            // 调试信息
+            console.log('=== 提交数据 ===')
+            console.log('选项:', formData.options)
+            console.log('正确答案:', formData.correct_answer)
+            console.log('答案是否在选项中:', formData.options.includes(formData.correct_answer))
             
             await this.createExercise(formData)
             
@@ -227,6 +247,7 @@ export default {
             // 重置表单
             this.resetForm()
           } catch (error) {
+            console.error('提交错误:', error)
             this.$message({
               type: 'error',
               message: error.message || '习题创建失败'

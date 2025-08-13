@@ -15,6 +15,8 @@ import jobstore from './job/store'
 import store from './aicalss/store'
 import request from './api/request'
 
+// localStorage.removeItem('token');
+
 Vue.config.productionTip = false;
 Vue.use(ElementUI, {
     size: 'small'

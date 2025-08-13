@@ -59,7 +59,7 @@ export default {
             [
                 {
                     icon: 'el-icon-lx-home',
-                    index: 'dashboard',
+                    index: '/dashboard',
                     title: '系统首页'
                 },
                 {
@@ -68,15 +68,15 @@ export default {
                         title: '语音合成',
                         subs: [
                             {
-                                index: 'VoiceCloning',
+                                index: '/VoiceCloning',
                                 title: '语音克隆'
                             },
                             {
-                                index: 'TextToSpeechs',
+                                index: '/TextToSpeechs',
                                 title: '批量文本转语音'
                             },
                             {
-                                index: 'interaction',
+                                index: '/interaction',
                                 title: '留言互动'
                             }
                         ]
@@ -87,7 +87,7 @@ export default {
                     title: '就业推荐',
                     subs: [
                         {
-                            index: 'recommendJob',
+                            index: '/recommendJob',
                             title: '职位推荐'
                         }
                     ]
@@ -98,11 +98,11 @@ export default {
                     title: '知识点分析',
                     subs: [
                         {
-                            index: 'KnowledgeRetrieval',
+                            index: '/KnowledgeRetrieval',
                             title: '知识点检索'
                         },
                         {
-                            index: 'OutlineMatching',
+                            index: '/OutlineMatching',
                             title: '大纲匹配'
                         }
                     ]
@@ -113,15 +113,15 @@ export default {
                     title: '智课工坊',
                     subs: [
                         {
-                            index: 'SmartPrep',
+                            index: '/SmartPrep',
                             title: '智能备课'
                         },
                         {
-                            index: 'NoteCompletion',
+                            index: '/NoteCompletion',
                             title: '笔记补全'
                         },
                         {
-                            index: 'ExerciseAssessment',
+                            index: '/ExerciseAssessment',
                             title: '习题测评'
                         }
                     ]
@@ -132,15 +132,15 @@ export default {
                     title: '智能督导',
                     subs: [
                         {
-                            index: 'car',
+                            index: '/car',
                             title: '课堂到课率和抬头率'
                         },
                         {
-                            index: 'icdc',
+                            index: '/icdc',
                             title: '智能课堂数据采集'
                         },
                         {
-                            index: 'macs',
+                            index: '/macs',
                             title: '多智能体协同督导'
                         }
                     ]
@@ -155,25 +155,25 @@ export default {
                             title: '知识处理',
                             subs: [
                                 {
-                                    index: 'EntityRecognition',
+                                    index: '/EntityRecognition',
                                     title: '实体识别'
                                 },
                                 {
-                                    index: 'RelationExtraction',
+                                    index: '/RelationExtraction',
                                     title: '关系抽取'
                                 },
                                 {
-                                    index: 'KnowledgeFusion',
+                                    index: '/KnowledgeFusion',
                                     title: '知识融合'
                                 }
                             ]
                         },
                         {
-                            index: 'DataAcquisition',
+                            index: '/DataAcquisition',
                             title: '数据采集'
                         },
                         {
-                            index: 'GeneticMapping',
+                            index: '/GeneticMapping',
                             title: '图谱构建'
                         }
                     ]
@@ -191,12 +191,12 @@ export default {
             ]:
             [{
                     icon: 'el-icon-lx-home',
-                    index: 'enterprisehome',
+                    index: '/enterprisehome',
                     title: '系统首页'
                 },
             {
                         icon: 'el-icon-rank',
-                        index: 'manage',
+                        index: '/manage',
                         title: '人才推荐'
                 }
                     ]
