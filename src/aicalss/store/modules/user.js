@@ -1,5 +1,6 @@
 // src/store/modules/user.js
 import request from '@/api/request'
+import {AC_URL} from '@/api/request'
 
 const state = {
   token: localStorage.getItem('token') || '',
@@ -31,7 +32,7 @@ const actions = {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
       request({
-        url: '/api-token-auth/',
+        url: AC_URL + '/api-token-auth/',
         method: 'post',
         data: {
           username: username.trim(),
@@ -70,7 +71,7 @@ const actions = {
   register({ commit }, userInfo) {
     return new Promise((resolve, reject) => {
       request({
-        url: '/api/v1/register/',
+        url: AC_URL + '/api/v1/register/',
         method: 'post',
         data: userInfo
       }).then(response => {

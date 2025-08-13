@@ -1,3 +1,4 @@
+import {AC_URL} from '@/api/request'
 const state = {
     lessonPlans: [],
     currentLesson: null,
@@ -58,7 +59,7 @@ const state = {
       try {
         // 修正 1: 使用 dispatch 调用根级别的 API action
         const response = await dispatch('post', { 
-          url: '/api/v1/prep/upload/', 
+          url: AC_URL + '/api/v1/prep/upload/', 
           data 
         }, { root: true })
 
@@ -92,7 +93,7 @@ const state = {
 
         // 这里应该调用 API
         const response = await dispatch('post', { 
-          url: '/api/v1/prep/generate/', 
+          url: AC_URL + '/api/v1/prep/generate/', 
           data: { lesson_id: lessonId } 
         }, { root: true })
 
@@ -119,7 +120,7 @@ const state = {
       commit('SET_LOADING', true)
       try {
         const response = await dispatch('post', { 
-          url: '/api/v1/prep/save/', 
+          url: AC_URL + '/api/v1/prep/save/', 
           data: lesson 
         }, { root: true })
         

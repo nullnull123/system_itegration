@@ -1,3 +1,5 @@
+import {AC_URL} from '@/api/request'
+
 const state = {
     notes: [],
     currentNote: null,
@@ -32,7 +34,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('get', { 
-          url: '/api/v1/notes/', 
+          url: AC_URL + '/api/v1/notes/', 
           params 
         }, { root: true })
         commit('SET_NOTES', response.data.data)
@@ -49,7 +51,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('get', { 
-          url: `/api/v1/notes/${id}/` 
+          url: AC_URL + `/api/v1/notes/${id}/` 
         }, { root: true })
         commit('SET_CURRENT_NOTE', response.data.data)
         commit('SET_ERROR', null)
@@ -65,7 +67,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('post', { 
-          url: '/api/v1/notes/upload/', 
+          url: AC_URL + '/api/v1/notes/upload/', 
           data 
         }, { root: true })
         commit('SET_CURRENT_NOTE', response.data.data)
@@ -84,7 +86,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('post', { 
-          url: '/api/v1/notes/complete/', 
+          url: AC_URL + '/api/v1/notes/complete/', 
           data: { note_id: state.currentNote?.id } 
         }, { root: true })
 

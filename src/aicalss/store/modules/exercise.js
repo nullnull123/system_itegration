@@ -1,3 +1,4 @@
+import {AC_URL} from '@/api/request'
 const state = {
     exercises: [],
     submissions: [],
@@ -30,7 +31,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('get', { 
-          url: '/api/v1/exercises/', 
+          url: AC_URL + '/api/v1/exercises/', 
           params 
         }, { root: true })
         
@@ -51,7 +52,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('get', { 
-          url: `/api/v1/exercises/${id}/` 
+          url: AC_URL + `/api/v1/exercises/${id}/` 
         }, { root: true })
         
         // 确保返回一致的数据结构
@@ -71,7 +72,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('post', { 
-          url: '/api/v1/exercises/create/', 
+          url: AC_URL + '/api/v1/exercises/create/', 
           data 
         }, { root: true })
         
@@ -94,7 +95,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('get', { 
-          url: '/api/v1/exercises/submissions/', 
+          url: AC_URL + '/api/v1/exercises/submissions/', 
           params 
         }, { root: true })
         
@@ -115,7 +116,7 @@ const state = {
       try {
         // 这里应该调用 API
         const response = await dispatch('post', { 
-          url: '/api/v1/exercises/submit/', 
+          url: AC_URL + '/api/v1/exercises/submit/', 
           data 
         }, { root: true })
         
