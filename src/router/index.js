@@ -84,45 +84,57 @@ export default new Router({
                 {
                     // 智能备课
                     path: '/SmartPrep',
-                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/SmartPrep/index.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/SmartPrep/index.vue'),
                     meta: { title: '智能备课' },
                     children: [
-                        {
-                        path: '',
-                        component: () => import('../aicalss/views/SmartPrep/Upload.vue'),
-                        meta: { title: '上传教案',}
-                        },
-                        {
-                        path: 'upload',
-                        component: () => import('../aicalss/views/SmartPrep/Upload.vue'),
-                        meta: { title: '上传教案' }
-                        },
-                        {
-                        path: 'detail/:id',
-                        component: () => import(/* webpackChunkName: "enterprisehome" */ '../aicalss/views/SmartPrep/Detail.vue'),
-                        meta: { title: '教案详情' }
-                        },
+                            {
+                                path: '',
+                                name: 'SmartPrepList',
+                                component: () => import('../aiclass/views/SmartPrep/List.vue'),
+                                meta: {title: '教案列表',}
+                            },
+                            {
+                                path: 'list',
+                                component: () => import('../aiclass/views/SmartPrep/List.vue'),
+                                meta: { title: '教案列表',}
+                            },
+                            {
+                                path: 'upload',
+                                component: () => import('../aiclass/views/SmartPrep/Upload.vue'),
+                                meta: { title: '上传教案' }
+                            },
+                            {
+                                path: 'detail/:displayId',
+                                component: () => import('../aiclass/views/SmartPrep/Detail.vue'),
+                                meta: { title: '教案详情' }
+                            },
                     ]
                 },
                 {
                     // 笔记补全
                     path: '/NoteCompletion',
-                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/NoteCompletion/index.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/NoteCompletion/index.vue'),
                     meta: { title: '笔记补全' },
                     children: [
                             {
                                 path: '',
-                                component: () => import('../aicalss/views/NoteCompletion/Upload.vue'),
-                                meta: {title: '上传笔记',}
+                                component: () => import('../aiclass/views/NoteCompletion/List.vue'),
+                                meta: {title: '笔记列表',}
+                            },
+                            {
+                                path: 'list',
+                                name: 'NoteList',
+                                component: () => import('../aiclass/views/NoteCompletion/List.vue'),
+                                meta: { title: '笔记列表',}
                             },
                             {
                                 path: 'upload',
-                                component: () => import('../aicalss/views/NoteCompletion/Upload.vue'),
+                                component: () => import('../aiclass/views/NoteCompletion/Upload.vue'),
                                 meta: { title: '上传笔记',}
                             },
                             {
-                                path: 'detail/:id',
-                                component: () => import('../aicalss/views/NoteCompletion/Detail.vue'),
+                                path: 'detail/:displayId',
+                                component: () => import('../aiclass/views/NoteCompletion/Detail.vue'),
                                 meta: { title: '笔记详情',}
                             }
                             ]
@@ -130,33 +142,39 @@ export default new Router({
                 {
                     // 习题测评
                     path: '/ExerciseAssessment',
-                    component: () => import(/* webpackChunkName: "upload" */ '../aicalss/views/ExerciseAssessment/index.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/ExerciseAssessment/index.vue'),
                     meta: { title: '习题测评' },
                     children: [
                             {
                                 path: '',
-                                component: () => import('../aicalss/views/ExerciseAssessment/List.vue'),
+                                component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
+                                name: 'ExerciseList',
                                 meta: {title: '习题列表',}
                             },
                             {
                                 path: 'list',
-                                component: () => import('../aicalss/views/ExerciseAssessment/List.vue'),
+                                component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
                                 meta: { title: '习题列表',}
                             },
                             {
                                 path: 'create',
-                                component: () => import('../aicalss/views/ExerciseAssessment/Create.vue'),
+                                component: () => import('../aiclass/views/ExerciseAssessment/Create.vue'),
                                 meta: { title: '创建习题',}
                             },
                             {
-                                path: 'submit',
-                                component: () => import('../aicalss/views/ExerciseAssessment/Submit.vue'),
+                                path: 'submit/:displayId',
+                                component: () => import('../aiclass/views/ExerciseAssessment/Submit.vue'),
                                 meta: { title: '提交答案',}
                             },
                             {
                                 path: 'submissions',
-                                component: () => import('../aicalss/views/ExerciseAssessment/Submissions.vue'),
+                                component: () => import('../aiclass/views/ExerciseAssessment/Submissions.vue'),
                                 meta: { title: '提交记录',}
+                            },
+                            {
+                                path: 'detail/:displayId',
+                                component: () => import('../aiclass/views/ExerciseAssessment/Detail.vue'),
+                                meta: { title: '习题详情',}
                             }
                             ]
                 },

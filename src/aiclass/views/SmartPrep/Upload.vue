@@ -74,13 +74,19 @@
         </el-form-item>
         
         <el-form-item>
+          <el-checkbox v-model="optimizeEnabled">
+            同时生成优化版教案（约需1-2分钟）
+          </el-checkbox>
+        </el-form-item>
+
+        <el-form-item>
           <el-button 
             type="primary" 
             @click="submitForm" 
             :loading="loading"
             :disabled="loading"
           >
-            <span v-if="!loading">提交并生成优化教案</span>
+            <span v-if="!loading">{{ optimizeEnabled ? '提交并优化教案' : '仅提交教案' }}</span>
             <span v-else>正在处理中...</span>
           </el-button>
           <el-button @click="resetForm">重置</el-button>
@@ -122,12 +128,6 @@
             icon="el-icon-document-copy"
             @click="copyOptimizedContent"
           >复制内容</el-button>
-          <el-button 
-            type="success" 
-            size="mini"
-            icon="el-icon-check"
-            @click="saveLesson"
-          >保存教案</el-button>
         </div>
       </div>
       
@@ -144,7 +144,6 @@
       
       <span slot="footer" class="dialog-footer">
         <el-button @click="closeDialog">关闭</el-button>
-        <el-button type="primary" @click="saveLesson">保存教案</el-button>
       </span>
     </el-dialog>
     
@@ -194,7 +193,8 @@ export default {
       optimizedLesson: null,
       saveSuccessDialog: false,
       processing: false,  // 添加处理状态标志
-      processingStartTime: null
+      processingStartTime: null,
+      optimizeEnabled: true
     }
   },
   // 修正 2: 合并重复的 computed 属性，只保留一个
@@ -218,8 +218,8 @@ export default {
     ...mapState('smartPrep', {
       loading: state => state.loading,
       error: state => state.error,
-      // 添加 currentLesson 的 computed 属性
-      currentLesson: state => state.currentLesson
+      // 添加 currentPrep 的 computed 属性
+      currentPrep: state => state.currentPrep
     }),
     rules() {
       return {
@@ -260,8 +260,8 @@ export default {
     ...mapActions('smartPrep', [
       'uploadLesson', 
       'generateOptimizedLesson', 
-      'saveLesson',  // 修正 1: 修复拼写错误并确保字符串正确闭合
-      'setCurrentLesson'  // 修正 2: 确保逗号位置正确
+      'saveLessonToServer',  // 修正 1: 修复拼写错误并确保字符串正确闭合
+      'setCurrentPrep'  // 修正 2: 确保逗号位置正确
     ]),
     
     getSubjectLabel(value) {
@@ -278,7 +278,6 @@ export default {
     async submitForm() {
       this.$refs.lessonForm.validate(async valid => {
         if (valid) {
-
           this.processing = true
           this.processingStartTime = Date.now()
 
@@ -291,56 +290,55 @@ export default {
               grade: this.lessonForm.grade,
               original_content: this.lessonForm.original_content
             }
-            
+
             console.log('提交教案数据:', lessonData)
 
             // 显示处理提示
             loading = this.$loading({
               lock: true,
-              text: '正在上传并优化教案...',
+              text: this.optimizeEnabled ? '正在上传并优化教案...' : '正在上传教案...',
               spinner: 'el-icon-loading',
               background: 'rgba(0, 0, 0, 0.7)'
             })
-            
+
             // 上传教案
             const uploadResponse = await this.uploadLesson(lessonData)
             console.log('教案上传成功:', uploadResponse)
 
             const lessonId = uploadResponse.id || uploadResponse.lesson_id || (uploadResponse.data && uploadResponse.data.id)
-            
+
             if (!lessonId) {
               console.error('无法从响应中获取教案ID:', uploadResponse)
               throw new Error('教案上传成功但未获取到教案ID')
             }
-            
+
             console.log('获取到教案ID:', lessonId)
 
-            console.log('setCurrentLesson 是否可用:', typeof this.setCurrentLesson === 'function')
-
-            await this.setCurrentLesson({
+            await this.setCurrentPrep({
               id: lessonId,
               title: this.lessonForm.title,
               subject: this.lessonForm.subject,
-              // 其他必要字段...
             })
 
-            loading.text = '正在优化教案，请耐心等待...'
-            
-            // 生成优化教案
-            const optimizedResponse = await this.generateOptimizedLesson()
-            this.optimizedLesson = optimizedResponse
-            this.dialogVisible = true
-            
-            this.$message.success('教案上传并优化成功')
+            if (this.optimizeEnabled) {
+              loading.text = '正在优化教案，请耐心等待...'
+
+              // 生成优化教案
+              const optimizedResponse = await this.generateOptimizedLesson()
+              this.optimizedLesson = optimizedResponse
+              this.dialogVisible = true
+
+              this.$message.success('教案上传并优化成功')
+            } else {
+              this.$message.success('教案已成功提交')
+            }
           } catch (error) {
             console.error('教案处理失败:', error)
 
-            // 计算处理时间
             const processingTime = Date.now() - this.processingStartTime
             const minutes = Math.floor(processingTime / 60000)
             const seconds = ((processingTime % 60000) / 1000).toFixed(0)
-            
-            // 根据错误类型显示不同提示
+
             if (error.code === 'ECONNABORTED') {
               this.$message({
                 type: 'warning',
@@ -364,7 +362,7 @@ export default {
               console.error('关闭 loading 时出错:', e)
             }
             this.processing = false
-          } 
+          }
         }
       })
     },
@@ -384,21 +382,6 @@ export default {
     
     closeDialog() {
       this.dialogVisible = false
-    },
-    
-    async saveLesson() {
-      if (!this.optimizedLesson) {
-        this.$message.warning('没有可保存的优化教案')
-        return
-      }
-      
-      try {
-        await this.saveLessonToServer(this.optimizedLesson)
-        this.saveSuccessDialog = true
-      } catch (error) {
-        console.error('保存教案失败:', error)
-        this.$message.error('保存教案失败: ' + (error.message || '未知错误'))
-      }
     },
     
     async copyOptimizedContent() {

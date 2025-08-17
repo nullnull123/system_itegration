@@ -12,7 +12,7 @@ import './assets/css/icon.css';
 import './components/common/directives';
 import 'babel-polyfill';
 import jobstore from './job/store'
-import store from './aicalss/store'
+import store from './aiclass/store'
 import request from './api/request'
 
 // localStorage.removeItem('token');

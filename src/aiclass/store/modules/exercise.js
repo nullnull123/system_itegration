@@ -35,7 +35,7 @@ const state = {
   }
   
   const actions = {
-    async fetchExercises({ commit, dispatch }, params) {
+    async fetchList({ commit, dispatch }, params) {
       commit('SET_LOADING', true)
       try {
         const response = await dispatch('get', { 
@@ -76,15 +76,17 @@ const state = {
       }
     },
     
-    async fetchExercise({ commit, dispatch }, id) {
+    async fetchDetail({ commit, dispatch }, display_id) {
       commit('SET_LOADING', true)
       try {
         const response = await dispatch('get', { 
-          url: AC_URL + `/api/v1/exercises/${id}/` 
+          url: AC_URL + `/api/v1/exercises/${display_id}/` 
         }, { root: true })
         
         // 获取单个习题对象
         const exercise = response.data.data || response.data
+
+        console.log('获取到的习题详情:', exercise)
         
         // 设置当前习题（应该有专门的mutation）
         commit('SET_CURRENT_EXERCISE', exercise)
@@ -179,14 +181,13 @@ const state = {
       }
     },
     
-    async submitAnswer({ commit, dispatch }, data) {
+    async submitAnswer({ commit, dispatch }, data ) {
       commit('SET_LOADING', true)
       try {
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/submit/', 
-          data 
+          url: AC_URL + `/api/v1/exercises/submit/${data.display_id}/`, 
+          data
         }, { root: true })
-        
         // 提交答案的响应不应该设置到习题列表
         const submissionResult = response.data.data || response.data
         
@@ -197,12 +198,66 @@ const state = {
         return submissionResult
       } catch (error) {
         console.error('提交答案失败:', error)
+        console.error('answer:', data.answer)
+        console.error('data.display_id:', data.display_id)
+        console.error('data:', data)
+        console.error('请求的URL:', AC_URL + `/api/v1/exercises/submit/${data.display_id}/`)
         commit('SET_ERROR', error.message || '提交答案失败')
         throw error
       } finally {
         commit('SET_LOADING', false)
       }
+    },
+
+
+        // 全删除方法
+    async deleteAllExercises({ commit, dispatch }) {
+      commit('SET_LOADING', true)
+      try {
+        const response = await dispatch('post', { 
+          url: AC_URL + '/api/v1/exercises/delete-all/', 
+          data: {
+            confirm: true  // 修正：添加 data 对象
+          } 
+        }, { root: true })
+        
+        commit('SET_ERROR', null)
+        return response.data
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.message || 
+                            '删除失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+
+    // 批量删除方法
+    async bulkDeleteExercises({ commit, dispatch }, displayIds) {
+      commit('SET_LOADING', true)
+      try {
+        const response = await dispatch('post', { 
+          url: AC_URL + '/api/v1/exercises/bulk-delete/', 
+          data: { display_ids: displayIds } // 注意这里是 display_ids 数组
+        }, { root: true })
+        
+        commit('SET_ERROR', null)
+        return response.data
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.message || 
+                            '批量删除失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
     }
+
   }
   
   export default {

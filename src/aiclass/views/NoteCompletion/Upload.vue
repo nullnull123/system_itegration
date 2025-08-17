@@ -41,9 +41,25 @@
         </el-form-item>
         
         <el-form-item>
-          <el-button type="primary" @click="submitForm">提交并补全笔记</el-button>
+          <el-checkbox v-model="completeEnabled">
+            同时生成补全版笔记（约需1-2分钟）
+          </el-checkbox>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button 
+            type="primary" 
+            @click="submitForm" 
+            :loading="loading"
+            :disabled="loading"
+          >
+            <span v-if="!loading">{{ completeEnabled ? '提交并补全笔记' : '仅提交笔记' }}</span>
+            <span v-else>正在处理中...</span>
+          </el-button>
           <el-button @click="resetForm">重置</el-button>
         </el-form-item>
+
+
       </el-form>
     </el-card>
     
@@ -88,6 +104,7 @@ export default {
         ]
       },
       dialogVisible: false,
+      completeEnabled: true,
       completedNote: null
     }
   },
@@ -150,7 +167,7 @@ export default {
             // 显示处理提示
             loading = this.$loading({
               lock: true,
-              text: '正在上传笔记...',
+              text: this.completeEnabled ? '正在上传并补全笔记...' : '正在上传笔记...',
               spinner: 'el-icon-loading',
               background: 'rgba(0, 0, 0, 0.7)'
             })
@@ -179,17 +196,21 @@ export default {
               // 其他必要字段...
             })
 
-            // 更新加载提示
-            loading.text = '正在补全笔记，请耐心等待...'
-            
-            // 补全笔记
-            const completedResponse = await this.completeNote()
-            console.log('笔记补全成功:', completedResponse)
-            
-            this.completedNote = completedResponse.data || completedResponse
-            this.dialogVisible = true
-            
-            this.$message.success('笔记上传并补全成功')
+
+            if (this.completeEnabled){// 更新加载提示
+              loading.text = '正在补全笔记，请耐心等待...'
+              
+              // 补全笔记
+              const completedResponse = await this.completeNote()
+              console.log('笔记补全成功:', completedResponse)
+              
+              this.completedNote = completedResponse.data || completedResponse
+              this.dialogVisible = true
+              
+              this.$message.success('笔记上传并补全成功')
+            }else{
+              this.$message.success('笔记已成功提交')
+            }
           } catch (error) {
             console.error('笔记处理失败:', error)
 

@@ -174,8 +174,8 @@ export default {
   methods: {
     ...mapActions('exercise', [
       'createExercise',
-      'fetchExercises',
-      'fetchExercise',
+      'fetchList',
+      'fetchDetail',
       'fetchSubmissions',
       'submitAnswer',
       'setCurrentExercise'
