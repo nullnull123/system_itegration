@@ -121,7 +121,7 @@ const state = {
 
         const lessonData = response.data.data || response.data
         
-        commit('SET_CURRENT_LESSON', lessonData)
+        commit('SET_CURRENT_PREP', lessonData)
         commit('SET_ERROR', null)
         return lessonData
 
@@ -137,8 +137,7 @@ const state = {
         commit('SET_LOADING', false)
       }
     },
-    
-    async generateOptimizedLesson({ commit, state, dispatch }) {
+    async generateOptimizedLesson({ commit, state, dispatch }, display_id) {
       commit('SET_LOADING', true)
       try {
         const lessonId = state.currentPrep?.id || state.currentPrep?.lesson_id
@@ -155,7 +154,40 @@ const state = {
 
         const lessonData = response.data.data || response.data
 
-        commit('SET_CURRENT_LESSON', lessonData)
+        commit('SET_CURRENT_PREP', lessonData)
+        commit('SET_ERROR', null)
+        return lessonData
+
+
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          '教案优化失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    async generateOptimizedLesson_id({ commit, state, dispatch }, display_id) {
+      commit('SET_LOADING', true)
+      try {
+        const lessonId = state.currentPrep?.id || state.currentPrep?.lesson_id
+
+        if (!lessonId) {
+          throw new Error('无法获取教案ID')
+        }
+
+        // 这里应该调用 API
+        const response = await dispatch('post', { 
+          url: AC_URL + `/api/v1/prep/generate/${display_id}/`, 
+          data: { lesson_id: lessonId } 
+        }, { root: true })
+
+        const lessonData = response.data.data || response.data
+
+        commit('SET_CURRENT_PREP', lessonData)
         commit('SET_ERROR', null)
         return lessonData
 
@@ -172,25 +204,66 @@ const state = {
       }
     },
     
-    async saveLessonToServer({ commit, dispatch }, lesson) {
+    async coverLessonToServer({ commit, dispatch }, lesson) {
       commit('SET_LOADING', true)
       try {
+        // 确保 lesson 对象包含 display_id
+        const displayId = lesson.display_id || lesson.id
+        if (!displayId) {
+          throw new Error('缺少教案ID')
+        }
+    
+        // 准备要发送的数据（只发送需要更新的字段）
+        const requestData = {
+          title: lesson.title,
+          subject: lesson.subject,
+          grade: lesson.grade,
+          duration: lesson.duration,
+          original_content: lesson.original_content,
+          optimized_content: lesson.optimized_content,
+          optimization_notes: lesson.optimization_notes,
+          optimization_time: lesson.optimization_time
+        }
+    
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/prep/save/', 
-          data: lesson 
+          url: AC_URL + `/api/v1/prep/cover/${displayId}/`, 
+          data: requestData 
         }, { root: true })
         
+        // 检查响应状态
+        if (response.data.status === 'error') {
+          throw new Error(response.data.message || '教案保存失败')
+        }
+    
         const lessonData = response.data.data || response.data
         
-        commit('SET_CURRENT_LESSON', lessonData)
+        commit('SET_CURRENT_PREP', lessonData)
         commit('SET_ERROR', null)
+        
+        // 显示成功消息
+        if (response.data.message) {
+          // 这里可以调用 Element UI 的消息提示
+          // Message.success(response.data.message)
+        }
+        
         return lessonData
       } catch (error) {
         const errorMessage = error.response?.data?.message || 
                             error.response?.data?.error || 
+                            error.response?.data?.details ||
                             error.message || 
                             '教案保存失败'
         commit('SET_ERROR', errorMessage)
+        
+        // 可以在这里添加更详细的错误处理
+        if (error.response?.status === 404) {
+          // 处理教案不存在的情况
+          console.error('教案不存在:', errorMessage)
+        } else if (error.response?.status === 400) {
+          // 处理参数错误
+          console.error('参数错误:', errorMessage)
+        }
+        
         throw error
       } finally {
         commit('SET_LOADING', false)

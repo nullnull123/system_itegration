@@ -154,6 +154,7 @@ export default new Router({
                             {
                                 path: 'list',
                                 component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
+                                name: 'ExerciseList',
                                 meta: { title: '习题列表',}
                             },
                             {
@@ -161,11 +162,11 @@ export default new Router({
                                 component: () => import('../aiclass/views/ExerciseAssessment/Create.vue'),
                                 meta: { title: '创建习题',}
                             },
-                            {
-                                path: 'submit/:displayId',
-                                component: () => import('../aiclass/views/ExerciseAssessment/Submit.vue'),
-                                meta: { title: '提交答案',}
-                            },
+                            // {
+                            //     path: 'submit/:displayId',
+                            //     component: () => import('../aiclass/views/ExerciseAssessment/Submit.vue'),
+                            //     meta: { title: '提交答案',}
+                            // },
                             {
                                 path: 'submissions',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Submissions.vue'),

@@ -143,7 +143,6 @@ export default {
     ...mapActions('noteCompletion',
      ['uploadNote',
       'completeNote', 
-      'saveNoteToServer',
       'setCurrentNote']),
     
     async submitForm() {

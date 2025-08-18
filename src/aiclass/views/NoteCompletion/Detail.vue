@@ -15,6 +15,13 @@
           >
             {{ isCompleting ? '补全中...' : '补全笔记' }}
           </el-button>
+          <!-- 添加修改按钮 -->
+          <el-button 
+            type="warning" 
+            @click="startEditing"
+          >
+            修改笔记
+          </el-button>
         </div>
       </div>
 
@@ -89,7 +96,69 @@
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="closeDialog">关闭</el-button>
-        <el-button type="primary" @click="saveCompletedNote" :loading="saving">保存</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 编辑笔记弹窗 -->
+    <el-dialog
+      title="编辑笔记"
+      :visible.sync="showEditDialog"
+      width="80%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      class="edit-dialog"
+    >
+      <el-form :model="editForm" label-width="80px">
+        <el-form-item label="笔记标题">
+          <el-input v-model="editForm.title"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="学科">
+          <el-select v-model="editForm.subject" placeholder="请选择学科">
+            <el-option
+              v-for="subject in subjects"
+              :key="subject.value"
+              :label="subject.label"
+              :value="subject.value">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="年级">
+          <el-input v-model="editForm.grade" placeholder="例如：九年级"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="原始内容">
+          <el-input
+            type="textarea"
+            v-model="editForm.original_content"
+            :rows="10"
+            placeholder="请输入原始笔记内容"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="补全内容">
+          <el-input
+            type="textarea"
+            v-model="editForm.completed_content"
+            :rows="15"
+            placeholder="请输入补全后的笔记内容"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="补全说明">
+          <el-input
+            type="textarea"
+            v-model="editForm.completion_notes"
+            :rows="3"
+            placeholder="请输入补全说明"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showEditDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveEditedNote" :loading="saving">保存修改</el-button>
       </span>
     </el-dialog>
 
@@ -107,9 +176,22 @@ export default {
       noteDisplayId: this.$route.params.displayId, // 2. 使用 displayId
       isCompleting: false, // 用于跟踪笔记补全的生成状态
       showCompletedDialog: false,
+      showEditDialog: false, // 添加编辑弹窗状态
       completedNote: null,
+      covering: false,
       saving: false,
-      processingStartTime: null
+      processingStartTime: null,
+      // 编辑表单数据
+      editForm: {
+        display_id: '',
+        title: '',
+        subject: '',
+        grade: '',
+        original_content: '',
+        completed_content: '',
+        completion_notes: '',
+        completion_time: ''
+      }
     }
   },
   computed: {
@@ -153,8 +235,8 @@ export default {
     // 6. 映射 Vuex actions
     ...mapActions('noteCompletion', [
       'fetchDetail', 
-      'completeNote', 
-      'saveNoteToServer', 
+      'completeNote_id', 
+      'coverNoteToServer', 
       'setCurrentNote']), 
 
     getSubjectLabel(value) {
@@ -168,6 +250,83 @@ export default {
       return date.toLocaleString()
     },
 
+    // 开始编辑笔记
+    startEditing() {
+      if (!this.currentNote) {
+        this.$message.warning("没有可编辑的笔记");
+        return;
+      }
+      
+      // 将当前笔记数据填充到编辑表单
+      this.editForm = {
+        display_id: this.currentNote.display_id || this.currentNote.id,
+        title: this.currentNote.title || '',
+        subject: this.currentNote.subject || '',
+        grade: this.currentNote.grade || '',
+        original_content: this.currentNote.original_content || '',
+        completed_content: this.currentNote.completed_content || '',
+        completion_notes: this.currentNote.completion_notes || '',
+        completion_time: this.currentNote.completion_time || new Date().toISOString()
+      };
+      
+      this.showEditDialog = true;
+    },
+
+    // 保存编辑后的笔记
+    async saveEditedNote() {
+      console.log('this.editForm:', this.editForm)
+      try {
+        this.saving = true;
+        
+        // 构造要保存的数据对象
+        const saveData = {
+          display_id: this.editForm.display_id,
+          title: this.editForm.title,
+          subject: this.editForm.subject,
+          grade: this.editForm.grade,
+          original_content: this.editForm.original_content,
+          completed_content: this.editForm.completed_content,
+          completion_notes: this.editForm.completion_notes,
+          completion_time: this.editForm.completion_time 
+        ? new Date(this.editForm.completion_time).toISOString().slice(0, 19).replace('T', ' ')
+        : null
+        };
+
+        // 调用 Vuex action 保存数据
+        await this.coverNoteToServer(saveData);
+        
+        this.$message.success("笔记修改已保存");
+        this.showEditDialog = false;
+        
+        // 保存成功后刷新详情，获取最新的数据
+        await this.fetchDetail(this.noteDisplayId);
+        
+      } catch (err) {
+        console.error("保存失败:", err);
+        
+        // 更详细的错误处理
+        let errorMessage = "保存失败";
+        if (err.response) {
+          if (err.response.status === 404) {
+            errorMessage = "笔记不存在，请刷新页面重试";
+          } else if (err.response.status === 400) {
+            errorMessage = "数据格式错误，请检查输入内容";
+          } else if (err.response.data && err.response.data.message) {
+            errorMessage = err.response.data.message;
+          } else {
+            errorMessage = `服务器错误: ${err.response.status}`;
+          }
+        } else if (err.request) {
+          errorMessage = "网络连接失败，请检查网络";
+        } else {
+          errorMessage = err.message || "未知错误";
+        }
+        
+        this.$message.error(errorMessage);
+      } finally {
+        this.saving = false;
+      }
+    },
 
     async handleCompleteNote() {
       if (!this.currentNote?.id && !this.currentNote?.note_id) {
@@ -196,7 +355,7 @@ export default {
         })
 
         // 补全笔记
-        const result = await this.completeNote()
+        const result = await this.completeNote_id(this.noteDisplayId)
         console.log('笔记补全成功:', result)
         
         this.completedNote = result.data || result
@@ -227,58 +386,6 @@ export default {
         if (loadingInstance) {
           loadingInstance.close()
         }
-      }
-    },
-
-    async saveCompletedNote() {
-      if (!this.completedNote) {
-        this.$message.warning("没有可保存的补全内容")
-        return
-      }
-
-      this.saving = true
-      try {
-        // 准备保存的数据
-        const saveData = {
-          id: this.currentNote.id || this.currentNote.note_id,
-          title: this.currentNote.title,
-          subject: this.currentNote.subject,
-          grade: this.currentNote.grade,
-          original_content: this.currentNote.original_content,
-          completed_content: this.completedNote.completed_content,
-          completion_notes: this.completedNote.completion_notes,
-          completion_time: this.completedNote.completion_time
-        }
-
-        console.log('准备保存的数据:', saveData)
-
-        await this.saveNoteToServer(saveData)
-        this.$message.success("补全笔记已保存")
-        this.closeDialog()
-        
-        // 重新获取详情以更新界面
-        await this.fetchDetail(this.noteDisplayId)
-      } catch (err) {
-        console.error("保存失败:", err)
-        
-        let errorMessage = "保存失败"
-        if (err.response) {
-          if (err.response.status === 404) {
-            errorMessage = "保存接口不存在，请检查API路径配置"
-          } else if (err.response.data && err.response.data.message) {
-            errorMessage = err.response.data.message
-          } else {
-            errorMessage = `服务器错误: ${err.response.status}`
-          }
-        } else if (err.request) {
-          errorMessage = "网络连接失败，请检查网络"
-        } else {
-          errorMessage = err.message || "未知错误"
-        }
-        
-        this.$message.error(errorMessage)
-      } finally {
-        this.saving = false
       }
     },
 
@@ -455,5 +562,14 @@ export default {
   color: #909399;
   font-size: 14px;
   text-align: right;
+}
+
+/* 编辑弹窗样式 */
+.edit-dialog .el-form-item {
+  margin-bottom: 20px;
+}
+
+.edit-dialog .el-textarea {
+  width: 100%;
 }
 </style>

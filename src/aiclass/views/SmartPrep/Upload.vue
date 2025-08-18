@@ -260,7 +260,6 @@ export default {
     ...mapActions('smartPrep', [
       'uploadLesson', 
       'generateOptimizedLesson', 
-      'saveLessonToServer',  // 修正 1: 修复拼写错误并确保字符串正确闭合
       'setCurrentPrep'  // 修正 2: 确保逗号位置正确
     ]),
     

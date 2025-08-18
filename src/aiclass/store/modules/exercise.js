@@ -156,22 +156,56 @@ const state = {
           params 
         }, { root: true })
         
-        // 处理提交记录数据（可能需要专门的state来存储）
+        console.log('提交记录API响应数据:', response.data)
+        
+        // 处理分页数据结构
         let submissions = []
         if (response.data.results) {
+          // 分页格式: {count: 3, next: null, previous: null, results: Array(3)}
           submissions = response.data.results
         } else if (Array.isArray(response.data.data)) {
+          // 嵌套数组格式: {data: [...]}
           submissions = response.data.data
         } else if (Array.isArray(response.data)) {
+          // 直接数组格式
           submissions = response.data
         } else {
+          // 其他情况
           submissions = []
         }
         
-        commit('SET_SUBMISSIONS', submissions) // 应该有专门的mutation
+        console.log('处理后的提交记录数组:', submissions)
+        
+        commit('SET_SUBMISSIONS', submissions)
+        commit('SET_ERROR', null)
+        return submissions
+      } catch (error) {
+        console.error('获取提交记录失败:', error)
+        commit('SET_ERROR', error.message || '获取提交记录失败')
+        commit('SET_SUBMISSIONS', [])
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    
+    async fetchSubmissionDetail({ commit, dispatch }, display_id) {
+      commit('SET_LOADING', true)
+      try {
+        const response = await dispatch('get', { 
+          url: AC_URL + `/api/v1/exercises/submissions/${display_id}/` 
+        }, { root: true })
+        
+        // 获取单个提交记录对象
+        const submission = response.data.data || response.data
+    
+        console.log('获取到的提交记录详情:', submission)
+        
+        // 设置当前提交记录
+        commit('SET_CURRENT_SUBMISSION', submission)
         commit('SET_ERROR', null)
         
-        return submissions
+        return submission
       } catch (error) {
         console.error('获取提交记录失败:', error)
         commit('SET_ERROR', error.message || '获取提交记录失败')
@@ -251,6 +285,53 @@ const state = {
                             error.response?.data?.error || 
                             error.message || 
                             '批量删除失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+
+    async deleteAllSubmissions({ commit, dispatch }) {
+      commit('SET_LOADING', true)
+      try {
+        const response = await dispatch('post', { 
+          url: AC_URL + '/api/v1/exercises/submissions/delete-all/', 
+          data: {
+            confirm: true
+          } 
+        }, { root: true })
+        
+        commit('SET_ERROR', null)
+        return response.data
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.message || 
+                            '删除提交记录失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    
+    // 批量删除提交记录方法
+    async bulkDeleteSubmissions({ commit, dispatch }, displayIds) {
+      commit('SET_LOADING', true)
+      try {
+        const response = await dispatch('post', { 
+          url: AC_URL + '/api/v1/exercises/submissions/bulk-delete/', 
+          data: { display_ids: displayIds }
+        }, { root: true })
+        
+        commit('SET_ERROR', null)
+        return response.data
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.message || 
+                            '批量删除提交记录失败'
         commit('SET_ERROR', errorMessage)
         throw error
       } finally {

@@ -126,7 +126,6 @@ const state = {
         commit('SET_LOADING', false)
       }
     },
-    
     async completeNote({ commit, state, dispatch }) {
       commit('SET_LOADING', true)
       try {
@@ -153,35 +152,89 @@ const state = {
       }
     },
 
-    async saveNoteToServer({ commit, dispatch }, note) {
+    async completeNote_id({ commit, state, dispatch }, display_id) {
       commit('SET_LOADING', true)
       try {
-        // 调用根级别的 post action 发送请求
-        const response = await dispatch('post', {
-          url: AC_URL + '/api/v1/notes/save/', // 对应的 API 端点
-          data: note // 将整个 note 对象作为数据发送
+        // 这里应该调用 API
+        const response = await dispatch('post', { 
+          url: AC_URL + `/api/v1/notes/complete/${display_id}/`, 
+          data: { note_id: state.currentNote?.id } 
         }, { root: true })
-  
-        // 处理响应数据 (与 saveLessonToServer 保持一致)
+
         const noteData = response.data.data || response.data
-  
-        // 更新 state 中的当前笔记
+
         commit('SET_CURRENT_NOTE', noteData)
-        // 清除之前的错误
         commit('SET_ERROR', null)
-        // 返回保存后的数据
         return noteData
       } catch (error) {
-        // 提供更详细的错误信息 (与 saveLessonToServer 保持一致)
-        const errorMessage = error.response?.data?.message ||
-                            error.response?.data?.error ||
-                            error.message ||
-                            '笔记保存失败'
+        const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        '笔记补全失败'
         commit('SET_ERROR', errorMessage)
-        // 重新抛出错误，以便调用者可以处理
         throw error
       } finally {
-        // 无论成功或失败，最后都重置加载状态
+        commit('SET_LOADING', false)
+      }
+    },
+
+    async coverNoteToServer({ commit, dispatch }, note) {
+      commit('SET_LOADING', true)
+      try {
+        // 确保 note 对象包含 display_id
+        const displayId = note.display_id || note.id
+        if (!displayId) {
+          throw new Error('缺少笔记ID')
+        }
+    
+        // 准备要发送的数据（按照后端所需格式）
+        const requestData = {
+          title: note.title,
+          subject: note.subject,
+          grade: note.grade,
+          original_content: note.original_content,
+          completed_content: note.completed_content,
+          completion_notes: note.completion_notes
+        }
+    
+        const response = await dispatch('post', {
+          url: AC_URL + `/api/v1/notes/cover/${displayId}/`, 
+          data: requestData 
+        }, { root: true })
+    
+        // 检查响应状态
+        if (response.data.status === 'error') {
+          throw new Error(response.data.message || '笔记保存失败')
+        }
+    
+        const noteData = response.data.data || response.data
+    
+        commit('SET_CURRENT_NOTE', noteData)
+        commit('SET_ERROR', null)
+    
+        // 显示成功消息（如使用 Element UI）
+        if (response.data.message) {
+          // Message.success(response.data.message)
+        }
+    
+        return noteData
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.response?.data?.details ||
+                            error.message || 
+                            '笔记保存失败'
+        commit('SET_ERROR', errorMessage)
+    
+        // 更详细的错误处理
+        if (error.response?.status === 404) {
+          console.error('笔记不存在:', errorMessage)
+        } else if (error.response?.status === 400) {
+          console.error('参数错误:', errorMessage)
+        }
+    
+        throw error
+      } finally {
         commit('SET_LOADING', false)
       }
     },

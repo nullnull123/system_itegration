@@ -406,7 +406,7 @@ export default {
 
     goToList() {
       console.log('返回习题列表')
-      this.$router.push({ name: 'ExerciseList' })
+      this.$router.push('/ExerciseAssessment')
     },
 
     clearSelections() {

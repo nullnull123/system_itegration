@@ -7,13 +7,19 @@
       <div class="detail-header">
         <h2>{{ currentPrep.title }} ({{ currentPrep.subject }})</h2>
         <div class="header-actions">
-          <!-- 添加 loading 状态到按钮 -->
           <el-button 
             type="primary" 
             @click="handleGenerateOptimizedLesson"
             :loading="isGenerating"
           >
             {{ isGenerating ? '生成中...' : '生成优化教案' }}
+          </el-button>
+          <!-- 添加修改按钮 -->
+          <el-button 
+            type="warning" 
+            @click="startEditing"
+          >
+            修改教案
           </el-button>
         </div>
       </div>
@@ -47,7 +53,6 @@
 
     <!-- 错误或无数据状态 -->
     <el-card class="error-card" v-else>
-      <!-- 显示具体的错误信息 -->
       <p v-if="error">{{ error }}</p>
       <p v-else>未找到指定的教案。</p>
       <el-button type="primary" @click="retryFetchDetail" icon="el-icon-refresh">重试</el-button>
@@ -88,11 +93,75 @@
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="showOptimizedDialog = false">关闭</el-button>
-        <el-button type="primary" @click="saveOptimizedLesson">保存</el-button>
-      </span>
+        </span>
     </el-dialog>
 
+    <!-- 编辑教案弹窗 -->
+    <el-dialog
+      title="编辑教案"
+      :visible.sync="showEditDialog"
+      width="80%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      class="edit-dialog"
+    >
+      <el-form :model="editForm" label-width="80px">
+        <el-form-item label="教案标题">
+          <el-input v-model="editForm.title"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="学科">
+          <el-select v-model="editForm.subject" placeholder="请选择学科">
+            <el-option
+              v-for="subject in subjects"
+              :key="subject.value"
+              :label="subject.label"
+              :value="subject.value">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="年级">
+          <el-input v-model="editForm.grade" placeholder="例如：九年级"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="课时">
+          <el-input-number v-model="editForm.duration" :min="1" :max="120"></el-input-number>
+        </el-form-item>
+        
+        <el-form-item label="原始内容">
+          <el-input
+            type="textarea"
+            v-model="editForm.original_content"
+            :rows="10"
+            placeholder="请输入原始教案内容"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="优化内容">
+          <el-input
+            type="textarea"
+            v-model="editForm.optimized_content"
+            :rows="15"
+            placeholder="请输入优化后的教案内容"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="优化说明">
+          <el-input
+            type="textarea"
+            v-model="editForm.optimization_notes"
+            :rows="3"
+            placeholder="请输入优化说明"
+          ></el-input>
+        </el-form-item>
+      </el-form>
 
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showEditDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveEditedLesson" :loading="saving">保存修改</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -104,9 +173,36 @@ export default {
   data() {
     return {
       lessonDisplayId: this.$route.params.displayId,
-      isGenerating: false, // 用于跟踪优化教案的生成状态
+      isGenerating: false,
       showOptimizedDialog: false,
-      optimizedLesson: {}
+      showEditDialog: false, // 添加编辑弹窗状态
+      optimizedLesson: {},
+      covering: false,
+      saving: false,
+      // 编辑表单数据
+      editForm: {
+        display_id: '',
+        title: '',
+        subject: '',
+        grade: '',
+        duration: 45,
+        original_content: '',
+        optimized_content: '',
+        optimization_notes: '',
+        optimization_time: ''
+      },
+      // 学科选项
+      subjects: [
+        { value: 'math', label: '数学' },
+        { value: 'chinese', label: '语文' },
+        { value: 'english', label: '英语' },
+        { value: 'physics', label: '物理' },
+        { value: 'chemistry', label: '化学' },
+        { value: 'biology', label: '生物' },
+        { value: 'history', label: '历史' },
+        { value: 'geography', label: '地理' },
+        { value: 'politics', label: '政治' }
+      ]
     }
   },
   computed: {
@@ -133,8 +229,8 @@ export default {
   methods: {
     ...mapActions('smartPrep', 
     ['fetchDetail', 
-    'generateOptimizedLesson', 
-    'saveLessonToServer']
+    'generateOptimizedLesson_id', 
+    'coverLessonToServer']
     ),
     formatDate(dateString) {
       if (!dateString) return ''
@@ -142,6 +238,85 @@ export default {
       return date.toLocaleString()
     },
 
+    // 开始编辑教案
+    startEditing() {
+      if (!this.currentPrep) {
+        this.$message.warning("没有可编辑的教案");
+        return;
+      }
+      
+      // 将当前教案数据填充到编辑表单
+      this.editForm = {
+        display_id: this.currentPrep.display_id || this.currentPrep.id,
+        title: this.currentPrep.title || '',
+        subject: this.currentPrep.subject || '',
+        grade: this.currentPrep.grade || '',
+        duration: this.currentPrep.duration || 45,
+        original_content: this.currentPrep.original_content || '',
+        optimized_content: this.currentPrep.optimized_content || '',
+        optimization_notes: this.currentPrep.optimization_notes || '',
+        optimization_time: this.currentPrep.optimization_time || new Date().toISOString()
+      };
+      
+      this.showEditDialog = true;
+    },
+
+    // 保存编辑后的教案
+    async saveEditedLesson() {
+      console.log('this.editForm:', this.editForm)
+      try {
+        this.saving = true;
+        
+        // 构造要保存的数据对象
+        const saveData = {
+          display_id: this.editForm.display_id,
+          title: this.editForm.title,
+          subject: this.editForm.subject,
+          grade: this.editForm.grade,
+          duration: this.editForm.duration,
+          original_content: this.editForm.original_content,
+          optimized_content: this.editForm.optimized_content,
+          optimization_notes: this.editForm.optimization_notes,
+          optimization_time: this.editForm.optimization_time 
+        ? new Date(this.editForm.optimization_time).toISOString().slice(0, 19).replace('T', ' ')
+        : null
+        };
+
+        // 调用 Vuex action 保存数据
+        await this.coverLessonToServer(saveData);
+        
+        this.$message.success("教案修改已保存");
+        this.showEditDialog = false;
+        
+        // 保存成功后刷新详情，获取最新的数据
+        await this.fetchDetail(this.lessonDisplayId);
+        
+      } catch (err) {
+        console.error("保存失败:", err);
+        
+        // 更详细的错误处理
+        let errorMessage = "保存失败";
+        if (err.response) {
+          if (err.response.status === 404) {
+            errorMessage = "教案不存在，请刷新页面重试";
+          } else if (err.response.status === 400) {
+            errorMessage = "数据格式错误，请检查输入内容";
+          } else if (err.response.data && err.response.data.message) {
+            errorMessage = err.response.data.message;
+          } else {
+            errorMessage = `服务器错误: ${err.response.status}`;
+          }
+        } else if (err.request) {
+          errorMessage = "网络连接失败，请检查网络";
+        } else {
+          errorMessage = err.message || "未知错误";
+        }
+        
+        this.$message.error(errorMessage);
+      } finally {
+        this.saving = false;
+      }
+    },
 
     async handleGenerateOptimizedLesson() {
       if (!this.currentPrep?.id && !this.currentPrep?.lesson_id) {
@@ -160,7 +335,7 @@ export default {
           background: 'rgba(0, 0, 0, 0.7)'
         });
 
-        const result = await this.generateOptimizedLesson();
+        const result = await this.generateOptimizedLesson_id(this.lessonDisplayId);
         this.optimizedLesson = result;
         this.showOptimizedDialog = true;
         this.$message.success("优化教案生成成功");
@@ -176,21 +351,15 @@ export default {
       }
     },
 
-    async saveOptimizedLesson() {
-      try {
-        await this.saveLessonToServer(this.optimizedLesson);
-        this.$message.success("优化教案已保存");
-        this.showOptimizedDialog = false;
-        // 可选：刷新当前教案信息
-        this.fetchDetail(this.lessonDisplayId);
-      } catch (err) {
-        console.error("保存失败:", err);
-        this.$message.error("保存失败：" + (err.message || "未知错误"));
-      }
-    },
+    
 
     copyOptimizedContent() {
       const content = this.optimizedLesson.optimized_content;
+      if (!content) {
+        this.$message.warning("没有可复制的内容");
+        return;
+      }
+      
       navigator.clipboard.writeText(content).then(() => {
         this.$message.success("内容已复制到剪贴板");
       }).catch(() => {
@@ -332,5 +501,14 @@ export default {
   color: #909399;
   font-size: 14px;
   text-align: right;
+}
+
+/* 编辑弹窗样式 */
+.edit-dialog .el-form-item {
+  margin-bottom: 20px;
+}
+
+.edit-dialog .el-textarea {
+  width: 100%;
 }
 </style>
