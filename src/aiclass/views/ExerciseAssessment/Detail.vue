@@ -419,7 +419,7 @@ export default {
     }
   },
   created() {
-    const displayId = this.$route.params.display_id
+    const displayId = this.$route.params.displayId
     console.log('组件创建，路由参数 display_id:', displayId)
     if (displayId) {
       this.fetchDetail(displayId)
