@@ -411,7 +411,7 @@ export default {
     },
 
     goToList() {
-      this.$router.push({ name: 'NoteList' })
+      this.$router.push('/NoteCompletion')
     }
   },
   created() {

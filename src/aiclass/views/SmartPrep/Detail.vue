@@ -374,7 +374,7 @@ export default {
     },
 
     goToList() {
-      this.$router.push({ name: 'SmartPrepList' });
+      this.$router.push('/SmartPrep');
     }
   },
   created() {
