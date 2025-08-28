@@ -202,7 +202,7 @@ const state = {
         console.log('获取到的提交记录详情:', submission)
         
         // 设置当前提交记录
-        commit('SET_CURRENT_SUBMISSION', submission)
+        commit('SET_SUBMISSION_RESULT', submission)
         commit('SET_ERROR', null)
         
         return submission

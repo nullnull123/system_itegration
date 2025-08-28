@@ -93,26 +93,26 @@
         :visible.sync="showDetailDialog"
         width="80%"
         :close-on-click-modal="false"
-        v-if="currentSubmission"
+        v-if="submissionResult"
       >
         <div class="submission-detail">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="显示ID">{{ currentSubmission.display_id }}</el-descriptions-item>
-            <el-descriptions-item label="习题标题">{{ currentSubmission.exercise_title }}</el-descriptions-item>
-            <el-descriptions-item label="学生姓名">{{ currentSubmission.student_name }}</el-descriptions-item>
-            <el-descriptions-item label="得分">{{ currentSubmission.score }}</el-descriptions-item>
-            <el-descriptions-item label="状态">{{ getStatusLabel(currentSubmission.status) }}</el-descriptions-item>
-            <el-descriptions-item label="提交时间">{{ formatDate(currentSubmission.submitted_at) }}</el-descriptions-item>
+            <el-descriptions-item label="显示ID">{{ submissionResult.display_id }}</el-descriptions-item>
+            <el-descriptions-item label="习题标题">{{ submissionResult.exercise_title }}</el-descriptions-item>
+            <el-descriptions-item label="学生姓名">{{ submissionResult.student_name }}</el-descriptions-item>
+            <el-descriptions-item label="得分">{{ submissionResult.score }}</el-descriptions-item>
+            <el-descriptions-item label="状态">{{ getStatusLabel(submissionResult.status) }}</el-descriptions-item>
+            <el-descriptions-item label="提交时间">{{ formatDate(submissionResult.submitted_at) }}</el-descriptions-item>
           </el-descriptions>
 
-          <div class="answer-section" v-if="currentSubmission.answer">
+          <div class="answer-section" v-if="submissionResult.answer">
             <h3>学生答案</h3>
-            <div class="answer-content" v-html="formatAnswerContent(currentSubmission.answer)"></div>
+            <div class="answer-content" v-html="formatAnswerContent(submissionResult.answer)"></div>
           </div>
 
-          <div class="feedback-section" v-if="currentSubmission.feedback">
+          <div class="feedback-section" v-if="submissionResult.feedback">
             <h3>教师反馈</h3>
-            <div class="feedback-content" v-html="formatFeedbackContent(currentSubmission.feedback)"></div>
+            <div class="feedback-content" v-html="formatFeedbackContent(submissionResult.feedback)"></div>
           </div>
         </div>
 
@@ -140,7 +140,7 @@ export default {
       total: 0,  // 添加这行 - 你已经在用了但没声明
       tableHeight: 500,
       showDetailDialog: false,
-      currentSubmission: null
+      submissionResult: null
     }
   },
   methods: {
@@ -184,7 +184,7 @@ export default {
     async viewSubmission(displayId) {
       try {
         const submission = await this.fetchSubmissionDetail(displayId)
-        this.currentSubmission = submission
+        this.submissionResult = submission
         this.showDetailDialog = true
       } catch (error) {
         this.$message.error('获取提交记录详情失败: ' + (error.message || '未知错误'))
