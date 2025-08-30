@@ -9,7 +9,7 @@
             <button @click="toggle('tts')" :class="['btn border', mode === 'tts' ? 'btn-primary' : '']"
                 style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">文字 → 语音</button>
             <button @click="toggle('sts')" :class="['btn border', mode === 'sts' ? 'btn-primary' : '']"
-                style="border-top-right-radius: 8px; border-bottom-right-radius: 8px;">语音 → 语音</button>
+                style="border-top-right-radius: 8px; border-bottom-right-radius: 8px;">音色1 → 音色2</button>
             <span class="question-mark" @click="showGuide(mode)" title="操作指南">
                 <i class="fas fa-question-circle"></i>
             </span>

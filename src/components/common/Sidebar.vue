@@ -63,7 +63,7 @@ export default {
                     title: '系统首页'
                 },
                 {
-                        icon: 'el-icon-lx-calendar',
+                        icon: 'el-icon-headset',
                         index: '3',
                         title: '语音合成',
                         subs: [
@@ -82,7 +82,7 @@ export default {
                         ]
                     },
                 {
-                    icon: 'el-icon-rank',
+                    icon: 'el-icon-suitcase',
                     index: '6',
                     title: '就业推荐',
                     subs: [
@@ -93,7 +93,7 @@ export default {
                     ]
                 },
                 {
-                    icon: 'el-icon-rank',
+                    icon: 'el-icon-notebook-2',
                     index: '7',
                     title: '知识点分析',
                     subs: [
@@ -108,7 +108,7 @@ export default {
                     ]
                 },
                 {
-                    icon: 'el-icon-rank',
+                    icon: 'el-icon-school',
                     index: '8',
                     title: '智课工坊',
                     subs: [
@@ -127,7 +127,7 @@ export default {
                     ]
                 },
                 {
-                    icon: 'el-icon-rank',
+                    icon: 'el-icon-monitor',
                     index: '9',
                     title: '智能督导',
                     subs: [
@@ -146,7 +146,7 @@ export default {
                     ]
                 },
                 {
-                    icon: 'el-icon-lx-calendar',
+                    icon: 'el-icon-share',
                     index: '10',
                     title: '知识图谱',
                     subs: [
@@ -184,7 +184,7 @@ export default {
                     title: '支持作者'
                 },
                 {
-                    icon: 'el-icon-lx-redpacket_fill',
+                    icon: 'el-icon-s-promotion',
                     index: '/test1',
                     title: '接入测试'
                 }
@@ -195,7 +195,7 @@ export default {
                     title: '系统首页'
                 },
             {
-                        icon: 'el-icon-rank',
+                        icon: 'el-icon-user-solid',
                         index: '/manage',
                         title: '人才推荐'
                 }
