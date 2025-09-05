@@ -65,7 +65,7 @@
 		<!-- 右侧抽屉界面 -->
 		<el-drawer title="精准推荐" :visible.sync="drawer" direction="rtl" size="50%" :with-header="false">
 			<div style="margin-top: 20px;" shadow="always">
-				<el-card v-for="(data,index) in students" :key="index" style="margin-bottom:20px;" shadow="hover">
+				<el-card v-for="data in students" style="margin-bottom:20px;" shadow="hover">
 					<el-row>
 						<el-col :span="20">
 							<el-descriptions :title="data.REALNAME">
@@ -88,9 +88,10 @@
 			</div>
 		</el-drawer>
 		<!-- 分页 -->
+		<!-- <el-divider></el-divider>
 		<el-pagination background layout="prev, pager, next, jumper" :total="total" :page-size="pageSize"
 			@current-change="handleCurrentChange">
-		</el-pagination>
+		</el-pagination> -->
 		<!-- 新增和编辑对话框 -->
 		<el-dialog :visible.sync="dialogVisible" :close-on-click-modal="false" :title="type" width="450px">
 			<el-form :model="form">
@@ -194,7 +195,7 @@
 		jobSearch,
 		jobAdd,
 		jobDelete,
-		myJob,
+		myJob,  //
 		jobUpdate
 	} from '../../api/job.js';
 	import {
@@ -205,7 +206,6 @@
 		data() {
 			return {
 				//表格数据
-				allData: [],
 				tableData: [],
 				//新增和编辑数据
 				form: {},
@@ -222,9 +222,9 @@
 				//是否加载中
 				loading: true,
 				//数据总个数
-				total: 10,
+				total: 1000,
 				//一页有几条数据
-				pageSize: 7,
+				pageSize: 5,
 				//学生详情对话框
 				studentDialogVisible: false,
 				//简历信息
@@ -253,15 +253,18 @@
 		},
 		methods: {
 			//重新请求分页数据
-			handleCurrentChange(pageNum) {
-				this.tableData = this.allData.slice((pageNum - 1) * this.pageSize, pageNum * this.pageSize);
+			handleCurrentChange(val) {
+				jobList(val).then(response => {
+					this.tableData = response.data.results;
+					this.total = response.data.count;
+					this.pageSize = 5;
+				})
 			},
 			//获取职位列表
 			getList() {
 				myJob().then(response => {
-					this.allData = response.data;
-					this.total = this.allData.length;
-					this.tableData = this.allData.slice(0, this.pageSize);
+					console.log(response);
+					this.tableData = response.data;
 				})
 			},
 			//点击编辑按钮
@@ -330,9 +333,10 @@
 					return;
 				}
 				jobSearch(this.key).then(response => {
-					console.log(response.data);
+					// console.log(response.data);
 					this.tableData = response.data;
 					this.total = response.data.length;
+					this.pageSize = 10;
 				})
 			},
 			// 对每个职位进行精准推荐
@@ -349,9 +353,11 @@
 					this.personalAdvantage = response.data.personalAdvantage;
 					this.schoolExperience = response.data.schoolExperience;
 					this.skills = response.data.skills;
+
 					if (response.data.expectedPositions != null) {
 						this.expectedPositions = response.data.expectedPositions.split(",");
 					}
+
 					//显示学生详情对话框
 					this.studentDialogVisible = true;
 				});

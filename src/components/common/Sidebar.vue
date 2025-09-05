@@ -89,6 +89,10 @@ export default {
                         {
                             index: '/recommendJob',
                             title: '职位推荐'
+                        },
+                        {
+                            index: '/profile',
+                            title: '个人简历'
                         }
                     ]
                 },

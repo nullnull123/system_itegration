@@ -43,6 +43,11 @@ export default new Router({
                             component: () => import(/* webpackChunkName: "recommendJob" */ '../job/views/recommendJob.vue'),
                             meta: { title: '职位推荐' }
                         },
+                        {
+                            path: '/profile',
+                            component: () => import(/* webpackChunkName: "recommendJob" */ '../job/views/Profile.vue'),
+                            meta: { title: '个人简历' }
+                        },
                     ]
                 },
                 {
