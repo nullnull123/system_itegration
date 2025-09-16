@@ -5,7 +5,7 @@
       <!-- <img src="../assets/quickKey.jpg" alt  class="quickey"/> -->
       <div class="video-container">
         <!-- 上传视频按钮 -->
-        <div class="video-uploader">
+        <!-- <div class="video-uploader">
           <h2>视频上传</h2>
           <input type="file" ref="fileInput" @change="handleFileSelect" accept="video/*" />
           <div v-if="selectedFile">
@@ -20,8 +20,53 @@
           <div v-if="message" :class="['message', messageType]">
             {{ message }}
           </div>
+        </div> -->
+        <div class="video-uploader">
+    <button class="upload-btn" @click="openUploadDialog">
+      <span class="icon-upload iconfont"></span> 上传视频
+    </button>
+ 
+    <!-- 弹窗 -->
+    <div v-if="showDialog" class="modal-overlay">
+      <div class="upload-modal">
+        <div class="modal-header">
+          <h3>上传视频</h3>
+          <button class="close-btn" @click="closeDialog">×</button>
         </div>
-      
+        
+        <div class="modal-body">
+          <!-- 隐藏的文件选择控件 -->
+          <input 
+            type="file" 
+            ref="fileInput"
+            @change="handleFileSelect" 
+            accept="video/*" 
+            class="hidden-input"
+          />
+          
+          <div v-if="selectedFile">
+            <p>已选择文件: {{ selectedFile.name }}</p>
+            <input v-model="newFilename" placeholder="请输入新文件名" />
+          </div>
+          
+          <div v-if="message" :class="['message', messageType]">
+            {{ message }}
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="triggerFileInput" class="btn-select">选择文件</button>
+          <button 
+            @click="uploadVideo" 
+            :disabled="uploading || !selectedFile"
+            class="btn-upload"
+          >
+            {{ uploading ? '上传中...' : '开始上传' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
         <div class="video-selector"> 
           <!-- Element UI Dialog 弹窗 -->
           <el-dialog
@@ -372,6 +417,13 @@ export default {
 
       finish: false,
       isEnded: false,
+
+      showDialog: false,
+      selectedFile: null,
+      newFilename: '',
+      uploading: false,
+      message: '',
+      messageType: ''
     };
   },
   created() {
@@ -469,6 +521,67 @@ export default {
     }
   },
   methods: {
+    openUploadDialog() {
+      this.showDialog = true;
+      // 重置状态
+      this.message = '';
+      this.selectedFile = null;
+      this.newFilename = '';
+    },
+    
+    // 关闭弹窗
+    closeDialog() {
+      this.showDialog = false;
+    },
+    
+    // 触发文件选择
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    
+    // 处理文件选择
+    handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith('video/')) {
+        this.selectedFile = file;
+        // 默认文件名
+        if (!this.newFilename) {
+          this.newFilename = file.name;
+        }
+      } else {
+        this.message = '请选择有效的视频文件';
+        this.messageType = 'error';
+      }
+    },
+    
+    // 上传视频
+    async uploadVideo() {
+      if (!this.selectedFile) {
+        this.message = '请先选择视频文件';
+        this.messageType = 'error';
+        return;
+      }
+      
+      this.uploading = true;
+      this.message = '上传中...';
+      this.messageType = 'info';
+      
+      try {
+        // 这里应该是实际的上传逻辑
+        await this.uploadVideos();
+        
+        
+        this.message = '视频上传成功！';
+        this.messageType = 'success';
+        this.uploading = false;
+        
+        this.closeDialog()
+      } catch (error) {
+        this.message = `上传失败: ${error.message || '请重试'}`;
+        this.messageType = 'error';
+        this.uploading = false;
+      }
+    },
     handleVideoEnded() {
       this.stop();
       this.simulateRealDoubleClick();
@@ -525,7 +638,7 @@ export default {
         this.$refs.fileInput.value = ''; // 清空文件输入框
       }
     },
-    async uploadVideo() {
+    async uploadVideos() {
       if (!this.selectedFile) {
         this.showMessage('请先选择一个视频文件', 'error');
         return;
@@ -2413,31 +2526,159 @@ export default {
   padding: 20px;
 }
  
-.video-uploader {
-  width: 300px;          /* 固定宽度 */
-  height: 300px;         /* 固定高度 */
-  overflow: auto;        /* 自动显示滚动条 */
-  padding: 20px;
-  box-sizing: border-box; /* 包含内边距在尺寸内 */
-  border: 1px solid #ddd;
+// .video-uploader {
+//   width: 300px;          /* 固定宽度 */
+//   height: 300px;         /* 固定高度 */
+//   overflow: auto;        /* 自动显示滚动条 */
+//   padding: 20px;
+//   box-sizing: border-box; /* 包含内边距在尺寸内 */
+//   border: 1px solid #ddd;
+//   border-radius: 8px;
+//   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+// }
+ 
+// /* 优化滚动条样式（现代浏览器） */
+// .video-uploader::-webkit-scrollbar {
+//   width: 8px;
+// }
+ 
+// .video-uploader::-webkit-scrollbar-track {
+//   background: #f1f1f1;
+//   border-radius: 4px;
+// }
+ 
+// .video-uploader::-webkit-scrollbar-thumb {
+//   background: #c1c1c1;
+//   border-radius: 4px;
+// }
+
+.upload-btn {
+  padding: 12px 24px;
+  background: #2c8df0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+ 
+.upload-btn:hover {
+  background: #1a75d0;
+}
+ 
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+ 
+.upload-modal {
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
 }
  
-/* 优化滚动条样式（现代浏览器） */
-.video-uploader::-webkit-scrollbar {
-  width: 8px;
+.modal-header {
+  background: #f5f7fa;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
 }
  
-.video-uploader::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+ 
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #666;
+}
+ 
+.modal-body {
+  padding: 24px;
+}
+ 
+.modal-footer {
+  padding: 16px 24px;
+  background: #f5f7fa;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+ 
+/* 隐藏文件输入 */
+.hidden-input {
+  display: none;
+}
+ 
+/* 消息样式 */
+.message {
+  padding: 12px;
+  margin-top: 16px;
   border-radius: 4px;
 }
  
-.video-uploader::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.message.error {
+  background: #ffeef0;
+  color: #d32f2f;
 }
+ 
+.message.success {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+ 
+.message.info {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+ 
+/* 按钮样式 */
+.btn-select, .btn-upload {
+  padding: 10px 18px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+ 
+.btn-select {
+  background: #f0f0f0;
+  color: #333;
+}
+ 
+.btn-upload {
+  background: #2c8df0;
+  color: white;
+}
+ 
+.btn-upload:disabled {
+  background: #a0d0ff;
+  cursor: not-allowed;
+}
+
 
 input[type="file"] {
   margin-bottom: 10px;
