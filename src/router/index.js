@@ -236,7 +236,7 @@ export default new Router({
                     // 视频裁剪
                     path: '/VideoCut',
                     component: () => import(/* webpackChunkName: "upload" */ '../videocut/VideoCut.vue'),
-                    meta: { title: '图谱构建' }
+                    meta: { title: '视频裁剪' }
                 },
                 {
                     path: '/404',

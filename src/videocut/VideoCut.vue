@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div calss="all">
     <div class="playVideo">
       <!-- <p>{{this.$store.state.curVideo.fileUrl}}</p> -->
       <!-- <img src="../assets/quickKey.jpg" alt  class="quickey"/> -->
@@ -11,7 +11,7 @@
           <div v-if="selectedFile">
             <p>已选择文件: {{ selectedFile.name }}</p>
             <input v-model="newFilename" placeholder="请输入新文件名" />
-            <div class="container">   
+            <div class="container1">   
               <button @click="uploadVideo" :disabled="uploading">
               {{ uploading ? '上传中...' : '上传视频' }}
               </button>
@@ -71,22 +71,22 @@
           </el-dialog>
         </div>
         <!-- 选择视频按钮 -->
-            <div class="container">  
+            <div class="container1">  
               <button type="primary" @click="fetchAndShowDialog" :loading="isFetching">选择视频</button>  
             </div> 
-        <div class="container">
+        <div class="container1">
           <!-- 触发按钮 -->
           <button  type="primary" @click="showGuide" class="trigger-button">
             快捷按键
           </button>
         </div>
-        <div class="container">
+        <div class="container1">
           <!-- 触发按钮 -->
           <button  type="primary" @click="backTostart" class="trigger-button">
             跳到开始
           </button>
         </div>
-        <div class="container">
+        <div class="container1">
           <!-- 触发按钮 -->
           <button  type="primary" @click="backToend" class="trigger-button">
             跳到末尾
@@ -831,19 +831,47 @@ export default {
       this.stop();
       this.blueBgFlag = true;
     },
-    blueBgMove(e){
-      if(!this.blueBgFlag){
-        return;
-      }
-      var pickeddeng = document.getElementById("pickeddeng");
-      var finleft = pickeddeng.scrollLeft + e.pageX - 40;
-      // console.log(finleft)
-      if(finleft>(parseFloat(this.imgWidth)-40) || finleft < -40){
-        this.stop();
-        this.$message.error("超过限制区域")
-        return
-      }
-      document.getElementById("blueBg").style.left = finleft +  "px";
+    // blueBgMove(e){
+    //   if(!this.blueBgFlag){
+    //     return;
+    //   }
+    //   var pickeddeng = document.getElementById("pickeddeng");
+    //   var finleft = pickeddeng.scrollLeft + e.pageX - 40;
+    //   // console.log(finleft)
+    //   if(finleft>(parseFloat(this.imgWidth)-40) || finleft < -40){
+    //     this.stop();
+    //     this.$message.error("超过限制区域")
+    //     return
+    //   }
+    //   document.getElementById("blueBg").style.left = finleft +  "px";
+    //     this.timeCurrentLeft = this.setDetailTime(
+    //       parseFloat(
+    //         Math.floor(
+    //           (this.number / 100) * (this.topMoveBox.offsetLeft + 40) * 100
+    //         ) / 100
+    //       ).toFixed(2)
+    //     );
+    //     this.Event.$emit("currentTime", this.timeCurrentLeft);
+    // },
+    blueBgMove(e) {
+      if (!this.blueBgFlag) return;
+
+      const pickeddeng = document.getElementById("pickeddeng");
+      const blueBg = document.getElementById("blueBg");
+      
+      // 直接获取鼠标相对于容器的坐标（考虑滚动）
+      const rect = pickeddeng.getBoundingClientRect();
+      let finleft = e.clientX - rect.left + pickeddeng.scrollLeft - 40; // 40 是偏移量（如光标中心或按钮宽度）
+
+      // 边界检查（根据容器和 blueBg 的实际宽度）
+      const maxLeft = pickeddeng.scrollWidth - blueBg.offsetWidth;
+      if (finleft > maxLeft) finleft = maxLeft;
+      if (finleft < 0) finleft = 0; // 从容器左侧开始限制
+
+      // 直接更新位置（去掉不必要的计算）
+      blueBg.style.left = finleft + "px";
+
+      // 更新时间和事件（简化计算）
         this.timeCurrentLeft = this.setDetailTime(
           parseFloat(
             Math.floor(
@@ -868,10 +896,11 @@ export default {
         return;
       }
       var pickeddeng = document.getElementById("pickeddeng");
+      const rect = pickeddeng.getBoundingClientRect();
       var currentBox = this.cutCoverList[this.index];
       var curWidth = parseFloat(currentBox.width);
       var curLeft = parseFloat(currentBox.left);
-      var finleft = pickeddeng.scrollLeft + $event.pageX - 30;
+      var finleft = pickeddeng.scrollLeft + $event.pageX - 30 - rect.left;
       if(this.turnFlag == "left"){
         var finright = curLeft + curWidth;
         var finwidth = finright - finleft;
@@ -944,6 +973,58 @@ export default {
         this.Event.$emit("currentTime", this.timeCurrentLeft);
       }
     },
+    //   if (!this.downFlag) return;
+      
+    //   const pickeddeng = document.getElementById("pickeddeng");
+    //   // 关键修正1：使用getBoundingClientRect获取容器相对视口的位置
+    //   const rect = pickeddeng.getBoundingClientRect();
+    //   const currentBox = this.cutCoverList[this.index];
+      
+    //   // 关键修正2：计算鼠标相对于容器的坐标（考虑子页面嵌套）
+    //   const mouseX = $event.clientX - rect.left + pickeddeng.scrollLeft;
+      
+    //   let finleft;
+    //   let newWidth;
+    
+    //   switch (this.turnFlag) {
+    //     case "left":
+    //       // 关键修正3：基于容器相对坐标计算新位置
+    //       finleft = mouseX - 30;
+    //       // 计算新宽度（保持右侧位置不变）
+    //       newWidth = parseFloat(currentBox.width) + currentBox.left - finleft;
+    //       // 添加边界约束
+    //       finleft = Math.max(0, Math.min(finleft, rect.width - 100));
+    //       newWidth = Math.max(50, Math.min(newWidth, rect.width - finleft));
+          
+    //       currentBox.left = `${finleft}px`;
+    //       currentBox.width = `${newWidth}px`;
+    //       break;
+    
+    //     case "center":
+    //       // 中心拖动直接设置位置
+    //       finleft = mouseX - 30;
+    //       finleft = Math.max(0, Math.min(finleft, rect.width - parseFloat(currentBox.width)));
+    //       currentBox.left = `${finleft}px`;
+    //       break;
+    
+    //     case "right":
+    //       // 右侧拖动计算新宽度
+    //       finleft = mouseX - 30;
+    //       newWidth = finleft - parseFloat(currentBox.left) + 30;
+    //       newWidth = Math.max(50, Math.min(newWidth, rect.width - parseFloat(currentBox.left)));
+    //       currentBox.width = `${newWidth}px`;
+    //       break;
+    //   }
+    
+    //   // 统一更新时间属性
+    //   this.updateTimeAttributes(currentBox);
+      
+    //   // 关键修正4：减少事件触发频率
+    //   if (!this.lastEmitTime || Date.now() - this.lastEmitTime > 100) {
+    //     this.lastEmitTime = Date.now();
+    //     this.Event.$emit("currentTime", this.timeCurrentLeft);
+    //   }
+    // },
     faPKup() {
       this.downFlag = false;
     },
@@ -2306,6 +2387,7 @@ export default {
 };
 </script>
 <style lang="less">
+
 .playVideo{
     display: flex;
     // .quickey{
@@ -2358,10 +2440,12 @@ export default {
 }
 
 input[type="file"] {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
+  font-size: 15px;
 }
 
 input[placeholder] {
+  font-size: 15px;
   width: 100%;
   padding: 8px;
   margin-bottom: 15px;
@@ -2413,11 +2497,12 @@ button:disabled {
   display: flex;
 }
 
-.container {  
+.container1 {  
   display: flex;  
   justify-content: center;  
   align-items: center;   
   padding: 15px 0px;
+  // background-color: #eee9e9;
   // border: 2px solid #409eff;
 } 
 .no-videos {
@@ -2454,7 +2539,7 @@ button:disabled {
 .video-play {
   position: relative; /* 为自定义控件定位做准备 */
   width: 100%;
-  max-width: 1400px; /* 限制最大宽度 */
+  max-width: 1200px; /* 限制最大宽度 */
   margin: 0 auto; /* 居中 */
   border-radius: 12px; /* 圆角 */
   overflow: hidden; /* 确保视频和控件的圆角生效 */
