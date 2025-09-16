@@ -154,24 +154,24 @@ export default {
                     index: '10',
                     title: '知识图谱',
                     subs: [
-                        {
-                            index: '10-1',
-                            title: '知识处理',
-                            subs: [
-                                {
-                                    index: '/EntityRecognition',
-                                    title: '实体识别'
-                                },
-                                {
-                                    index: '/RelationExtraction',
-                                    title: '关系抽取'
-                                },
-                                {
-                                    index: '/KnowledgeFusion',
-                                    title: '知识融合'
-                                }
-                            ]
-                        },
+                        // {
+                        //     index: '10-1',
+                        //     title: '知识处理',
+                        //     subs: [
+                        //         {
+                        //             index: '/EntityRecognition',
+                        //             title: '实体识别'
+                        //         },
+                        //         {
+                        //             index: '/RelationExtraction',
+                        //             title: '关系抽取'
+                        //         },
+                        //         {
+                        //             index: '/KnowledgeFusion',
+                        //             title: '知识融合'
+                        //         }
+                        //     ]
+                        // },
                         {
                             index: '/DataAcquisition',
                             title: '数据采集'
@@ -179,6 +179,17 @@ export default {
                         {
                             index: '/GeneticMapping',
                             title: '图谱构建'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-s-tools',
+                    index: '11',
+                    title: '工具',
+                    subs: [
+                        {
+                            index: '/VideoCut',
+                            title: '视频裁剪'
                         }
                     ]
                 },

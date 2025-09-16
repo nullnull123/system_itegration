@@ -846,7 +846,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'http://10.104.73.235:8000/Graphapps/',
+      baseUrl:KL_URL,
       queryText: '',
       presetQueries: [
         { label: '显示整个知识图谱', query: '显示整个知识图谱' },
@@ -1912,16 +1912,17 @@ export default {
       console.log('搜索节点:', queryToSend);
 
       try {
-        const response = await fetch(`${this.baseUrl}query/`, {
-          method: 'POST',
+        const response = await request.post(`${this.baseUrl}query/`, {
+          query: queryToSend
+        }, {
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': this.getCsrfToken()
           },
-          body: JSON.stringify({ query: queryToSend })
+          withCredentials: true  // 自动携带cookies
         });
-
-        const data = await response.json();
+      
+        const data = response.data;  // axios自动解析JSON
 
         if (data.success) {
           await this.updateGraph(data, false, false, false);
@@ -2002,24 +2003,28 @@ export default {
       console.log('发送查询:', queryToSend);
 
       // 真实的API请求
-      fetch(`${this.baseUrl}query/`, {
-          method: 'POST',
+      request.post(`${this.baseUrl}query/`, {
+        query: queryToSend
+      }, {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': this.getCsrfToken()
         },
-        body: JSON.stringify({ query: queryToSend })
+        withCredentials: true  // 自动携带cookies
       })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // 查询结果时允许自动适应视图，因为这是用户主动的查询操作
-            this.updateGraph(data, false, false, false);
-          } else {
-            this.showError('查询错误: ' + data.error);
-          }
+      .then(response => {
+        const data = response.data;  // axios自动解析JSON
+        
+        if (data.success) {
+          // 查询结果时允许自动适应视图，因为这是用户主动的查询操作
+          this.updateGraph(data, false, false, false);
+        } else {
+          this.showError('查询错误: ' + (data.error || '未知错误'));
+        }
+        
+        // 确保无论成功失败都更新加载状态
         this.isLoading = false;
-        })
+      })
         .catch(error => {
         console.error('查询失败:', error);
         alert('查询失败，请检查网络连接');
@@ -2138,16 +2143,23 @@ export default {
     // 获取统计信息
     loadStatistics() {
       // 真实的API请求
-      fetch(`${this.baseUrl}statistics/`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            this.statistics.entityCount = data.entity_count;
-            this.statistics.relationCount = data.relation_count;
-            this.statistics.entityTypes = data.entity_types;
-            this.statistics.relationTypes = data.relation_types;
-          }
-        })
+      request.get(`${this.baseUrl}statistics/`, {
+        headers: {
+          'Accept': 'application/json'  // 保持与原fetch一致的Accept头
+        },
+        withCredentials: true  // 如果需要cookies则保留此配置
+      })
+      .then(response => {
+        const data = response.data;  // axios自动解析JSON
+        
+        if (data.success) {
+          // 保持原有数据映射逻辑
+          this.statistics.entityCount = data.entity_count;
+          this.statistics.relationCount = data.relation_count;
+          this.statistics.entityTypes = data.entity_types;
+          this.statistics.relationTypes = data.relation_types;
+        }
+      })
         .catch(error => {
                     console.error('获取统计信息失败:', error);
                     // 设置默认统计信息，避免页面显示错误
@@ -2180,16 +2192,24 @@ export default {
       this.isLoading = true;
       
       // 真实的API请求
-      fetch(`${this.baseUrl}get_graph_data/`)
-        .then(response => response.json())
-      .then(data => {
+      request.get(`${this.baseUrl}get_graph_data/`, {
+        headers: {
+          'Accept': 'application/json'  // 保持与原fetch一致的Accept头
+        },
+        withCredentials: true  // 如果需要cookies则保留此配置
+      })
+      .then(response => {
+        const data = response.data;  // axios自动解析JSON
+        
         if (data.success && data.nodes && data.nodes.length > 0) {
-                  this.updateGraph(data, false, false, false);
-              } else {
-                  console.warn('没有可用的图谱数据');
-              }
+          this.updateGraph(data, false, false, false);
+        } else {
+          console.warn('没有可用的图谱数据');
+        }
+        
+        // 确保无论成功失败都更新加载状态
         this.isLoading = false;
-        })
+      })
         .catch(error => {
                     console.error('加载图谱数据失败:', error);
         alert('加载图谱数据失败: ' + error.message);
@@ -2252,8 +2272,14 @@ export default {
       
       try {
         console.log('[DEBUG] 开始刷新图谱数据');
-        const response = await fetch(`${this.baseUrl}get_graph_data/`);
-        const data = await response.json();
+        const response = await request.get(`${this.baseUrl}get_graph_data/`, {
+          headers: {
+            'Accept': 'application/json'  // 保持与原fetch一致的Accept头
+          },
+          withCredentials: true  // 如果需要cookies则保留此配置
+        });
+        
+        const data = response.data;  // axios自动解析JSON
         console.log('[DEBUG] 获取图谱数据响应:', data ? '成功' : '失败');
 
         if (data.success) {
@@ -3071,20 +3097,23 @@ export default {
           properties: properties
         });
 
-        const response = await fetch(`${this.baseUrl}create_node/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
+        const response = await request.post(
+          `${this.baseUrl}create_node/`,
+          {
             name: this.newNode.name,
             label: this.newNode.label,
             properties: properties
-          })
-        });
-
-        const result = await response.json();
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.getCsrfToken()
+            },
+            withCredentials: true  // 自动携带cookies
+          }
+        );
+      
+        const result = response.data;  // axios自动解析JSON
         console.log('创建节点响应:', result);
 
         if (result.success) {
@@ -3177,20 +3206,23 @@ export default {
           properties: properties
         });
 
-        const response = await fetch(`${this.baseUrl}update_node/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
+        const response = await request.post(
+          `${this.baseUrl}update_node/`,
+          {
             name: this.updateNodeData.name,
             label: this.updateNodeData.label,
             properties: properties
-          })
-        });
-
-        const result = await response.json();
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.getCsrfToken()
+            },
+            withCredentials: true  // 自动携带cookies
+          }
+        );
+      
+        const result = response.data;  // axios自动解析JSON
         console.log('更新节点响应:', result);
 
         if (result.success) {
@@ -3223,18 +3255,21 @@ export default {
           name: this.selectedNode.name
         });
 
-        const response = await fetch(`${this.baseUrl}delete_node/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
+        const response = await request.post(
+          `${this.baseUrl}delete_node/`,
+          {
+            name: this.selectedNode.name  // 保持与原代码相同的数据结构
           },
-          body: JSON.stringify({
-            name: this.selectedNode.name
-          })
-        });
-
-        const result = await response.json();
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.getCsrfToken()  // 保留CSRF令牌
+            },
+            withCredentials: true  // 保持与原fetch相同的凭证行为
+          }
+        );
+      
+        const result = response.data;  // axios自动解析JSON响应
         console.log('删除节点响应:', result);
 
         if (result.success) {
@@ -3309,21 +3344,20 @@ export default {
           properties: properties
         });
 
-        const response = await fetch(`${this.baseUrl}create_relationship/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
-            source: this.newRelationship.source,
-            target: this.newRelationship.target,
-            relation_type: this.newRelationship.relation_type,
-            properties: properties
-          })
-        });
-
-        const result = await response.json();
+        const response = await request.post(
+          `${this.baseUrl}create_relationship/`,
+          requestData,  // axios会自动JSON.stringify
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.getCsrfToken()  // 保留CSRF令牌
+            },
+            withCredentials: true  // 保持与原fetch相同的凭证行为
+          }
+        );
+      
+        // 获取解析后的响应数据
+        const result = response.data;
         console.log('创建关系响应:', result);
 
         if (result.success) {
@@ -3473,22 +3507,23 @@ export default {
           properties: properties
         });
 
-        const response = await fetch(`${this.baseUrl}update_relationship/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
+        const response = await request.post(
+          `${this.baseUrl}update_relationship/`,
+          {
             source: this.updateRelationshipForm.source,
             target: this.updateRelationshipForm.target,
             old_relation_type: englishOldRelationType,
             new_relation_type: englishNewRelationType,
             properties: properties
-          })
-        });
+          },
+          {
+            headers: {
+              'X-CSRFToken': this.getCsrfToken() // 如果 request.js 已默认设置 Content-Type，则无需重复
+            }
+          }
+        );
 
-        const result = await response.json();
+        const result = await response.data;
         console.log('更新关系响应:', result);
 
         if (result.success) {
@@ -3540,20 +3575,21 @@ export default {
           original_type: this.deleteRelationshipForm.old_relation_type
         });
 
-        const response = await fetch(`${this.baseUrl}delete_relationship/`, {
-          method: 'POST',
+        const response = await request.post(
+        `${this.baseUrl}delete_relationship/`,
+        {
+          source: this.deleteRelationshipForm.source,
+          target: this.deleteRelationshipForm.target,
+          relation_type: englishRelationType
+        },
+        {
           headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
-            source: this.deleteRelationshipForm.source,
-            target: this.deleteRelationshipForm.target,
-            relation_type: englishRelationType
-          })
-        });
+            'X-CSRFToken': this.getCsrfToken() // 如果 request.js 未全局设置 CSRF Token
+          }
+        }
+      );
 
-        const result = await response.json();
+        const result = await response.data;
         console.log('删除关系响应:', result);
 
         if (result.success) {
@@ -3611,13 +3647,9 @@ export default {
         console.log('开始创建知识点...');
 
         // 1. 创建知识点节点
-        const knowledgePointResponse = await fetch(`${this.baseUrl}create_node/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
+        const knowledgePointResponse = await request.post(
+          `${this.baseUrl}create_node/`,
+          {
             name: this.quickCreateKnowledgePointData.knowledgePointName,
             label: 'KnowledgePoint',
             properties: {
@@ -3627,10 +3659,15 @@ export default {
               created_from: 'quick_create',
               course: this.quickCreateKnowledgePointData.courseName
             }
-          })
-        });
+          },
+          {
+            headers: {
+              'X-CSRFToken': this.getCsrfToken() // 如果 request.js 未全局设置 CSRF Token
+            }
+          }
+        );
 
-        const knowledgePointResult = await knowledgePointResponse.json();
+        const knowledgePointResult = await knowledgePointResponse.data;
         console.log('创建知识点响应:', knowledgePointResult);
 
         if (!knowledgePointResult.success) {
@@ -3641,23 +3678,22 @@ export default {
 
         // 2. 创建关系
         console.log('开始创建关系...');
-        const relationshipResponse = await fetch(`${this.baseUrl}create_relationship/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
+        const relationshipResponse = await request.post(
+          `${this.baseUrl}create_relationship/`,
+          {
             source: this.quickCreateKnowledgePointData.courseName,
             target: this.quickCreateKnowledgePointData.knowledgePointName,
             relation_type: this.quickCreateKnowledgePointData.relationType,
-            properties: {
-              created_from: 'quick_create'
+            properties: { created_from: 'quick_create' }
+          },
+          {
+            headers: {
+              'X-CSRFToken': this.getCsrfToken() // 如果 request.js 未全局设置 CSRF Token
             }
-          })
-        });
+          }
+        );
 
-        const relationshipResult = await relationshipResponse.json();
+        const relationshipResult = await relationshipResponse.data;
         console.log('创建关系响应:', relationshipResult);
 
         if (relationshipResult.success) {
@@ -3858,15 +3894,18 @@ export default {
       formData.append('uploaded_by', 'anonymous'); // 可以从用户会话获取
 
       try {
-        const response = await fetch(`${this.baseUrl}upload_learning_material/`, {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: formData
-        });
+        const response = await request.post(
+          `${this.baseUrl}upload_learning_material/`,
+          formData, // 直接传递 FormData 对象
+          {
+            headers: {
+              'X-CSRFToken': this.getCsrfToken(),
+              'Content-Type': 'multipart/form-data' // axios 不会自动设置，需手动指定
+            }
+          }
+        );
 
-        const result = await response.json();
+        const result = await response.data;
 
         if (result.success) {
           this.showSuccess(result.message);
@@ -3902,8 +3941,13 @@ export default {
 
       this.materialsLoading = true;
       try {
-        const response = await fetch(`${this.baseUrl}get_learning_materials/?entity_name=${encodeURIComponent(this.selectedNode.name)}&entity_type=${encodeURIComponent(this.selectedNode.label)}`);
-        const result = await response.json();
+        const response = await request.get(`${this.baseUrl}get_learning_materials/`, {
+          params: {
+            entity_name: this.selectedNode.name,
+            entity_type: this.selectedNode.label
+          }
+        });
+        const result = response.data; // axios 自动解析 JSON
 
         if (result.success) {
           this.learningMaterials = result.data;
@@ -3934,12 +3978,13 @@ export default {
         if (isPreviewable) {
           // 先发送POST请求记录查看次数
           try {
-            await fetch(`${this.baseUrl}view_learning_material/${material.id}/`, {
-              method: 'POST',
-              headers: {
-                'X-CSRFToken': this.getCsrfToken()
+            await request.post(
+              `${this.baseUrl}view_learning_material/${material.id}/`,
+              null, // 无请求体时显式传递 null
+              {
+                headers: { 'X-CSRFToken': this.getCsrfToken() }
               }
-            });
+            );
             console.log('✅ 查看次数记录成功');
           } catch (postError) {
             console.warn('⚠️ 记录查看次数失败，但继续查看文件:', postError);
@@ -3976,23 +4021,42 @@ export default {
     // 下载学习资料
     async downloadMaterial(material) {
       try {
-        const response = await fetch(`${this.baseUrl}download_learning_material/${material.id}/`);
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = material.file_name;
-          document.body.appendChild(a);
-          a.click();
+        const response = await request.get(
+          `${this.baseUrl}download_learning_material/${material.id}/`,
+          { 
+            responseType: 'blob',
+            headers: {
+              'X-CSRFToken': this.getCsrfToken() // 如果接口需要 CSRF 验证
+            }
+          }
+        );
+      
+        // 3. 验证响应状态（axios 自动处理非 2xx 状态码）
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      
+        // 4. 创建安全的下载链接
+        const safeFileName = material.file_name?.normalize('NFC') || 
+                            `学习材料_${material.id}.${this.inferFileType(response)}`;
+        const url = window.URL.createObjectURL(response.data);
+        const a = document.createElement('a');
+        
+        // 5. 配置下载属性（兼容中文文件名）
+        a.href = url;
+        a.download = safeFileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+      
+        // 6. 延迟清理资源（避免浏览器未完成下载）
+        setTimeout(() => {
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
-
-          // 增加本地下载次数
-          material.download_count++;
-        } else {
-          this.showError('下载失败');
-        }
+        }, 100);
+      
+        // 7. 更新本地下载次数
+        material.download_count++;
       } catch (error) {
         console.error('下载失败:', error);
         this.showError('下载失败: ' + error.message);
@@ -4006,14 +4070,14 @@ export default {
       }
 
       try {
-        const response = await fetch(`${this.baseUrl}delete_learning_material/${material.id}/`, {
-          method: 'DELETE',
-          headers: {
-            'X-CSRFToken': this.getCsrfToken()
+        const response = await request.delete(
+          `${this.baseUrl}delete_learning_material/${material.id}/`,
+          {
+            headers: { 'X-CSRFToken': this.getCsrfToken() }
           }
-        });
+        );
 
-        const result = await response.json();
+        const result = await response.data;
 
         if (result.success) {
           this.showSuccess(result.message);
@@ -4368,16 +4432,16 @@ export default {
         // 构造查询
         const queryToSend = 'search ' + courseName;
         
-        const response = await fetch(`${this.baseUrl}query/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({ query: queryToSend })
-        });
-        
-        const data = await response.json();
+        const response = await request.post(
+          `${this.baseUrl}query/`,
+          { query: queryToSend }, // axios 会自动 JSON.stringify
+          {
+            headers: { 'X-CSRFToken': this.getCsrfToken() },
+          }
+        );
+      
+        // 3. 处理成功响应
+        const data = response.data; // axios 已自动解析 JSON
         
         if (data.success && data.nodes && data.nodes.length > 0) {
           console.log(`[COURSE SEARCH] 搜索成功，找到 ${data.nodes.length} 个节点`);
@@ -4425,16 +4489,17 @@ export default {
 
         console.log(`[AUTO QUERY] 发送查询: ${queryToSend}`);
 
-        const response = await fetch(`${this.baseUrl}query/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({ query: queryToSend })
-        });
-
-        const data = await response.json();
+        const response = await request.post(
+          `${this.baseUrl}query/`,
+          { query: queryToSend }, // 请求体数据（自动 JSON 序列化）
+          {
+            headers: {
+              'X-CSRFToken': this.getCsrfToken() // 手动添加 CSRF Token
+            }
+          }
+        );
+        
+        const data = response.data; // 直接获取解析后的 JSON 数据
 
         if (data.success && data.nodes && data.nodes.length > 0) {
           console.log(`[AUTO QUERY] 查询成功，找到 ${data.nodes.length} 个节点，更新图谱`);
@@ -4509,8 +4574,8 @@ export default {
           return;
         }
 
-        const response = await fetch(`${this.baseUrl}get_graph_data/`);
-        const data = await response.json();
+        const response = await request.get(`${this.baseUrl}get_graph_data/`);
+        const data = response.data; // 直接获取解析后的JSON数据
 
         if (data.success && data.nodes) {
           const currentNodeCount = data.nodes.length;

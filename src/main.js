@@ -9,6 +9,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'   // 可选，JS 组件
 
 import './assets/css/icon.css';
+// import './assets/css/videocutcss/iconfont.css'
 import './components/common/directives';
 import 'babel-polyfill';
 import jobstore from './job/store'
@@ -24,6 +25,7 @@ Vue.use(ElementUI, {
 
 
 Vue.prototype.$baseUrl = process.env.VUE_APP_BASE_API
+// Vue.prototype.Event = new Vue
 
 // 1. 初始化时从 localStorage 读取值（若无则用默认值 true）
 const initialIsStu = sessionStorage.getItem('isStu');

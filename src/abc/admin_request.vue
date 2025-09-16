@@ -4,7 +4,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
       <div class="container-fluid">
         <!-- <a class="navbar-brand" href="/">计算机专业知识图谱</a> -->
-        <router-link to="/GeneticMapping" class="navbar-brand">计算机专业知识图谱</router-link>
+        <router-link to="/RelationExtraction" class="navbar-brand">计算机专业知识图谱</router-link>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -12,7 +12,7 @@
           <ul class="navbar-nav">
             <li class="nav-item">
               <!-- <a class="nav-link" href="/">知识图谱</a> -->
-              <router-link to="/GeneticMapping" class="nav-link">知识图谱</router-link>
+              <router-link to="/RelationExtraction" class="nav-link">知识图谱</router-link>
             </li>
             <li class="nav-item">
               <!-- <a class="nav-link active" href="/admin">管理面板</a> -->
@@ -283,10 +283,12 @@
 </template>
 
 <script>
+import request from '@/api/request'
+import {KL_URL} from '@/api/request'
 export default {
   data: function() {
     return {
-      baseUrl: 'http://10.104.73.235:8000/Graphapps',  // 固定Django服务器地址
+      baseUrl: KL_URL,  // 固定Django服务器地址
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,
@@ -370,9 +372,9 @@ export default {
     // 检查数据库状态
     checkDatabaseStatus: function() {
       console.log('[DATABASE] 检查数据库状态...')
-      fetch(this.baseUrl + '/statistics/')
-        .then(response => response.json())
-        .then(data => {
+      request.get(this.baseUrl+'/statistics/',)
+        .then(response => {
+          const data = response.data;
           if (data.success) {
             this.databaseStatus.nodeCount = data.entity_count || 0
             this.databaseStatus.relationCount = data.relation_count || 0
@@ -417,28 +419,29 @@ export default {
       var testUrl = this.baseUrl + '/get_collection_progress/'
       console.log('测试URL:', testUrl)
 
-      fetch(testUrl, {
-        method: 'GET',
+      request.get(testUrl, {
         headers: {
           'Accept': 'application/json'
-        }
+        },
+        validateStatus: () => true,  // 允许处理所有HTTP状态码
+        responseType: 'text'         // 确保获取原始文本内容
       })
-      .then(function(response) {
+      .then(response => {
         console.log('测试响应状态:', response.status)
-        console.log('测试响应头:', response.headers.get('content-type'))
-        return response.text()
-      })
-      .then(function(text) {
+        console.log('测试响应头:', response.headers['content-type'])
+        
+        const text = response.data
         console.log('测试响应内容前200字符:', text.substring(0, 200))
+        
         try {
-          var jsonData = JSON.parse(text)
+          const jsonData = JSON.parse(text)
           console.log('✅ API连接测试成功，响应为JSON格式')
         } catch (e) {
           console.log('❌ API连接测试失败，响应不是JSON格式')
           console.log('错误详情:', e)
         }
       })
-      .catch(function(error) {
+      .catch(error => {
         console.error('❌ API连接测试失败:', error)
       })
     },
@@ -466,47 +469,60 @@ export default {
         var apiUrl = this.baseUrl + '/get_collection_progress/'
         console.log('正在请求进度信息:', apiUrl)
 
-        fetch(apiUrl, {
-          method: 'GET',
+        request.get(apiUrl, {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
           },
-          credentials: 'include'  // 包含cookies
+          withCredentials: true,         // 对应原credentials: 'include'
+          validateStatus: () => true     // 允许处理所有HTTP状态码
         })
-          .then(function(response) {
-            console.log('进度请求响应:', response.status, response.statusText)
-            if (response.ok) {
-              return response.json()
-            } else {
-              throw new Error('HTTP ' + response.status + ': ' + response.statusText)
-            }
-          })
-            .then(function(data) {
-              console.log('进度数据:', data)
-              if (data.success) {
-                self.updateProgress(data.progress)
-                self.clearMessages()
-                // 标记首次加载完成（但不影响completed状态的重置逻辑）
-                self.isInitialLoad = false
-              } else {
-                self.errorMessage = data.error || '获取进度信息失败'
-                // 即使出错也标记首次加载完成
-                self.isInitialLoad = false
-              }
-            })
-          .catch(function(error) {
-            console.error('获取进度失败:', error)
-            
-            // 检查是否是CORS错误
-            if (error.message.includes('Failed to fetch')) {
-              self.errorMessage = 'CORS跨域错误：无法获取进度信息。请确保Django服务器已重启并配置了正确的CORS设置。'
-            } else if (error.message.includes('CORS')) {
-              self.errorMessage = 'CORS跨域错误：' + error.message
-            } else {
-              self.errorMessage = '网络错误：无法获取进度信息 (' + error.message + ')'
-            }
-          })
+        .then(response => {
+          console.log('进度请求响应:', response.status, response.statusText)
+          
+          // 模拟原response.ok的行为（200-299状态码）
+          if (response.status >= 200 && response.status < 300) {
+            return response.data  // axios自动解析JSON，直接获取data
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+        })
+        .then(data => {
+          console.log('进度数据:', data)
+          if (data.success) {
+            self.updateProgress(data.progress)
+            self.clearMessages()
+            self.isInitialLoad = false
+          } else {
+            self.errorMessage = data.error || '获取进度信息失败'
+            self.isInitialLoad = false
+          }
+        })
+        .catch(error => {
+          console.error('获取进度失败:', error)
+          
+          // 错误类型判断增强版
+          let errorMessage
+          if (error.response) {
+            // 服务器返回了响应（包括4xx/5xx错误）
+            errorMessage = `HTTP ${error.response.status}: ${error.response.statusText}`
+          } else if (error.request) {
+            // 请求已发送但无响应
+            errorMessage = '网络错误：无响应返回'
+          } else {
+            // 初始化请求时出错
+            errorMessage = error.message
+          }
+        
+          // 特殊处理CORS错误
+          if (error.message.includes('CORS') || 
+              error.message.includes('failed to fetch') ||
+              error.message.includes('Network Error')) {
+            errorMessage = 'CORS跨域错误：请确保Django服务器已重启并配置了正确的CORS设置。'
+          }
+        
+          self.errorMessage = errorMessage
+        })
       } catch (error) {
         console.error('获取进度失败:', error)
         this.errorMessage = '网络错误：无法获取进度信息 (' + error.message + ')'
@@ -678,39 +694,59 @@ export default {
 
       try {
         var apiUrl = this.baseUrl + '/run_collection/'
-        fetch(apiUrl, {
-          method: 'POST',
+        request.post(apiUrl, {
+          collection_type: actualType
+        }, {
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': this.getCsrfToken()
           },
-          body: JSON.stringify({
-            collection_type: actualType
-          })
+          validateStatus: () => true,  // 允许处理所有HTTP状态码
+          withCredentials: true       // 自动包含cookies
         })
-        .then(function(response) {
-          return response.json()
-        })
-        .then(function(data) {
-          if (data.success) {
-            var actionName = type === 'start' ? '开始' : (type === 'reset' ? '重新' : '继续')
-            self.successMessage = data.message || actionName + '采集任务已启动'
-            self.currentStatus = 'running'
-
-            setTimeout(function() {
-              self.fetchProgressInfo()
-              self.startAutoRefresh()
-            }, 1000)
+        .then(response => {
+          // 模拟原response.ok的行为（200-299状态码）
+          if (response.status >= 200 && response.status < 300) {
+            const data = response.data;
+            
+            if (data.success) {
+              const actionName = type === 'start' ? '开始' : 
+                                (type === 'reset' ? '重新' : '继续');
+              this.successMessage = data.message || `${actionName}采集任务已启动`;
+              this.currentStatus = 'running';
+        
+              // 使用箭头函数保持this上下文
+              setTimeout(() => {
+                this.fetchProgressInfo();
+                this.startAutoRefresh();
+              }, 1000);
+            } else {
+              this.errorMessage = data.error || '启动采集任务失败';
+            }
+            this.isRunning = false;
           } else {
-            self.errorMessage = data.error || '启动采集任务失败'
+            // 非2xx状态码视为错误
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-          self.isRunning = false
         })
-        .catch(function(error) {
-          console.error('启动采集任务失败:', error)
-          self.errorMessage = '网络错误：' + error.message
-          self.isRunning = false
-        })
+        .catch(error => {
+          console.error('启动采集任务失败:', error);
+          
+          let errorMessage = '网络错误：';
+          if (error.response) {
+            // 服务器返回了响应（包括4xx/5xx错误）
+            errorMessage += `${error.response.status} ${error.response.statusText}`;
+          } else if (error.request) {
+            // 请求已发送但无响应
+            errorMessage += '无响应返回';
+          } else {
+            // 初始化请求时出错
+            errorMessage += error.message;
+          }
+        
+          this.errorMessage = errorMessage;
+          this.isRunning = false;
+        });
       } catch (error) {
         console.error('启动采集任务失败:', error)
         this.errorMessage = '网络错误：' + error.message
@@ -779,62 +815,81 @@ ${hasData ? '重新生成' : '开始生成'}大约需要5-10分钟，具体时�
         this.pendingGeneration.courseName = this.courseName.trim()
         this.pendingGeneration.isActive = true
 
-        fetch(apiUrl, {
-          method: 'POST',
+        request.post(apiUrl, requestData, {
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken || '',
             'Accept': 'application/json'
           },
-          credentials: 'include',  // 包含cookies
-          body: JSON.stringify(requestData)
+          withCredentials: true,         // 对应credentials: 'include'
+          validateStatus: () => true,     // 允许处理所有HTTP状态码
+          responseType: 'text'           // 保持原始文本响应格式
         })
-        .then(function(response) {
+        .then(response => {
           console.log('生成请求响应:', response.status, response.statusText)
-          console.log('响应头:', response.headers.get('content-type'))
-
-          if (response.ok) {
-            return response.json()
+          console.log('响应头:', response.headers['content-type'])
+          
+          // 模拟原response.ok的行为（200-299状态码）
+          if (response.status >= 200 && response.status < 300) {
+            try {
+              // 手动解析JSON（因为responseType: 'text'）
+              const data = JSON.parse(response.data)
+              console.log('生成响应数据:', data)
+              
+              if (data.success) {
+                self.successMessage = data.message || '单课程知识图谱生成任务已启动'
+                self.currentStatus = 'running'
+                self.courseName = ''  // 清空输入框
+                
+                // 使用箭头函数保持this上下文
+                setTimeout(() => {
+                  self.fetchProgressInfo()
+                  self.startAutoRefresh()
+                }, 1000)
+              } else {
+                self.errorMessage = data.error || '启动生成任务失败'
+              }
+              self.isRunning = false
+              
+              return data  // 继续传递解析后的数据
+            } catch (e) {
+              console.error('JSON解析失败:', e)
+              throw new Error('响应解析失败')
+            }
           } else {
-            // 如果不是成功的响应，读取响应文本用于调试
-            return response.text().then(function(text) {
-              console.error('响应内容:', text.substring(0, 500))
-              throw new Error('HTTP ' + response.status + ': ' + response.statusText)
-            })
+            // 非2xx状态码处理
+            const errorText = response.data.substring(0, 500)
+            console.error('响应内容:', errorText)
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
           }
         })
-        .then(function(data) {
-          console.log('生成响应数据:', data)
-          if (data.success) {
-            self.successMessage = data.message || '单课程知识图谱生成任务已启动'
-            self.currentStatus = 'running'
-
-            // 清空输入框
-            self.courseName = ''
-
-            // 延迟刷新进度
-            setTimeout(function() {
-              self.fetchProgressInfo()
-              self.startAutoRefresh()
-            }, 1000)
-          } else {
-            self.errorMessage = data.error || '启动生成任务失败'
-          }
-          self.isRunning = false
-        })
-        .catch(function(error) {
+        .catch(error => {
           console.error('启动生成任务失败:', error)
-          
-          // 检查是否是CORS错误
-          if (error.message.includes('Failed to fetch')) {
-            self.errorMessage = 'CORS跨域错误：前端(8080端口)无法访问后端(8000端口)。请确保Django服务器已重启并配置了正确的CORS设置。'
-          } else if (error.message.includes('CORS')) {
-            self.errorMessage = 'CORS跨域错误：' + error.message
-          } else {
-            self.errorMessage = '网络错误：' + error.message
-          }
-          
           self.isRunning = false
+          
+          // 增强版错误类型判断
+          let errorMessage
+          if (error.response) {
+            // 服务器返回了响应（包括4xx/5xx错误）
+            errorMessage = `HTTP ${error.response.status}: ${error.response.statusText}`
+          } else if (error.request) {
+            // 请求已发送但无响应
+            errorMessage = '网络错误：无响应返回'
+          } else {
+            // 初始化请求时出错
+            errorMessage = error.message
+          }
+        
+          // 特殊处理CORS错误
+          if (errorMessage.includes('Failed to fetch') || 
+              errorMessage.includes('CORS') ||
+              errorMessage.includes('Network Error')) {
+            errorMessage = 'CORS跨域错误：前端(8080端口)无法访问后端(8000端口)。请确保Django服务器已重启并配置了正确的CORS设置。'
+          } else {
+            errorMessage = '网络错误：' + errorMessage
+          }
+        
+          self.errorMessage = errorMessage
         })
       } catch (error) {
         console.error('启动生成任务失败:', error)

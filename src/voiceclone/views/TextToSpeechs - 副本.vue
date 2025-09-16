@@ -6,7 +6,7 @@
         </div>
 
         <div class="my-2 btn-group" style="margin-bottom: 10px !important">
-            <button @click="toggle($event, 'tts')" class="btn border btn-primary">批量文本转语音</button>
+            <button @click="toggle($event, 'tts')" class="btn border btn-primary">文字 → 语音</button>
         </div>
         <span class="question-mark" @click="showGuide" title="操作指南">
             <i class="fas fa-question-circle"></i>
@@ -39,9 +39,9 @@
                             要使用的声音文件:
                             <a href="javascript:;" class="form-text" @click="playSelectedVoice">点击试听</a>
                         </label>
-                        <audio ref="ttsPreviewAudio" class="d-none" preload="metadata"></audio>
-                        <el-select ref="voiceSelect" v-model="voiceFile" filterable placeholder="选择声音文件"
-                            class="form-select-compat" popper-class="form-select-popper" style="width:105%;">
+                        <audio ref="ttsPreviewAudio" class="d-none" preload="none"></audio>
+                        <el-select v-model="voiceFile" filterable placeholder="选择声音文件" class="form-select-compat"
+                            popper-class="form-select-popper" style="width:105%;">
                             <el-option v-for="opt in voiceOptions" :key="opt.name" :label="opt.name" :value="opt.name">
                                 <div class="d-flex align-items-center justify-content-between"
                                     style="gap:8px;width:100%;">
@@ -130,29 +130,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 命名录音(带匹配) -->
-        <el-dialog title="录音命名" :visible.sync="nameDlgVisible" width="430px" @open="prepareVoiceNameCache"
-            @close="cancelNameDialog">
-            <div>
-                <!-- 提示文字 -->
-                <p class="mb-2" style="font-size:14px; color:#606266;">
-                    请输入录音文件名（可不写 .wav，保存时会自动加上）
-                </p>
-                <!-- 输入框本体 -->
-                <el-autocomplete class="rename-input" v-model="nameInput" :fetch-suggestions="queryLocalNameSuggestions"
-                    placeholder="例如：李老师_课件_音色 或 李老师_课件_音色.wav" :trigger-on-focus="true" :debounce="120"
-                    @select="onPickSuggestedName" style="width:100%" />
-                <small v-if="nameExists" class="text-danger d-block mt-2" style="font-size:14px;">
-                    已存在同名音色，请更换名称
-                </small>
-            </div>
-
-            <span slot="footer" class="dialog-footer">
-                <el-button @click="cancelNameDialog">取 消</el-button>
-                <el-button type="primary" @click="confirmNameDialog">保 存</el-button>
-            </span>
-        </el-dialog>
     </div>
 </template>
 
@@ -226,12 +203,6 @@ export default {
             fileOrderMap: {},                // { filename: 序号 } 由本批次上传顺序生成
             lastFileIdx: -1,                 // 上一次已经显示到的“文件序号”                     
             user_id: 'test_user_001',        // 默认测试用户 ID（上线时改为真实 session）
-
-            // ====== 命名对话框 ======
-            nameDlgVisible: false,       // 命名弹窗开关
-            nameInput: "",               // 弹窗中的命名输入
-            nameExists: false,           // 是否存在完全同名
-            _voiceNameCache: [],         // 从后端拉取的所有文件名缓存
         }
     },
     mounted() {
@@ -280,39 +251,6 @@ export default {
                 { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' }
             );
         },
-
-        //  置顶并选中指定音色
-        promoteVoice(newName) {
-            if (!newName) return;
-
-            // 若列表里已有该项，沿用原有 deletable 等字段；否则当作新增
-            var existed = null;
-            for (var i = 0; i < this.voiceOptions.length; i++) {
-                if (this.voiceOptions[i] && this.voiceOptions[i].name === newName) {
-                    existed = this.voiceOptions[i];
-                    break;
-                }
-            }
-            var newItem = existed || { name: newName, deletable: true };
-
-            // 去重后插到最前面
-            var rest = [];
-            for (var j = 0; j < this.voiceOptions.length; j++) {
-                if (this.voiceOptions[j].name !== newName) rest.push(this.voiceOptions[j]);
-            }
-            this.voiceOptions = [newItem].concat(rest);
-
-            // 选中它
-            this.voiceFile = newName;
-
-            this.$nextTick(() => {
-                if (this.$refs && this.$refs.voiceSelect) {
-                    this.$refs.voiceSelect.query = '';
-                    this.$refs.voiceSelect.blur && this.$refs.voiceSelect.blur();
-                }
-            });
-        },
-
         // 获取语言列表  拉取语言 → 填充 languageList → 默认选中 zh-cn 或第一项
         async initLanguageList() {
             try {
@@ -602,113 +540,58 @@ export default {
             return stem;
         },
 
-        //  打开命名对话框
-        openNameDialog() {
-            return new Promise(resolve => {
-                this.nameInput = ""
-                this.nameExists = false
-                this.nameDlgVisible = true
-                // 暂存回调，确认时取出
-                this._resolveNamePromise = resolve
-            })
-        },
-
-        //  打开对话框时准备缓存
-        async prepareVoiceNameCache() {
-            try {
-                const { data } = await getVoiceListExt()
-                const arr = (data && data.voices) ? data.voices : []
-                this._voiceNameCache = arr
-                    .filter(x => x && x.name)
-                    .map(x => String(x.name))
-            } catch (e) {
-                this._voiceNameCache = []
-            }
-        },
-
-        //  el-autocomplete 的数据源：本地联想（首字母/包含）
-        queryLocalNameSuggestions(queryString, cb) {
-            const q = (queryString || "").trim().toLowerCase()
-            const list = this._voiceNameCache
-                .filter(n => !q || n.toLowerCase().includes(q) || n.toLowerCase().startsWith(q))
-                .slice(0, 10)
-                .map(n => ({ value: n }))
-            // 同步“是否完全重名”
-            this.nameExists = !!q && this._voiceNameCache
-                .some(v => v.toLowerCase() === (q.endsWith('.wav') ? q : `${q}.wav`))
-            cb(list)
-        },
-
-        //  点击取消：关闭弹窗并让 openNameDialog() 返回 null
-        cancelNameDialog() {
-            this.nameDlgVisible = false
-            const resolve = this._resolveNamePromise
-            this._resolveNamePromise = null
-
-            // 让 await openNameDialog() 收到 null（表示取消）
-            resolve && resolve(null)
-        },
-
-        //  点击“保存”：校验 + 关闭并返回
-        confirmNameDialog() {
-            const raw = (this.nameInput || "").trim()
-            if (!raw) {
-                this.$message.warning('文件名不能为空')
-                return
-            }
-            const stem = this._sanitizeStem(raw.replace(/\.[A-Za-z0-9]+$/i, ''))
-
-            // 完全同名（含 .wav）判断
-            this.nameExists = this._voiceNameCache
-                .some(v => v.toLowerCase() === `${stem}.wav`.toLowerCase())
-            if (this.nameExists) {
-                this.$message.warning('已存在同名文件，请更换名称或直接使用该音色')
-                return
-            }
-
-            this.nameDlgVisible = false
-            const resolve = this._resolveNamePromise
-            this._resolveNamePromise = null
-            resolve && resolve(stem)
-        },
-
-        onPickSuggestedName(item) {
-            this.nameInput = item.value || ''
-            this.nameExists = true
-        },
-
-        //  在线录音：上传前先弹出“联想命名”对话框
+        //  上传录音为音色：弹框命名 → 清洗 → FormData(Blob, name.wav) → uploadAudioFile → 刷新音色
         async uploadRecording() {
             if (!this.recordedBlob) {
-                return this.$alert((this.langlist && this.langlist.lang6) || '请先录音', '提示')
+                return this.$alert((this.langlist && this.langlist.lang6) || '请先录音', '提示');
             }
 
-            // 1) 打开带联想的命名弹窗，等待用户确认
-            const stem = await this.openNameDialog()
-            if (!stem) return  // 用户取消
+            // 1) 让用户输入期望的文件名
+            var promptRes = null;
+            try {
+                promptRes = await this.$prompt(
+                    '请输入录音文件名（可不写 .wav，保存时会自动加上）',
+                    '命名录音',
+                    {
+                        inputPlaceholder: '例如：李老师_课件_音色 或 李老师_课件_音色.wav',
+                        confirmButtonText: '保存',
+                        cancelButtonText: '取消',
+                        inputPattern: /.+/,
+                        inputErrorMessage: '文件名不能为空'
+                    }
+                );
+            } catch (e) {
+                promptRes = { action: 'cancel' };
+            }
 
-            // 2) 组装 FormData，用“用户命名 + .wav”作为文件名传给后端
-            const fd = new FormData()
-            fd.append('audio', this.recordedBlob, `${stem}.wav`)   // 第3参是文件名
+            var value = promptRes && promptRes.value;
+            var action = promptRes && promptRes.action;
+            if (action === 'cancel') return;
 
-            // 3) 调用后端上传接口
-            const { data } = await uploadAudioFile(fd)
+            // 2) 规范化：去掉扩展名，清理非法字符，长度限制
+            var raw = (value || '').trim();
+            raw = raw.replace(/\.[A-Za-z0-9]+$/i, '');
+            var stem = this._sanitizeStem(raw);
+
+            // 3) 组装 FormData，并使用“用户命名 + .wav”作为第三个参数传给后端
+            var fd = new FormData();
+            fd.append('audio', this.recordedBlob, stem + '.wav');
+
+            // 4) 调后端上传接口
+            var resp = await uploadAudioFile(fd);
+            var data = resp && resp.data ? resp.data : {};
 
             if (data.code === 0) {
-                const newName = data.data
-                this.$message.success(`录音上传成功：${newName}`)
-                await this.initAudioList()
-
-                // 置顶 + 选中
-                this.promoteVoice(newName)
-
-                this.recorded = false
+                if (this.$message) this.$message.success('录音上传成功：' + data.data);
+                this.voiceFile = data.data;     // 选中新上传的音色
+                this.recorded = false;          // 重置录音态
+                await this.initAudioList();     // 刷新音色下拉
             } else {
-                this.$message.error(data.msg || '上传失败')
+                if (this.$message) this.$message.error(data.msg || '上传失败');
             }
         },
 
-        //  从本地选择并上传为音色：FormData(file) → uploadAudioFile → 刷新音色 → 置顶+选中；最后清空 <input> value
+        //  从本地选择并上传为音色：FormData(file) → uploadAudioFile → 刷新音色；最后清空 <input> value
         async uploadFromLocal(e) {
             var file = e && e.target ? e.target.files[0] : null;
             if (!file) {
@@ -717,24 +600,21 @@ export default {
             }
 
             var fd = new FormData();
-            fd.append('audio', file);      // 默认保存到 voicelist 目录
-
+            fd.append('audio', file);      // 默认进 voicelist 目录
             try {
                 var resp = await uploadAudioFile(fd);
                 var data = resp && resp.data ? resp.data : {};
                 if (data.code === 0) {
-                    var newName = data.data;   // 后端返回的新文件名
-                    if (this.$message) this.$message.success('录音上传成功：' + newName);
-
+                    if (this.$message) this.$message.success('上传成功');
+                    this.voiceFile = data.data;   // 选中新上传的音色
                     await this.initAudioList();   // 刷新音色下拉
-                    this.promoteVoice(newName);   // 置顶 + 选中
                 } else {
                     if (this.$message) this.$message.error(data.msg || '上传失败');
                 }
             } catch (err) {
                 if (this.$message) this.$message.error('上传失败，请稍后重试');
             } finally {
-                // 允许重复选择同一个文件
+                // 允许重复选择同一个文件（必须清空 input 值）
                 if (e && e.target) {
                     try { e.target.value = ''; } catch (x) { }
                 }
@@ -924,6 +804,7 @@ export default {
                 this.isProcessing = false;
             });
         },
+
 
         pollProgressUntilZipReady() {
             if (this.progressTimer) { clearInterval(this.progressTimer); this.progressTimer = null; }
@@ -1115,18 +996,5 @@ export default {
 .form-select-popper .option-remove[disabled] {
     opacity: .5;
     cursor: not-allowed;
-}
-
-.rename-input /deep/ .el-input--small .el-input__inner {
-    height: 40px;
-    line-height: 32px;
-    font-size: 15px;
-    padding: 0 12px;
-    border-radius: 6px;
-}
-
-/* 占位符字体也同步放大 */
-.rename-input ::v-deep .el-input__inner::placeholder {
-    font-size: 15px;
 }
 </style>

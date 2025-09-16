@@ -7,9 +7,9 @@
 
         <div class="my-2 btn-group">
             <button @click="toggle('tts')" :class="['btn border', mode === 'tts' ? 'btn-primary' : '']"
-                style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">文本转语音(Text-to-Speech)</button>
+                style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">文本转语音</button>
             <button @click="toggle('sts')" :class="['btn border', mode === 'sts' ? 'btn-primary' : '']"
-                style="border-top-right-radius: 8px; border-bottom-right-radius: 8px;">音色转换(Speech-to-Speech)</button>
+                style="border-top-right-radius: 8px; border-bottom-right-radius: 8px;">音色转换</button>
             <span class="question-mark" @click="showGuide(mode)" title="操作指南">
                 <i class="fas fa-question-circle"></i>
             </span>
@@ -50,9 +50,9 @@
                             <a href="javascript:;" class="form-text" @click="playSelectedVoice">点击试听</a>
                         </label>
                         <!-- TTS 专用播放器 -->
-                        <audio ref="ttsPreviewAudio" class="d-none" preload="metadata"></audio>
-                        <el-select ref="voiceSelect" v-model="voiceFile" filterable placeholder="选择声音文件"
-                            class="form-select-compat" popper-class="form-select-popper" style="width:105%;">
+                        <audio ref="ttsPreviewAudio" class="d-none" preload="none"></audio>
+                        <el-select v-model="voiceFile" filterable placeholder="选择声音文件" class="form-select-compat"
+                            popper-class="form-select-popper" style="width:106%;">
                             <el-option v-for="opt in voiceOptions" :key="opt.name" :label="opt.name" :value="opt.name">
                                 <div class="d-flex align-items-center justify-content-between"
                                     style="gap:8px;width:100%;">
@@ -85,30 +85,14 @@
                         <audio style="width:280px" ref="audioPlayer" controls></audio>
                     </div>
                 </div>
-
                 <textarea v-model="textInput" class="form-control" rows="5" placeholder="在此输入要合成的文字"></textarea>
                 <label class="btn-file  btn-secondary-srt mt-1">
                     <span class="btn btn-sm">导入文本文件(txt、srt)</span>
                     <input type="file" accept=".srt,.txt"
                         class="position-absolute start-0 top-0 end-0 bottom-0 opacity-0" @change="uploadSrtFile">
                 </label>
-
                 <div class="text-center mt-3">
-                    <button @click="startSynthesis" class="btn btn-danger" :disabled="isTtsConverting"
-                        :title="isTtsConverting ? '正在合成，请稍候…' : '开始生成'">
-                        {{ isTtsConverting ? '合成中…' : '立即开始生成' }}
-                    </button>
-                </div>
-
-                <div class="text-danger text-center my-2" v-if="warningMessage">{{ warningMessage }}</div>
-                <div class="text-danger text-center my-2" v-if="tipsMessage">{{ tipsMessage }}</div>
-
-                <!-- TTS 结果试听 -->
-                <div v-if="showTtsPlayer" class="audio-compare my-4">
-                    <div class="audio-compare-item">
-                        <span class="audio-title">合成结果试听</span>
-                        <audio ref="ttsAudio" controls preload="metadata"></audio>
-                    </div>
+                    <button @click="startSynthesis" class="btn btn-danger">立即开始生成</button>
                 </div>
             </div>
 
@@ -118,7 +102,7 @@
                     <el-select v-model="stsVoice" filterable placeholder="选择声音文件" class="form-select-compat"
                         popper-class="form-select-popper" style="min-width: 260px; margin-left: 8px;">
                         <el-option v-for="opt in voiceOptions" :key="opt.name" :label="opt.name" :value="opt.name">
-                            <div class="d-flex align-items-center w-100" style="gap:8px;">
+                            <div class="d-flex align-items-center justify-content-between" style="gap:8px;">
                                 <span>{{ opt.name }}</span>
                                 <button v-if="opt.deletable" class="option-remove" :disabled="deletingName === opt.name"
                                     @click.stop="handleDeleteVoice(opt)" title="删除该音色">×</button>
@@ -132,65 +116,27 @@
                         </a>
                     </label>
                     <!-- STS 专用播放器 -->
-                    <audio ref="stsPreviewAudio" class="d-none" preload="metadata"></audio>
+                    <audio ref="stsPreviewAudio" class="d-none" preload="none"></audio>
                 </div>
-
                 <!-- 上传灰框：拖拽或点击 -->
                 <div ref="dropZone" class="border m-2 p-5 text-center" style="cursor:pointer;"
                     @drop.prevent="handleFileUpload" @dragover.prevent @click="triggerFileInput">
                     {{ stsFileName ? '✅ 已上传：' + stsFileName : '拖拽或点击将音频 wav/mp3/flac 文件上传' }}
                 </div>
+                <!-- 隐藏 file input -->
                 <input type="file" accept=".mp3,.wav,.flac" ref="stsFileInput" class="d-none"
                     @change="handleFileUpload">
-
                 <div class="text-center mt-3">
-                    <button @click="startSTS" class="btn btn-danger" :disabled="isConverting"
-                        :title="isConverting ? '正在转换，请稍候…' : '开始转换'">
-                        {{ isConverting ? '转换中…' : '立即开始转换' }}
-                    </button>
+                    <button @click="startSTS" class="btn btn-danger">立即开始转换</button>
                 </div>
+            </div>
 
-                <div class="text-danger text-center my-2" v-if="warningMessage">{{ warningMessage }}</div>
-                <div class="text-danger text-center my-2" v-if="tipsMessage">{{ tipsMessage }}</div>
-
-                <!-- 对比试听区域 -->
-                <div v-if="showUploadedPreview || showResultPreview" class="audio-compare my-4">
-                    <!-- 原始音频 -->
-                    <div class="audio-compare-item" v-if="showUploadedPreview">
-                        <span class="audio-title">原始音频试听</span>
-                        <audio ref="uploadedAudio" controls preload="metadata"></audio>
-                    </div>
-                    <!-- 转换结果 -->
-                    <div class="audio-compare-item" v-if="showResultPreview">
-                        <span class="audio-title">转换结果试听</span>
-                        <audio ref="resultAudio" controls preload="metadata"></audio>
-                    </div>
-                </div>
+            <div class="text-danger text-center my-2" v-if="warningMessage">{{ warningMessage }}</div>
+            <div class="text-danger text-center my-2" v-if="tipsMessage">{{ tipsMessage }}</div>
+            <div class="text-center my-4">
+                <audio ref="resultAudio" controls class="d-none"></audio>
             </div>
         </div>
-
-        <!-- 命名录音(带匹配) -->
-        <el-dialog title="录音命名" :visible.sync="nameDlgVisible" width="430px" @open="prepareVoiceNameCache"
-            @close="cancelNameDialog">
-            <div>
-                <!-- 提示文字 -->
-                <p class="mb-2" style="font-size:14px; color:#606266;">
-                    请输入录音文件名（可不写 .wav，保存时会自动加上）
-                </p>
-                <!-- 输入框本体 -->
-                <el-autocomplete class="rename-input" v-model="nameInput" :fetch-suggestions="queryLocalNameSuggestions"
-                    placeholder="例如：李老师_课件_音色 或 李老师_课件_音色.wav" :trigger-on-focus="true" :debounce="120"
-                    @select="onPickSuggestedName" style="width:100%" />
-                <small v-if="nameExists" class="text-danger d-block mt-2" style="font-size:14px;">
-                    已存在同名音色，请更换名称
-                </small>
-            </div>
-
-            <span slot="footer" class="dialog-footer">
-                <el-button @click="cancelNameDialog">取 消</el-button>
-                <el-button type="primary" @click="confirmNameDialog">保 存</el-button>
-            </span>
-        </el-dialog>
     </div>
 </template>
 
@@ -219,53 +165,39 @@ export default {
             // ====== 语言与语速 ======
             language: '',                // 当前选中的语言代码，如 'zh-cn'
             languageList: [],            // 语言下拉列表
-            speed: 1.0,                  // 合成语速
+            speed: 1.0,                  // 合成语速：0.1 ~ 2.0，1 为正常
 
-            // ====== 音色文件 ======
+            // ====== 音色与文件 ======
             voiceFile: '',               // 选中的音色文件名
             voiceOptions: [],            // 可用音色列表 [{ name, deletable, ... }]
-            deletingName: '',            // 当前正在删除的音色名
 
             // ====== 录音相关 ======
             isRecording: false,          // 是否处于录音中
-            recorded: false,             // 是否已经录制完成
+            recorded: false,             // 是否已经录制完成（可试听/上传）
             mediaRecorder: null,         // MediaRecorder 实例
             audioChunks: [],             // 录音分片数据
-            recordedBlob: null,          // 存放录制后的 Blob
-            recordTimer: null,           // 录音计时器
-            recordSeconds: 0,            // 录音已用秒数
 
             // ====== STS 相关 ======
             stsVoice: '',                // STS 的参考音色
             stsFileName: '',             // 已上传/选中的待转换音频文件名
-            stsPreviewUrl: '',           // STS 当前试听 URL
-            showUploadedPreview: false,  // 是否显示“原始音频试听”
-            showResultPreview: false,    // 是否显示“转换结果试听”
-            isConverting: false,         // 转换中禁用按钮
-            _uploadedBlobUrl: null,      // 上一次生成的 blob 地址
+            stsPreviewUrl: '',           // 当前播放的音频 URL
 
             // ====== TTS 相关 ======
             ttsPreviewUrl: '',           // TTS 当前试听 URL
-            isTtsConverting: false,      // TTS 合成中
-            showTtsPlayer: false,        // 是否显示 TTS 播放器
 
             // ====== 计时器与时长 ======
-            synthesisTimer: null,        // 合成计时器
+            synthesisTimer: null,        // 合成计时器（setInterval 返回值）
             synthesisSeconds: 0,         // 合成已用秒数
-            _timerStartAt: 0,            // 起点时间
+            recordTimer: null,           // 录音计时器（setInterval 返回值）
+            recordSeconds: 0,            // 录音已用秒数
 
             // ====== 界面提示 ======
-            warningMessage: '',          // 警告信息
-            tipsMessage: '',             // 过程提示
+            warningMessage: '',          // 警告信息（如参数校验）
+            tipsMessage: '',             // 过程提示（如合成进度/状态）
+            deletingName: '',            // 当前正在删除的音色名
 
             // ====== 文本输入 ======
             textInput: '',               // 待合成的文本内容
-
-            // ====== 命名对话框 ======
-            nameDlgVisible: false,       // 命名弹窗是否可见
-            nameInput: "",               // 弹窗中的命名输入
-            nameExists: false,           // 是否存在完全同名
-            _voiceNameCache: [],         // 从后端拉取的所有文件名缓存
 
             // ====== 用户标识 ======
             user_id: 'test_user_001',    // 默认测试用户 ID
@@ -304,22 +236,30 @@ export default {
         this.initAudioList();
         this.initLanguageList();
         this.checkModelStatus();
-        this.bindExclusivePlayback();
         this.getSessionUser();  // 获取用户 session ID（预留）
     },
     watch: {
-        mode() {
-            // 停止计时器
-            this.stopProgress()
+        mode: function () {
+            // 1) 停计时器 & 清零
+            if (this.synthesisTimer) {
+                clearInterval(this.synthesisTimer)
+                this.synthesisTimer = null
+            }
             this.synthesisSeconds = 0
 
-            // 清空提示
-            this.setTips && this.setTips('')
+            // 2) 清空提示
+            if (typeof this.setTips === 'function') {
+                this.setTips('')
+            }
 
-            // 重置播放器显示状态
-            this.resetTtsPlayer();
-            this.resetStsResultPlayer();
-            this.showTtsPlayer = false
+            // 3) 停止并清空播放器 + 隐藏
+            var audio = this.$refs.resultAudio
+            if (audio) {
+                try { if (!audio.paused) audio.pause() } catch (e) { }
+                audio.src = ''
+                if (audio.load) audio.load()
+                if (audio.classList) audio.classList.add('d-none')
+            }
         }
     },
     beforeDestroy() {
@@ -331,9 +271,6 @@ export default {
         if (this.recordTimer) {
             clearInterval(this.recordTimer)
             this.recordTimer = null
-        }
-        if (this._uploadedBlobUrl) {
-            URL.revokeObjectURL(this._uploadedBlobUrl);
         }
         // 确保离开时停止试听
         this.stopStsPreview();
@@ -389,116 +326,6 @@ export default {
                 this.$alert('该模型还没有启动，请启动后使用', '提示');
             }
         },
-        async checkModelStatus() {
-            try {
-                const res = await getModelStatus();
-                if (res.data && Object.keys(res.data).length > 0) {
-                    this.models = Object.keys(res.data).map(name => ({
-                        name,
-                        label: `${name}/${res.data[name] ? '已启动' : '已停止'}`,
-                        status: res.data[name] ? 'on' : 'off'
-                    }));
-                }
-            } catch {
-                this.$message.error('获取模型状态失败');
-            }
-        },
-        async updateModelStatus(modelName, el) {
-            try {
-                const newStatus = el.status === 'on' ? 'off' : 'on';
-                const res = await toggleModelStatus({ status_new: newStatus, name: modelName });
-                if (res.data && res.data.code === 0) {
-                    this.$message.success(res.data.msg);
-                    this.checkModelStatus();
-                } else {
-                    this.$message.error(res.data.msg || '状态更新失败');
-                }
-            } catch (error) {
-                this.$message.error('状态更新请求失败');
-            }
-        },
-
-        // 计时启动
-        startProgress(labelText) {
-            // 记录墙钟起点
-            this._timerStartAt = Date.now()
-            this.synthesisSeconds = 0
-            this.setTips(`${labelText}：0 秒`)
-
-            if (this.synthesisTimer) {
-                clearInterval(this.synthesisTimer)
-                this.synthesisTimer = null
-            }
-
-            // 每秒刷新，显示值来自墙钟差值
-            this.synthesisTimer = setInterval(() => {
-                const sec = Math.floor((Date.now() - this._timerStartAt) / 1000)
-                this.synthesisSeconds = sec
-                this.setTips(`${labelText}：${sec} 秒`)
-            }, 1000)
-        },
-
-        // 计时停止
-        stopProgress() {
-            if (this.synthesisTimer) {
-                clearInterval(this.synthesisTimer)
-                this.synthesisTimer = null
-            }
-        },
-
-        // 隐藏并清空 TTS 结果播放器
-        resetTtsPlayer() {
-            this.showTtsPlayer = false;
-
-            const el = this.$refs.ttsAudio;
-            if (!el) return;  
-
-            if (!el.paused) {
-                el.pause();
-            }
-
-            el.removeAttribute('src');
-            el.load();
-        },
-
-        // 隐藏并清空 STS 结果播放器
-        resetStsResultPlayer() {
-            this.showResultPreview = false;
-
-            const el = this.$refs.resultAudio;
-            if (!el) return;
-
-            if (!el.paused) {
-                el.pause();
-            }
-
-            el.removeAttribute('src');
-            el.load();
-        },
-
-        promoteVoice(newName) {
-            if (!newName) return;
-
-            // 如果列表里已经有它，就沿用原有 deletable 等字段；没有就当作用户新增
-            const existed = this.voiceOptions.find(v => v && v.name === newName);
-            const newItem = existed || { name: newName, deletable: true };
-
-            // 去重后插到最前面
-            this.voiceOptions = [newItem, ...this.voiceOptions.filter(v => v.name !== newName)];
-
-            // 选中它
-            this.voiceFile = newName;
-            this.stsVoice = newName;
-
-            // 若当前在搜索（filterable），清空关键字，避免新项被过滤
-            this.$nextTick(() => {
-                if (this.$refs.voiceSelect) {
-                    this.$refs.voiceSelect.query = '';
-                    this.$refs.voiceSelect.blur && this.$refs.voiceSelect.blur();
-                }
-            });
-        },
-
         // 获取可用音色：后端返回 { voices: [{ name, deletable }, ...] }
         async initAudioList() {
             try {
@@ -529,7 +356,6 @@ export default {
                 if (this.$message) this.$message.error('获取音色失败');
             }
         },
-
         // 获取语言列表：后端固定返回 { languages: [{ language_code, language_name }, ...] }
         async initLanguageList() {
             try {
@@ -551,7 +377,6 @@ export default {
                 if (this.$message) this.$message.error('获取语言列表失败');
             }
         },
-
         uploadSrtFile(event) {
             const file = event.target.files[0];
             if (!file) {
@@ -564,7 +389,34 @@ export default {
             };
             reader.readAsText(file, 'utf-8');
         },
-
+        async checkModelStatus() {
+            try {
+                const res = await getModelStatus();
+                if (res.data && Object.keys(res.data).length > 0) {
+                    this.models = Object.keys(res.data).map(name => ({
+                        name,
+                        label: `${name}/${res.data[name] ? '已启动' : '已停止'}`,
+                        status: res.data[name] ? 'on' : 'off'
+                    }));
+                }
+            } catch {
+                this.$message.error('获取模型状态失败');
+            }
+        },
+        async updateModelStatus(modelName, el) {
+            try {
+                const newStatus = el.status === 'on' ? 'off' : 'on';
+                const res = await toggleModelStatus({ status_new: newStatus, name: modelName });
+                if (res.data && res.data.code === 0) {
+                    this.$message.success(res.data.msg);
+                    this.checkModelStatus();
+                } else {
+                    this.$message.error(res.data.msg || '状态更新失败');
+                }
+            } catch (error) {
+                this.$message.error('状态更新请求失败');
+            }
+        },
         //  删除音色
         async handleDeleteVoice(item) {
             if (!item || !item.name) return
@@ -747,7 +599,6 @@ export default {
                 this.$message.error('无法启动录音设备');
             });
         },
-
         stopRecording() {
             if (this.mediaRecorder) {
                 this.mediaRecorder.stop();
@@ -755,7 +606,6 @@ export default {
                 clearInterval(this.recordTimer);
             }
         },
-
         //  工具：清理用户输入文件名（不含后缀）
         _sanitizeStem(input) {
             let stem = (input || '').trim()
@@ -767,339 +617,166 @@ export default {
             if (stem.length > 80) stem = stem.slice(0, 80)
             return stem
         },
-
-        //  打开命名对话框
-        openNameDialog() {
-            return new Promise(resolve => {
-                this.nameInput = ""
-                this.nameExists = false
-                this.nameDlgVisible = true
-                // 暂存回调，确认时取出
-                this._resolveNamePromise = resolve
-            })
-        },
-
-        //  打开对话框时准备缓存
-        async prepareVoiceNameCache() {
-            try {
-                const { data } = await getVoiceListExt()
-                const arr = (data && data.voices) ? data.voices : []
-                this._voiceNameCache = arr
-                    .filter(x => x && x.name)
-                    .map(x => String(x.name))
-            } catch (e) {
-                this._voiceNameCache = []
-            }
-        },
-
-        //  el-autocomplete 的数据源：本地联想（首字母/包含）
-        queryLocalNameSuggestions(queryString, cb) {
-            const q = (queryString || "").trim().toLowerCase()
-            const list = this._voiceNameCache
-                .filter(n => !q || n.toLowerCase().includes(q) || n.toLowerCase().startsWith(q))
-                .slice(0, 10)
-                .map(n => ({ value: n }))
-            // 同步“是否完全重名”
-            this.nameExists = !!q && this._voiceNameCache
-                .some(v => v.toLowerCase() === (q.endsWith('.wav') ? q : `${q}.wav`))
-            cb(list)
-        },
-
-        //  点击取消：关闭弹窗并让 openNameDialog() 返回 null
-        cancelNameDialog() {
-            this.nameDlgVisible = false
-            const resolve = this._resolveNamePromise
-            this._resolveNamePromise = null
-
-            // 让 await openNameDialog() 收到 null（表示取消）
-            resolve && resolve(null)
-        },
-
-        //  点击“保存”：校验 + 关闭并返回
-        confirmNameDialog() {
-            const raw = (this.nameInput || "").trim()
-            if (!raw) {
-                this.$message.warning('文件名不能为空')
-                return
-            }
-            const stem = this._sanitizeStem(raw.replace(/\.[A-Za-z0-9]+$/i, ''))
-
-            // 完全同名（含 .wav）判断
-            this.nameExists = this._voiceNameCache
-                .some(v => v.toLowerCase() === `${stem}.wav`.toLowerCase())
-            if (this.nameExists) {
-                this.$message.warning('已存在同名文件，请更换名称或直接使用该音色')
-                return
-            }
-
-            this.nameDlgVisible = false
-            const resolve = this._resolveNamePromise
-            this._resolveNamePromise = null
-            resolve && resolve(stem)
-        },
-
-        onPickSuggestedName(item) {
-            this.nameInput = item.value || ''
-            this.nameExists = true
-        },
-
-        //  在线录音：上传前先弹出“联想命名”对话框
+        //  在线录音：上传前先让用户命名 
         async uploadRecording() {
             if (!this.recordedBlob) {
                 return this.$alert((this.langlist && this.langlist.lang6) || '请先录音', '提示')
             }
 
-            // 1) 打开带联想的命名弹窗，等待用户确认
-            const stem = await this.openNameDialog()
-            if (!stem) return  // 用户取消
+            // 1) 让用户输入期望的文件名
+            const { value, action } = await this.$prompt(
+                '请输入录音文件名（可不写 .wav，保存时会自动加上）',
+                '命名录音',
+                {
+                    inputPlaceholder: '例如：李老师_课件_音色 或 李老师_课件_音色.wav',
+                    confirmButtonText: '保存',
+                    cancelButtonText: '取消',
+                    inputPattern: /.+/,
+                    inputErrorMessage: '文件名不能为空'
+                }
+            ).catch(() => ({ action: 'cancel' }))
 
-            // 2) 组装 FormData，用“用户命名 + .wav”作为文件名传给后端
+            if (action === 'cancel') return
+
+            // 2) 规范化：去掉扩展名，清理非法字符，长度限制
+            let raw = (value || '').trim()
+            raw = raw.replace(/\.[A-Za-z0-9]+$/i, '')
+            const stem = this._sanitizeStem(raw)
+
+            // 3) 组装 FormData，并使用“用户命名 + .wav”作为第三个参数传给后端
             const fd = new FormData()
-            fd.append('audio', this.recordedBlob, `${stem}.wav`)
+            fd.append('audio', this.recordedBlob, `${stem}.wav`) // 第三个参数是“文件名”
 
-            // 3) 调用后端上传接口
+            // 4) 调后端上传接口
             const { data } = await uploadAudioFile(fd)
 
             if (data.code === 0) {
-                const newName = data.data
-                this.$message.success('录音上传成功：' + newName)
-                await this.initAudioList()
-
-                // 置顶 + 选中
-                this.promoteVoice(newName)
-
+                this.$message.success(`录音上传成功：${data.data}`)
+                this.voiceFile = data.data
                 this.recorded = false
+                await this.initAudioList()
+            } else {
+                this.$message.error(data.msg || '上传失败')
+            }
+        },
+        async uploadFromLocal(e) {
+            const file = e.target.files[0]
+            if (!file) return this.$alert(this.langlist.lang7, '提示')
+
+            const fd = new FormData()
+            fd.append('audio', file)      // 默认进 voicelist
+            const { data } = await uploadAudioFile(fd)
+
+            if (data.code === 0) {
+                this.$message.success('上传成功')
+                this.voiceFile = data.data
+                await this.initAudioList()
             } else {
                 this.$message.error(data.msg || '上传失败')
             }
         },
 
-        // 从本地选择并上传为音色：上传 → 刷新 → 置顶+选中 → 清空<input>值
-        async uploadFromLocal(e) {
-            const file = e && e.target ? e.target.files[0] : null;
-            if (!file) {
-                this.$alert((this.langlist && this.langlist.lang7) || '请选择一个音频文件', '提示');
-                return;
-            }
-
-            const fd = new FormData();
-            fd.append('audio', file);  // 默认保存到 voicelist
-
-            try {
-                const { data } = await uploadAudioFile(fd);
-                if (data.code === 0) {
-                    const newName = data.data;
-                    this.$message.success('上传成功：' + newName);
-
-                    await this.initAudioList(); // 刷新音色列表
-                    this.promoteVoice && this.promoteVoice(newName); // 置顶+选中
-                } else {
-                    this.$message.error(data.msg || '上传失败');
-                }
-            } catch (err) {
-                this.$message.error('上传失败，请稍后重试');
-            } finally {
-                // 清空 <input type="file"> 的值，避免再次选择同一文件不触发 change
-                if (e && e.target) {
-                    try { e.target.value = ''; } catch (_) { }
-                }
-            }
-        },
-
         /* ---------- 文本 → 语音 ---------- */
         async startSynthesis() {
-            this.resetTtsPlayer();
+            // 1. 基础校验（保持原判空逻辑）
+            if (!this.voiceFile) return this.setWarning(this.langlist.lang10)
+            if (!this.textInput) return this.setWarning(this.langlist.lang11)
+            if (this.speed < 0.1 || this.speed > 2.0)
+                return this.setWarning(this.langlist.lang16)
 
-            // 1) 基础校验
-            if (!this.voiceFile) return this.setWarning(this.langlist.lang10);
-            if (!this.textInput) return this.setWarning(this.langlist.lang11);
-            if (this.speed < 0.1 || this.speed > 2.0) return this.setWarning(this.langlist.lang16);
-
-            // 2) 状态与计时
-            this.isTtsConverting = true;
-            this.startProgress(this.langlist.lang13);
+            // 2. 提示计时
+            this.synthesisSeconds = 0
+            this.setTips(`${this.langlist.lang13}：0 秒`)
+            this.synthesisTimer = setInterval(() => {
+                this.synthesisSeconds++
+                this.setTips(`${this.langlist.lang13}：${this.synthesisSeconds} 秒`)
+            }, 1000)
 
             try {
-                // 3) 请求后端
-                const resp = await runTTS(this.buildFormData());
-                const payload = (resp && resp.data) ? resp.data : resp;
-                console.log('TTS response', payload);
+                const { data } = await runTTS(this.buildFormData())
+                clearInterval(this.synthesisTimer)
+                console.log('TTS response', data)
 
-                if (!payload || payload.code !== 0 || !payload.file_url) {
-                    return this.setWarning((payload && payload.msg) || '合成失败');
+                if (data.code !== 0 || !data.file_url) {
+                    return this.setWarning(data.msg || '合成失败')
                 }
 
-                // 4) 成功：设置并显示 TTS 播放器
-                this.showTtsPlayer = true;
+                const audio = this.$refs.resultAudio
+                if (!audio) { console.error('audio ref 未找到'); return }
+                audio.src = data.file_url + '?t=' + Date.now()
+                audio.load()
+                audio.classList.remove('d-none')
+                this.setTips('合成成功！')
 
-                this.$nextTick(() => {
-                    const el = this.$refs && this.$refs.ttsAudio;
-                    if (!el) { console.error('ttsAudio ref 未找到'); return; }
-
-                    el.src = payload.file_url + '?t=' + Date.now();    // 防缓存
-                    el.load();
-                    this.stopProgress();
-                    this.setTips('合成成功！');
-                });
             } catch (err) {
-                this.setWarning('合成请求失败');
-                console.error(err);
-            } finally {
-                // 5) 统一清理计时 & 状态
-                this.stopProgress();
-                this.isTtsConverting = false;
+                clearInterval(this.synthesisTimer)
+                this.setWarning('合成请求失败')
+                console.error(err)
             }
         },
 
         /* ---------- 语音 → 语音 ---------- */
         async startSTS() {
-            this.resetStsResultPlayer();
+            if (!this.stsVoice) return this.setWarning('请选择要克隆的音色')
+            if (!this.stsFileName) return this.setWarning('请先上传原始音频')
 
-            if (!this.stsVoice) return this.setWarning('请选择要克隆的音色');
-            if (!this.stsFileName) return this.setWarning('请先上传原始音频');
+            /* ---- 计时开始 ---- */
+            this.synthesisSeconds = 0
+            this.synthesisTimer = setInterval(() => {
+                this.synthesisSeconds++
+                this.setTips(`转换中，请耐心等待，已用时：${this.synthesisSeconds} 秒`)
+            }, 1000)
 
-            this.isConverting = true;
-            this.startProgress('转换中，请耐心等待，已用时');
-
-            var fd = new FormData();
-            fd.append('voice', this.stsVoice);
-            fd.append('name', this.stsFileName);
+            const fd = new FormData()
+            fd.append('voice', this.stsVoice)
+            fd.append('name', this.stsFileName)
 
             try {
-                const resp = await runSTS(fd);
-                const payload = (resp && typeof resp === 'object' && 'data' in resp) ? resp.data : resp;
+                const { data } = await runSTS(fd)
+                clearInterval(this.synthesisTimer)
 
-                if (!payload || payload.code !== 0 || !payload.file_url) {
-                    this.setWarning((payload && payload.msg) || '转换失败');
-                    return;
-                }
+                if (data.code !== 0 || !data.file_url)
+                    return this.setWarning(data.msg || '转换失败')
 
-                this.showResultPreview = true;
-                const fileUrl = payload.file_url + '?t=' + Date.now();
-                this.$nextTick(async () => {
-                    const audio = this.$refs && this.$refs.resultAudio;
-                    if (audio) {
-                        audio.src = fileUrl;
-                        audio.load();
-                        this.bindExclusivePlayback();
-                    }
-                });
-                this.stopProgress();
-                this.setTips('转换成功！');
+                const audio = this.$refs.resultAudio
+                audio.src = data.file_url + '?t=' + Date.now()   // 防缓存
+                audio.load()
+                audio.classList.remove('d-none')
+                this.setTips('转换成功！')
+
             } catch (e) {
-                this.setWarning('转换请求失败');
-                console.error(e);
-            } finally {
-                this.stopProgress();
-                this.isConverting = false;
+                clearInterval(this.synthesisTimer)
+                this.setWarning('转换请求失败')
+                console.error(e)
             }
         },
 
-        /* 拖拽 / 选择文件后上传到 tmp/ 并记录文件名 + 本地试听 */
+        /* 拖拽 / 选择文件后上传到 tmp/ 并记录文件名 */
         async handleFileUpload(event) {
-            // 兼容拖拽与点击选择
-            var file = null;
-            if (event && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-                file = event.dataTransfer.files[0];
-            } else if (event && event.target && event.target.files && event.target.files.length > 0) {
-                file = event.target.files[0];
-            }
-            if (!file) return;
+            const file = (event.dataTransfer || event.target).files[0]
+            if (!file) return
 
-            // 1) 上传到后端 tmp 目录
-            var fd = new FormData();
-            fd.append('audio', file);
-            fd.append('save_dir', 'tmp');
+            const fd = new FormData()
+            fd.append('audio', file)
+            fd.append('save_dir', 'tmp')           // 让后端存 TMP_DIR
 
-            let resp;
-            try {
-                resp = await uploadAudioFile(fd);
-            } catch (e) {
-                this.setWarning('上传失败');
-                return;
+            const { data } = await uploadAudioFile(fd)   // /upload_audio
+            if (data.code !== 0) {
+                return this.setWarning(data.msg || '上传失败')
             }
 
-            const payload = (resp && typeof resp === 'object' && 'data' in resp) ? resp.data : resp;
-            if (!payload || payload.code !== 0) {
-                this.showUploadedPreview = false;
-                return this.setWarning((payload && payload.msg) || '上传失败');
-            }
-
-            // 记录后端返回的文件名
-            this.stsFileName = payload.data || '';
-
-            // 2) 本地即时试听
-            this.showUploadedPreview = true;
-            this.$nextTick(() => {
-                try {
-                    if (this._uploadedBlobUrl) URL.revokeObjectURL(this._uploadedBlobUrl);
-                    this._uploadedBlobUrl = URL.createObjectURL(file);
-
-                    const el = this.$refs && this.$refs.uploadedAudio;
-                    if (el) {
-                        el.src = this._uploadedBlobUrl;
-                        this.bindExclusivePlayback();
-                    }
-                } catch (e) { console.warn('本地试听初始化失败：', e); }
-            });
-
-            // 3) 在下一轮事件循环，把 blob 地址替换为服务端稳定 URL，然后释放 blob
-            setTimeout(() => {
-                const el2 = this.$refs && this.$refs.uploadedAudio;
-                if (!el2) return;
-
-                const serverUrl = MEDIA_BASE + '/tmp/' + encodeURIComponent(this.stsFileName);
-                el2.src = serverUrl + '?t=' + Date.now();
-                if (el2.load) el2.load();
-
-                // 释放本地 blob，避免内存泄漏
-                try {
-                    if (this._uploadedBlobUrl) URL.revokeObjectURL(this._uploadedBlobUrl);
-                } catch (_) { }
-                this._uploadedBlobUrl = null;
-            }, 0);
-
-
-            // 4) 重置 input，确保选择同名文件也能再次触发
-            if (this.$refs && this.$refs.stsFileInput) {
-                this.$refs.stsFileInput.value = '';
-            }
+            this.stsFileName = data.data || ''
         },
 
-        /* 点击“上传灰框”时，触发隐藏的 input */
         triggerFileInput() {
-            this.$refs.stsFileInput && this.$refs.stsFileInput.click();
+            this.$refs.stsFileInput.click();
         },
-
-        // 暂停除 activeRef 外的其它播放器
-        exclusivePauseOthers(activeRef) {
-            const list = [
-                this.$refs.uploadedAudio,   // 原始音频试听
-                this.$refs.resultAudio,     // 转换结果试听
-                this.$refs.stsPreviewAudio  // 音色样例试听
-            ].filter(Boolean);
-
-            list.forEach(a => {
-                if (a !== activeRef && !a.paused) a.pause();
-            });
+        handleFileChange(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                this.handleFileDrop({ dataTransfer: { files } });
+            }
         },
-
-        // 给播放器绑定互斥播放
-        bindExclusivePlayback() {
-            const list = [
-                this.$refs.uploadedAudio,
-                this.$refs.resultAudio,
-                this.$refs.stsPreviewAudio,
-            ].filter(Boolean);
-
-            list.forEach(a => {
-                if (!a._exclusiveBound) {
-                    a.addEventListener('play', () => this.exclusivePauseOthers(a));
-                    a._exclusiveBound = true;  // 避免重复绑定
-                }
-            });
-        },
-
 
 
 
@@ -1191,38 +868,6 @@ export default {
     background-color: #f0f0f0;
 }
 
-.audio-compare {
-    display: flex;
-    gap: 24px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.audio-compare-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 14px;
-    padding: 10px 14px;
-    min-width: 380px;
-    max-width: 48%;
-    flex: 1;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.audio-compare-item audio {
-    flex: 1;
-    outline: none;
-}
-
-.audio-title {
-    white-space: nowrap;
-    font-weight: 600;
-    color: #0d6efd;
-}
-
 
 
 /* Vue2 深度选择器：>>> 或 /deep/ 都可 */
@@ -1290,18 +935,5 @@ export default {
 .form-select-popper .option-remove[disabled] {
     opacity: .5;
     cursor: not-allowed;
-}
-
-.rename-input /deep/ .el-input--small .el-input__inner {
-    height: 40px;
-    line-height: 32px;
-    font-size: 15px;
-    padding: 0 12px;
-    border-radius: 6px;
-}
-
-/* 占位符字体也同步放大 */
-.rename-input ::v-deep .el-input__inner::placeholder {
-    font-size: 15px;
 }
 </style>

@@ -57,7 +57,7 @@ export function searchStudent(data, page) {
 // 获取学生简历
 export function getResume() {
 	return request({
-		url: '/resume/getResume/',
+		url: JOB_URL+'/resume/getResume/',
 		method: 'get'
 	})
 }
