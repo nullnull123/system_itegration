@@ -1,72 +1,57 @@
 <template>
   <div calss="all">
     <div class="playVideo">
-      <!-- <p>{{this.$store.state.curVideo.fileUrl}}</p> -->
-      <!-- <img src="../assets/quickKey.jpg" alt  class="quickey"/> -->
       <div class="video-container">
-        <!-- 上传视频按钮 -->
-        <!-- <div class="video-uploader">
-          <h2>视频上传</h2>
-          <input type="file" ref="fileInput" @change="handleFileSelect" accept="video/*" />
-          <div v-if="selectedFile">
-            <p>已选择文件: {{ selectedFile.name }}</p>
-            <input v-model="newFilename" placeholder="请输入新文件名" />
-            <div class="container1">   
-              <button @click="uploadVideo" :disabled="uploading">
-              {{ uploading ? '上传中...' : '上传视频' }}
-              </button>
+        <div class="video-display">  
+          <h2 class="display-title">当前播放视频</h2>  
+          <div class="video-name-container">  
+            <div class="video-name-scroll">  
+              {{ video_name }}  
+            </div>  
+          </div>  
+        </div>
+        <div class="video-uploader">
+          <!-- 弹窗 -->
+          <div v-if="showDialog" class="modal-overlay">
+            <div class="upload-modal">
+              <div class="modal-header">
+                <h3>上传视频</h3>
+                <button class="close-btn" @click="closeDialog">×</button>
+              </div>
+              
+              <div class="modal-body">
+                <!-- 隐藏的文件选择控件 -->
+                <input 
+                  type="file" 
+                  ref="fileInput"
+                  @change="handleFileSelect" 
+                  accept="video/*" 
+                  class="hidden-input"
+                />
+                
+                <div v-if="selectedFile">
+                  <p>已选择文件: {{ selectedFile.name }}</p>
+                  <input v-model="newFilename" placeholder="请输入新文件名" />
+                </div>
+                
+                <div v-if="message" :class="['message', messageType]">
+                  {{ message }}
+                </div>
+              </div>
+              
+              <div class="modal-footer">
+                <button @click="triggerFileInput" class="btn-select">选择文件</button>
+                <button 
+                  @click="uploadVideo" 
+                  :disabled="uploading || !selectedFile"
+                  class="btn-upload"
+                >
+                  {{ uploading ? '上传中...' : '开始上传' }}
+                </button>
+              </div>
             </div>
           </div>
-          <div v-if="message" :class="['message', messageType]">
-            {{ message }}
-          </div>
-        </div> -->
-        <div class="video-uploader">
-    <button class="upload-btn" @click="openUploadDialog">
-      <span class="icon-upload iconfont"></span> 上传视频
-    </button>
- 
-    <!-- 弹窗 -->
-    <div v-if="showDialog" class="modal-overlay">
-      <div class="upload-modal">
-        <div class="modal-header">
-          <h3>上传视频</h3>
-          <button class="close-btn" @click="closeDialog">×</button>
         </div>
-        
-        <div class="modal-body">
-          <!-- 隐藏的文件选择控件 -->
-          <input 
-            type="file" 
-            ref="fileInput"
-            @change="handleFileSelect" 
-            accept="video/*" 
-            class="hidden-input"
-          />
-          
-          <div v-if="selectedFile">
-            <p>已选择文件: {{ selectedFile.name }}</p>
-            <input v-model="newFilename" placeholder="请输入新文件名" />
-          </div>
-          
-          <div v-if="message" :class="['message', messageType]">
-            {{ message }}
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          <button @click="triggerFileInput" class="btn-select">选择文件</button>
-          <button 
-            @click="uploadVideo" 
-            :disabled="uploading || !selectedFile"
-            class="btn-upload"
-          >
-            {{ uploading ? '上传中...' : '开始上传' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
         <div class="video-selector"> 
           <!-- Element UI Dialog 弹窗 -->
           <el-dialog
@@ -115,25 +100,30 @@
             </span>
           </el-dialog>
         </div>
+        <div class="container1">  
+          <button type="primary" class="upload-btn" @click="openUploadDialog">
+              上传视频
+          </button>
+        </div> 
         <!-- 选择视频按钮 -->
-            <div class="container1">  
-              <button type="primary" @click="fetchAndShowDialog" :loading="isFetching">选择视频</button>  
-            </div> 
+        <div class="container1">  
+          <button type="primary" class="upload-btn" @click="fetchAndShowDialog" :loading="isFetching">选择视频</button>  
+        </div> 
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="showGuide" class="trigger-button">
+          <button  type="primary" @click="showGuide" class="upload-btn">
             快捷按键
           </button>
         </div>
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="backTostart" class="trigger-button">
+          <button  type="primary" @click="backTostart" class="upload-btn">
             跳到开始
           </button>
         </div>
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="backToend" class="trigger-button">
+          <button  type="primary" @click="backToend" class="upload-btn">
             跳到末尾
           </button>
         </div>
@@ -291,10 +281,10 @@
         </span>
       </el-dialog> -->
       <el-dialog :title="spliceMsg" :visible.sync="dialogVisible" width="600" append-to-body>
-        <span>选择存放文件夹</span>
+        <!-- <span>选择存放文件夹</span>
         <div class="wenjianBox" style="height:160px;overflow:auto;">
           <el-tree :data="wenjianList" accordion @node-click="handleNodeClick"></el-tree>
-        </div>
+        </div> -->
         <el-table :data="cutCoverList" style="width: 100%">
           <el-table-column label="名称" align="center" show-overflow-tooltip prop="text"></el-table-column>
           <el-table-column label="开始时间" align="center" show-overflow-tooltip prop="startTime"></el-table-column>
@@ -323,11 +313,6 @@ import {VC_URL} from '../api/request.js';
 export default {
   data() {
     return {
-      selectedFile: null,
-      newFilename: '',
-      uploading: false,
-      message: '',
-      messageType: '' ,// 'success' or 'error'
       mode:true,
       video_name:'',
 
@@ -409,7 +394,7 @@ export default {
       mainImgUrl: "../assets/demo.jpg", //底部封面图
       mainFlag: false, //是否选择了视频
       numberFlag: "00", //00 拆分  01合并
-      spliceMsg: "拆分提交",
+      spliceMsg: "提交视频",
       countNumber: 1,
       firstCutVideo:{},//页面拆分相关数据
       blueBgFlag:false,
@@ -546,7 +531,7 @@ export default {
         this.selectedFile = file;
         // 默认文件名
         if (!this.newFilename) {
-          this.newFilename = file.name;
+          this.newFilename = file.name.replace(/\.[^/.]+$/, ""); // 移除扩展名
         }
       } else {
         this.message = '请选择有效的视频文件';
@@ -565,17 +550,42 @@ export default {
       this.uploading = true;
       this.message = '上传中...';
       this.messageType = 'info';
+
+      const formData = new FormData();
+      formData.append('file', this.selectedFile);
+      formData.append('filename', this.newFilename.trim());
       
       try {
         // 这里应该是实际的上传逻辑
-        await this.uploadVideos();
-        
-        
-        this.message = '视频上传成功！';
+        const response = await request.post(VC_URL + '/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (response.data.success) {
+          this.showMessage(response.data.message, 'success');
+          // 重置表单
+          this.selectedFile = null;
+          this.newFilename = '';
+          this.$refs.fileInput.value = '';
+        } else {
+            this.showMessage(response.data.message || '上传失败', 'error');
+            this.$confirm(`该命名视频已存在，确定覆盖原视频 "${this.newFilename.trim()}" 吗?`, '确认选择', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              this.VV_dialogVisible = false; // 确认后关闭弹窗
+              this.cover_video(true)
+            }).catch(() => {
+              // 用户取消选择
+              console.log('用户取消选择');
+              this.cover_video(false)
+            });
+        }
         this.messageType = 'success';
         this.uploading = false;
-        
-        this.closeDialog()
       } catch (error) {
         this.message = `上传失败: ${error.message || '请重试'}`;
         this.messageType = 'error';
@@ -621,76 +631,6 @@ export default {
       var s = time.split(":")[2];
       var ms = time.split(".")[1];
       return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s) + "." + ms;
-    },
-    // 处理上传逻辑
-    handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (file && file.type.startsWith('video/')) {
-        this.selectedFile = file;
-        this.message = '';
-        this.messageType = '';
-        // 默认新文件名可以设为原文件名（不含扩展名）
-        const originalName = file.name.replace(/\.[^/.]+$/, ""); // 移除扩展名
-        this.newFilename = originalName;
-      } else {
-        this.selectedFile = null;
-        this.showMessage('请选择一个有效的视频文件', 'error');
-        this.$refs.fileInput.value = ''; // 清空文件输入框
-      }
-    },
-    async uploadVideos() {
-      if (!this.selectedFile) {
-        this.showMessage('请先选择一个视频文件', 'error');
-        return;
-      }
-
-      if (!this.newFilename.trim()) {
-        this.showMessage('请输入视频名称', 'error');
-        return;
-      }
-
-      this.uploading = true;
-      this.message = '';
-      this.messageType = '';
-
-      const formData = new FormData();
-      formData.append('file', this.selectedFile);
-      formData.append('filename', this.newFilename.trim());
-
-      try {
-        const response = await request.post(VC_URL + '/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-        if (response.data.success) {
-          this.showMessage(response.data.message, 'success');
-          // 重置表单
-          this.selectedFile = null;
-          this.newFilename = '';
-          this.$refs.fileInput.value = '';
-        } else {
-            this.showMessage(response.data.message || '上传失败', 'error');
-            this.$confirm(`该命名视频已存在，确定覆盖原视频 "${this.newFilename.trim()}" 吗?`, '确认选择', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              this.VV_dialogVisible = false; // 确认后关闭弹窗
-              this.cover_video(true)
-            }).catch(() => {
-              // 用户取消选择
-              console.log('用户取消选择');
-              this.cover_video(false)
-            });
-        }
-      } catch (error) {
-        console.error('上传请求失败:', error);
-        this.showMessage('网络错误或服务器无响应', 'error');
-      } finally {
-        this.uploading = false;
-      }
     },
     async cover_video(type){
       try {
@@ -2501,6 +2441,70 @@ export default {
 </script>
 <style lang="less">
 
+.video-display {  
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);  
+  border-radius: 12px;  
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);  
+  padding: 10px;  
+  width: 200px;  
+  max-width: 100%;  
+  margin: 40px auto;  
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;  
+  // background-color: #eee9e9;
+  // border: 2px solid #409eff;
+}  
+  
+.display-title {  
+  color: #2c3e50;  
+  font-size: 1.4rem;  
+  font-weight: 600;  
+  margin-bottom: 8px;  
+  display: flex;  
+  align-items: center;  
+}  
+  
+.display-title::before {  
+  content: "🎬";  
+  margin-right: 10px;  
+}  
+  
+.video-name-container {  
+  background: white;  
+  border-radius: 8px;  
+  padding: 16px;  
+  border-left: 4px solid #3498db;  
+  margin: 0;  
+  min-height: 2.5rem;  
+  overflow: hidden; /* 关键：隐藏超出部分 */  
+  position: relative;  
+}  
+  
+.video-name-scroll {  
+  display: inline-block;  
+  white-space: nowrap;  
+  font-size: 1.2rem;  
+  color: #34495e;  
+  padding-right: 20px; /* 留出滚动空间 */  
+  animation: scrollText 5s linear infinite;  
+  position: relative;  
+  left: 0%; /* 从右侧开始 */  
+  width: max-content;  
+}  
+  
+@keyframes scrollText {  
+  0% {  
+    transform: translateX(0);  
+  }  
+  100% {  
+    transform: translateX(-100%);  
+  }  
+}  
+  
+/* 当文本不够长时禁用滚动 */  
+.video-name-container:not(:hover) .video-name-scroll {  
+  animation-play-state: paused;  
+}  
+
 .playVideo{
     display: flex;
     // .quickey{
@@ -2522,35 +2526,11 @@ export default {
 }
 
 .video-container {
-  gap: 16px;
-  padding: 20px;
+  // gap: 16px;
+  padding-left: 50px;
+  // background-color: #eee9e9;
+  // border: 2px solid #409eff;
 }
- 
-// .video-uploader {
-//   width: 300px;          /* 固定宽度 */
-//   height: 300px;         /* 固定高度 */
-//   overflow: auto;        /* 自动显示滚动条 */
-//   padding: 20px;
-//   box-sizing: border-box; /* 包含内边距在尺寸内 */
-//   border: 1px solid #ddd;
-//   border-radius: 8px;
-//   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-// }
- 
-// /* 优化滚动条样式（现代浏览器） */
-// .video-uploader::-webkit-scrollbar {
-//   width: 8px;
-// }
- 
-// .video-uploader::-webkit-scrollbar-track {
-//   background: #f1f1f1;
-//   border-radius: 4px;
-// }
- 
-// .video-uploader::-webkit-scrollbar-thumb {
-//   background: #c1c1c1;
-//   border-radius: 4px;
-// }
 
 .upload-btn {
   padding: 12px 24px;
@@ -2742,7 +2722,7 @@ button:disabled {
   display: flex;  
   justify-content: center;  
   align-items: center;   
-  padding: 15px 0px;
+  padding: 10px 0px;
   // background-color: #eee9e9;
   // border: 2px solid #409eff;
 } 
@@ -2762,20 +2742,6 @@ button:disabled {
   overflow: auto;
   background-color: rgba(0,0,0,0.4);
 }
-// .video-play {
-//   width: 1500px;       /* 固定宽度 */
-//   height: 750px;      /* 固定高度 */
-//   position: relative; /* 为视频绝对定位提供基准 */
-//   border: 1px solid #000000;
-// }
- 
-// .video-play video {
-//   position: absolute; /* 视频绝对定位填满容器 */
-//   top: 0;
-//   left: 0;
-//   width: 100%;
-//   height: 100%;
-// }
 
 .video-play {
   position: relative; /* 为自定义控件定位做准备 */
@@ -2787,6 +2753,8 @@ button:disabled {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* 立体阴影 */
   background: #000; /* 默认背景色（视频加载前） */
   aspect-ratio: 16/9; /* 保持16:9比例（可选） */
+  // background-color: #eee9e9;
+  // border: 2px solid #409eff;
 }
  
 .video-play video {
