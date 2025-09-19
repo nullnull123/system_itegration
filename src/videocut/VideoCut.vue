@@ -594,7 +594,9 @@ export default {
     },
     handleVideoEnded() {
       this.stop();
+      this.backTostart();
       this.simulateRealDoubleClick();
+      console.log("视频播放完,已自动跳到视频开始")
     },
 
     simulateRealDoubleClick() {
@@ -1781,7 +1783,7 @@ export default {
       this.showCanvas();
       this.imgWidth = (this.videoLong / this.number) * 100 + "px";
       this.stop();
-      this.backTostart();
+      this.simulateRealDoubleClick();
     },
     // 获取总秒树
     getCountS(time) {
