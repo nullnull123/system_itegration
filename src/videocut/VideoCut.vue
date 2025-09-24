@@ -611,8 +611,6 @@ export default {
   
         // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
         Object.defineProperty(event, "offsetX", { value: 20 });
-        Object.defineProperty(event, "offsetY", { value: 20 });
-  
         // 触发事件
         this.canvas.dispatchEvent(event);
       }
@@ -920,8 +918,8 @@ export default {
 
       // 边界检查（根据容器和 blueBg 的实际宽度）
       const maxLeft = pickeddeng.scrollWidth - blueBg.offsetWidth;
-      if (finleft > maxLeft) finleft = maxLeft;
-      if (finleft < 0) finleft = 0; // 从容器左侧开始限制
+      if (finleft > maxLeft) {finleft = maxLeft;}
+      if (finleft < 0) {finleft = 0;} // 从容器左侧开始限制
 
       // 直接更新位置（去掉不必要的计算）
       blueBg.style.left = finleft + "px";
@@ -1510,12 +1508,28 @@ export default {
       this.currentRunMsg = "run";
       this.running();
     },
-    running() {
-      // clearInterval(this.clickIn);
-    //   if (!this.mainFlag) {
-    //     this.$message.error("您还没有选择视频~");
-    //     return;
-    //   }
+    async running() {
+
+      const pickeddeng = document.getElementById("pickeddeng");
+      const element = document.querySelector('.turnDowm');
+      const rect = element.getBoundingClientRect();
+      console.log(`元素位置：左${rect.left}px, 宽${rect.width}px`);
+      if (this.canvas) {
+        // 创建 MouseEvent
+        const event = new MouseEvent("dblclick", {
+          bubbles: true,
+          cancelable: true,
+          clientX: 0, // 模拟点击位置（需根据实际 canvas 位置调整）
+          clientY: 0
+        });
+  
+        // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
+        Object.defineProperty(event, "offsetX", { value: rect.left+2.5 - pickeddeng.lef});
+  
+        // 触发事件
+        await this.canvas.dispatchEvent(event);
+      }
+
       this.bofangFlag = false;
       this.Event.$emit("paly", true); //播放视频
       if (this.currentRunMsg == "clickIn") {
@@ -1530,12 +1544,12 @@ export default {
       }
       const timeMove = document.getElementsByClassName("blueBg")[0];
       // var target = this.target;
+      console.log("this.target",this.target)
       timeMove.style.left = this.target + "px";
-
+      console.log("timeMove",timeMove)
       this.timeId = setInterval(() => {
-        this.moveLeft = window.getComputedStyle(timeMove).left;
-        // console.log(this.moveLeft);
-        this.timeMoveNumber = parseInt(parseInt(this.moveLeft)/1600)
+        this.moveLeft = parseFloat(getComputedStyle(timeMove).left);
+        this.timeMoveNumber = Math.floor(this.moveLeft / 1600);
         if (parseFloat(this.moveLeft) / 1400 > this.countNumber) {
           this.countNumber = parseInt(parseFloat(this.moveLeft) / 1400) + 1;
         }
@@ -1556,6 +1570,7 @@ export default {
               100
           ).toFixed(2)
         );
+        console.log("播放后时间",this.timeCurrentLeft)
       }, 20);
       var pxecachS = this.number / 100; // 对应的每px所需要的秒
       // console.log(parseInt(target), parseInt(this.moveLeft), pxecachS);
@@ -1810,6 +1825,9 @@ export default {
           return;
         }
         that.stop();
+        const element = document.querySelector('.turnDowm');
+        const rect = element.getBoundingClientRect();
+        console.log(`元素位置：左${rect.left}px, 宽${rect.width}px`);
         that.clickCurrentTime = e.offsetX;
         console.log("e.offsetX",e.offsetX)
 

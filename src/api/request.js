@@ -76,7 +76,7 @@ service.interceptors.response.use(
 export const JOB_URL = '/JobRec/api'
 export const KL_URL = '/Graphapps' 
 export const AC_URL = '/ai_class_workshop' 
-export const VC_URL = '/videocut' 
+export const VC_URL = '/videocut'
 
 // 导出axios实例
 export default service
