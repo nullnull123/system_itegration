@@ -57,11 +57,11 @@ export default {
             collapse: false,
             items: this.$global.isStu ?
             [
-                {
-                    icon: 'el-icon-lx-home',
-                    index: '/dashboard',
-                    title: '系统首页'
-                },
+                // {
+                //     icon: 'el-icon-lx-home',
+                //     index: '/dashboard',
+                //     title: '系统首页'
+                // },
                 {
                         icon: 'el-icon-headset',
                         index: '3',
@@ -74,11 +74,11 @@ export default {
                             {
                                 index: '/TextToSpeechs',
                                 title: '批量文本转语音'
-                            },
-                            {
-                                index: '/interaction',
-                                title: '留言互动'
                             }
+                            // {
+                            //     index: '/interaction',
+                            //     title: '留言互动'
+                            // }
                         ]
                     },
                 {
@@ -96,21 +96,21 @@ export default {
                         }
                     ]
                 },
-                {
-                    icon: 'el-icon-notebook-2',
-                    index: '7',
-                    title: '知识点分析',
-                    subs: [
-                        {
-                            index: '/KnowledgeRetrieval',
-                            title: '知识点检索'
-                        },
-                        {
-                            index: '/OutlineMatching',
-                            title: '大纲匹配'
-                        }
-                    ]
-                },
+                // {
+                //     icon: 'el-icon-notebook-2',
+                //     index: '7',
+                //     title: '知识点分析',
+                //     subs: [
+                //         {
+                //             index: '/KnowledgeRetrieval',
+                //             title: '知识点检索'
+                //         },
+                //         {
+                //             index: '/OutlineMatching',
+                //             title: '大纲匹配'
+                //         }
+                //     ]
+                // },
                 {
                     icon: 'el-icon-school',
                     index: '8',
@@ -130,25 +130,25 @@ export default {
                         }
                     ]
                 },
-                {
-                    icon: 'el-icon-monitor',
-                    index: '9',
-                    title: '智能督导',
-                    subs: [
-                        {
-                            index: '/car',
-                            title: '课堂到课率和抬头率'
-                        },
-                        {
-                            index: '/icdc',
-                            title: '智能课堂数据采集'
-                        },
-                        {
-                            index: '/macs',
-                            title: '多智能体协同督导'
-                        }
-                    ]
-                },
+                // {
+                //     icon: 'el-icon-monitor',
+                //     index: '9',
+                //     title: '智能督导',
+                //     subs: [
+                //         {
+                //             index: '/car',
+                //             title: '课堂到课率和抬头率'
+                //         },
+                //         {
+                //             index: '/icdc',
+                //             title: '智能课堂数据采集'
+                //         },
+                //         {
+                //             index: '/macs',
+                //             title: '多智能体协同督导'
+                //         }
+                //     ]
+                // },
                 {
                     icon: 'el-icon-share',
                     index: '10',
@@ -193,16 +193,16 @@ export default {
                         }
                     ]
                 },
-                {
-                    icon: 'el-icon-lx-redpacket_fill',
-                    index: '/donate',
-                    title: '支持作者'
-                },
-                {
-                    icon: 'el-icon-s-promotion',
-                    index: '/test1',
-                    title: '接入测试'
-                }
+                // {
+                //     icon: 'el-icon-lx-redpacket_fill',
+                //     index: '/donate',
+                //     title: '支持作者'
+                // },
+                // {
+                //     icon: 'el-icon-s-promotion',
+                //     index: '/test1',
+                //     title: '接入测试'
+                // }
             ]:
             [{
                     icon: 'el-icon-lx-home',

@@ -286,7 +286,7 @@
 export default {
   data: function() {
     return {
-      baseUrl: 'http://10.104.73.235:8000/Graphapps',  // 固定Django服务器地址
+      baseUrl: 'api/Graphapps',  // 固定Django服务器地址
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,

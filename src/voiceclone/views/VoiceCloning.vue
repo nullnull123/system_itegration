@@ -195,7 +195,7 @@
 </template>
 
 <script>
-const MEDIA_BASE = process.env.VUE_APP_BASE_API + '/media';   // 统一的媒体前缀
+const MEDIA_BASE =  '/api/media';   // 统一的媒体前缀
 import {
     getLanguageList,
     getVoiceListExt,

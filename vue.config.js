@@ -9,6 +9,11 @@ module.exports = {
       '/static': {
         target: 'http://127.0.0.1:9988',
         changeOrigin: true
+      },
+      '/api': {
+        target: 'http://10.104.73.235:8000', 
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' }
       }
 
       /* 你之前若有其它接口需要代理，也可以继续写
@@ -17,6 +22,7 @@ module.exports = {
         changeOrigin: true
       }
       */
-    }
+    },
+    disableHostCheck: true
   }
 }

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 /* ========= 基础路径 ========= */
-const BASE_URL = process.env.VUE_APP_BASE_API + '/voiceclone/'
+const BASE_URL =  '/api/voiceclone/'
 
 /* ========= 模型与配置 ========= */
 export const getModelStatus = () => axios.get(`${BASE_URL}isstart/`)

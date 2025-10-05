@@ -846,7 +846,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'http://10.104.73.235:8000/Graphapps/',
+      baseUrl:'api/Graphapps/',
       queryText: '',
       presetQueries: [
         { label: '显示整个知识图谱', query: '显示整个知识图谱' },

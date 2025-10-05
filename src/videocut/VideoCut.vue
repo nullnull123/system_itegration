@@ -560,7 +560,8 @@ export default {
         const response = await request.post(VC_URL + '/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
-          }
+          },
+          timeout: 500000
         });
 
         if (response.data.success) {
@@ -766,7 +767,7 @@ export default {
         // *** 关键：构造正确的后端视频访问 URL ***
         // 请根据你的实际后端地址和端口修改
         this.video_name = videoName
-        const baseUrl = process.env.VUE_APP_BASE_API + VC_URL; // <--- 请检查这里
+        const baseUrl = 'api' + VC_URL; // <--- 请检查这里
         if(this.mode){
           this.videoSrc = `${baseUrl}/original_videos/${encodeURIComponent(videoName)}`;
         }
@@ -1355,9 +1356,26 @@ export default {
       this.subPlayValue = value;
       this.Event.$emit("subSectionPlay", value);
       this.topMoveBox.style.left = parseFloat(value.left) - 40 + "px";
-      this.subrunning(parseFloat(value.left) + parseFloat(value.width));
+      this.subplay(parseFloat(value.left) + parseFloat(value.width));
+      // this.subrunning(parseFloat(value.left) + parseFloat(value.width));
     },
-
+    subplay(value){
+      this.bofangFlag = false;
+      this.Event.$emit("paly", true); //播放视频
+      const timeMove = document.getElementsByClassName("blueBg")[0];
+      this.timeId = setInterval(() => {
+        this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
+        const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
+        timeMove.style.left = `${newLeft-40}px`;
+        console.log('value',value);
+        console.log('timeMove.style.left',timeMove.style.left)
+        console.log('newLeft',newLeft)
+        if (parseFloat(newLeft)> value) {
+          clearInterval(this.subTimeId);
+          this.stop();
+        }
+      }, 50);
+    },
     // 黄色盒子宽高
 
     // 鼠标按下
@@ -1508,28 +1526,77 @@ export default {
       this.currentRunMsg = "run";
       this.running();
     },
+    // async running() {
+
+    //   const pickeddeng = document.getElementById("pickeddeng");
+    //   const element = document.querySelector('.turnDowm');
+    //   const rect = element.getBoundingClientRect();
+    //   console.log(`元素位置：左${rect.left}px, 宽${rect.width}px`);
+    //   if (this.canvas) {
+    //     // 创建 MouseEvent
+    //     const event = new MouseEvent("dblclick", {
+    //       bubbles: true,
+    //       cancelable: true,
+    //       clientX: 0, // 模拟点击位置（需根据实际 canvas 位置调整）
+    //       clientY: 0
+    //     });
+  
+    //     // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
+    //     Object.defineProperty(event, "offsetX", { value: rect.left+2.5 - pickeddeng.lef});
+  
+    //     // 触发事件
+    //     await this.canvas.dispatchEvent(event);
+    //   }
+
+    //   this.bofangFlag = false;
+    //   this.Event.$emit("paly", true); //播放视频
+    //   if (this.currentRunMsg == "clickIn") {
+    //     this.clickIninterval();
+    //     return;
+    //   } else if (this.currentRunMsg == "subrunning") {
+    //     this.subrunning(
+    //       parseFloat(this.subPlayValue.left) +
+    //         parseFloat(this.subPlayValue.width)
+    //     );
+    //     return;
+    //   }
+    //   const timeMove = document.getElementsByClassName("blueBg")[0];
+    //   // var target = this.target;
+    //   console.log("this.target",this.target)
+    //   timeMove.style.left = this.target + "px";
+    //   console.log("timeMove",timeMove)
+    //   this.timeId = setInterval(() => {
+    //     this.moveLeft = parseFloat(getComputedStyle(timeMove).left);
+    //     this.timeMoveNumber = Math.floor(this.moveLeft / 1600);
+    //     if (parseFloat(this.moveLeft) / 1400 > this.countNumber) {
+    //       this.countNumber = parseInt(parseFloat(this.moveLeft) / 1400) + 1;
+    //     }
+    //     if (parseFloat(this.moveLeft) + 40 > parseFloat(this.imgWidth)) {
+    //       clearInterval(this.timeId);
+    //       timeMove.style.left = this.moveLeft;
+    //       this.stop();
+    //       timeMove.style.transition = "none";
+    //     }
+    //     // if (parseInt(this.moveLeft) >= this.target) {
+    //     //   // this.scrollInterval();
+    //     //   // this.target+=1400;
+    //     //   // this.scrollFlag = true;
+    //     // }
+    //     this.timeCurrentLeft = this.setDetailTime(
+    //       parseFloat(
+    //         Math.floor((this.number / 100) * (timeMove.offsetLeft + 40) * 100) /
+    //           100
+    //       ).toFixed(2)
+    //     );
+    //   }, 20);
+    //   var pxecachS = this.number / 100; // 对应的每px所需要的秒
+    //   // console.log(parseInt(target), parseInt(this.moveLeft), pxecachS);
+    //   var timeCount =
+    //     (parseInt(this.target) - parseInt(this.moveLeft)) * pxecachS;
+    //   // console.log(timeCount);
+    //   timeMove.style.transition = `all ${timeCount}s linear`;
+    // },
     async running() {
-
-      const pickeddeng = document.getElementById("pickeddeng");
-      const element = document.querySelector('.turnDowm');
-      const rect = element.getBoundingClientRect();
-      console.log(`元素位置：左${rect.left}px, 宽${rect.width}px`);
-      if (this.canvas) {
-        // 创建 MouseEvent
-        const event = new MouseEvent("dblclick", {
-          bubbles: true,
-          cancelable: true,
-          clientX: 0, // 模拟点击位置（需根据实际 canvas 位置调整）
-          clientY: 0
-        });
-  
-        // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
-        Object.defineProperty(event, "offsetX", { value: rect.left+2.5 - pickeddeng.lef});
-  
-        // 触发事件
-        await this.canvas.dispatchEvent(event);
-      }
-
       this.bofangFlag = false;
       this.Event.$emit("paly", true); //播放视频
       if (this.currentRunMsg == "clickIn") {
@@ -1543,42 +1610,32 @@ export default {
         return;
       }
       const timeMove = document.getElementsByClassName("blueBg")[0];
-      // var target = this.target;
-      console.log("this.target",this.target)
-      timeMove.style.left = this.target + "px";
-      console.log("timeMove",timeMove)
+
       this.timeId = setInterval(() => {
-        this.moveLeft = parseFloat(getComputedStyle(timeMove).left);
-        this.timeMoveNumber = Math.floor(this.moveLeft / 1600);
-        if (parseFloat(this.moveLeft) / 1400 > this.countNumber) {
-          this.countNumber = parseInt(parseFloat(this.moveLeft) / 1400) + 1;
-        }
-        if (parseFloat(this.moveLeft) + 40 > parseFloat(this.imgWidth)) {
-          clearInterval(this.timeId);
-          timeMove.style.left = this.moveLeft;
-          this.stop();
-          timeMove.style.transition = "none";
-        }
-        // if (parseInt(this.moveLeft) >= this.target) {
-        //   // this.scrollInterval();
-        //   // this.target+=1400;
-        //   // this.scrollFlag = true;
-        // }
-        this.timeCurrentLeft = this.setDetailTime(
-          parseFloat(
-            Math.floor((this.number / 100) * (timeMove.offsetLeft + 40) * 100) /
-              100
-          ).toFixed(2)
-        );
-        console.log("播放后时间",this.timeCurrentLeft)
-      }, 20);
-      var pxecachS = this.number / 100; // 对应的每px所需要的秒
-      // console.log(parseInt(target), parseInt(this.moveLeft), pxecachS);
-      var timeCount =
-        (parseInt(this.target) - parseInt(this.moveLeft)) * pxecachS;
-      // console.log(timeCount);
-      timeMove.style.transition = `all ${timeCount}s linear`;
+        this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
+        const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
+        timeMove.style.left = `${newLeft-40}px`;
+      }, 50);
     },
+      // 时间格式化
+    formatTime(seconds) {
+          // 处理无效输入
+          if (isNaN(seconds) || seconds < 0) return '00:00:00.00';
+          
+          // 分解时间单位
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const secondsInt = Math.floor(seconds % 60);
+          const milliseconds = Math.round((seconds - Math.floor(seconds)) * 100);
+          
+          // 格式化为两位数
+          const formatNumber = num => num.toString().padStart(2, '0');
+          
+          // 特殊处理毫秒部分
+          const formattedMs = formatNumber(milliseconds).slice(0, 2);
+          
+          return `${formatNumber(hours)}:${formatNumber(minutes)}:${formatNumber(secondsInt)}.${formattedMs}`;
+        },
     subrunning(target) {
       this.stop();
       this.currentRunMsg = "subrunning";
