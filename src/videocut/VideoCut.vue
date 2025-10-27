@@ -1498,23 +1498,10 @@ export default {
     },
     // 重新设置target
     resetTarget($event) {
-      // clearInterval(this.timeId);
-      // clearInterval(this.clickIn);
-      // this.target += 1400;
-      // var scrollpd = document.getElementById("pickeddeng");
-      // this.scrollId = setInterval(() => {
-      //   console.log("scroll");
-      //   scrollpd.scrollLeft = parseFloat(this.moveLeft) - 1400;
-      // }, 20);
-      // this.clickIninterval();
     },
-    // pickeddeng
 
     // 播放
     play() {
-      // if (this.scrollFlag) {
-      //   this.scrollInterval();
-      // }
       if (this.currentRunMsg == "clickIn") {
         this.running();
         return;
@@ -1526,76 +1513,6 @@ export default {
       this.currentRunMsg = "run";
       this.running();
     },
-    // async running() {
-
-    //   const pickeddeng = document.getElementById("pickeddeng");
-    //   const element = document.querySelector('.turnDowm');
-    //   const rect = element.getBoundingClientRect();
-    //   console.log(`元素位置：左${rect.left}px, 宽${rect.width}px`);
-    //   if (this.canvas) {
-    //     // 创建 MouseEvent
-    //     const event = new MouseEvent("dblclick", {
-    //       bubbles: true,
-    //       cancelable: true,
-    //       clientX: 0, // 模拟点击位置（需根据实际 canvas 位置调整）
-    //       clientY: 0
-    //     });
-  
-    //     // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
-    //     Object.defineProperty(event, "offsetX", { value: rect.left+2.5 - pickeddeng.lef});
-  
-    //     // 触发事件
-    //     await this.canvas.dispatchEvent(event);
-    //   }
-
-    //   this.bofangFlag = false;
-    //   this.Event.$emit("paly", true); //播放视频
-    //   if (this.currentRunMsg == "clickIn") {
-    //     this.clickIninterval();
-    //     return;
-    //   } else if (this.currentRunMsg == "subrunning") {
-    //     this.subrunning(
-    //       parseFloat(this.subPlayValue.left) +
-    //         parseFloat(this.subPlayValue.width)
-    //     );
-    //     return;
-    //   }
-    //   const timeMove = document.getElementsByClassName("blueBg")[0];
-    //   // var target = this.target;
-    //   console.log("this.target",this.target)
-    //   timeMove.style.left = this.target + "px";
-    //   console.log("timeMove",timeMove)
-    //   this.timeId = setInterval(() => {
-    //     this.moveLeft = parseFloat(getComputedStyle(timeMove).left);
-    //     this.timeMoveNumber = Math.floor(this.moveLeft / 1600);
-    //     if (parseFloat(this.moveLeft) / 1400 > this.countNumber) {
-    //       this.countNumber = parseInt(parseFloat(this.moveLeft) / 1400) + 1;
-    //     }
-    //     if (parseFloat(this.moveLeft) + 40 > parseFloat(this.imgWidth)) {
-    //       clearInterval(this.timeId);
-    //       timeMove.style.left = this.moveLeft;
-    //       this.stop();
-    //       timeMove.style.transition = "none";
-    //     }
-    //     // if (parseInt(this.moveLeft) >= this.target) {
-    //     //   // this.scrollInterval();
-    //     //   // this.target+=1400;
-    //     //   // this.scrollFlag = true;
-    //     // }
-    //     this.timeCurrentLeft = this.setDetailTime(
-    //       parseFloat(
-    //         Math.floor((this.number / 100) * (timeMove.offsetLeft + 40) * 100) /
-    //           100
-    //       ).toFixed(2)
-    //     );
-    //   }, 20);
-    //   var pxecachS = this.number / 100; // 对应的每px所需要的秒
-    //   // console.log(parseInt(target), parseInt(this.moveLeft), pxecachS);
-    //   var timeCount =
-    //     (parseInt(this.target) - parseInt(this.moveLeft)) * pxecachS;
-    //   // console.log(timeCount);
-    //   timeMove.style.transition = `all ${timeCount}s linear`;
-    // },
     async running() {
       this.bofangFlag = false;
       this.Event.$emit("paly", true); //播放视频
@@ -1748,15 +1665,19 @@ export default {
       this.currentRunMsg = "clickIn";
       const timeMove = document.getElementsByClassName("blueBg")[0];
       var target = this.target;
+
+      this.timeId = setInterval(() => {
+        this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
+        const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
+        timeMove.style.left = `${newLeft-40}px`;
+      }, 50);
       this.clickIn = setInterval(() => {
-        // console.log("clickIn");
         this.moveLeft = window.getComputedStyle(timeMove).left;
 
         this.timeMoveNumber = parseInt(parseInt(this.moveLeft)/1600)//赋值让底部滚动
         if (parseFloat(this.moveLeft) / 1400 > this.countNumber) {
           this.countNumber = parseInt(parseFloat(this.moveLeft) / 1400) + 1;
         }
-        // console.log(this.moveLeft, this.imgWidth);
         if (parseFloat(this.moveLeft) + 40 >= parseFloat(this.imgWidth)) {
           clearInterval(this.clickIn);
           this.timeMove();
@@ -1774,31 +1695,12 @@ export default {
           current.timeLong = this.getStartEndTime(coverBoxWidth);
         }
 
-        this.timeCurrentLeft = this.setDetailTime(
-          parseFloat(
-            Math.floor((this.number / 100) * (timeMove.offsetLeft + 40) * 100) /
-              100
-          ).toFixed(2)
-        );
-      }, 10);
-      var pxecachS = this.number / 100; // 对应的每px所需要的秒
-      // console.log(parseInt(target), parseInt(this.moveLeft), pxecachS);
-      var timeCount = (parseInt(target) - parseInt(this.moveLeft)) * pxecachS;
-      // console.log(timeCount);
-      timeMove.style.left = target + "px";
-      timeMove.style.transition = `all ${timeCount}s linear`;
+        this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
+        const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
+        timeMove.style.left = `${newLeft-40}px`;
+      }, 50);
+
     },
-    // 滚动计时器
-    // scrollInterval() {
-    //   console.log("scroll1")
-    //   this.scrollFlag = true;
-    //   this.target += 1400;
-    //   var scrollpd = document.getElementById("pickeddeng");
-    //   this.scrollId = setInterval(() => {
-    //     console.log("scroll");
-    //     scrollpd.scrollLeft = parseFloat(this.moveLeft) - 1400;
-    //   }, 20);
-    // },
 
     //改变刻度
     stepChange() {
@@ -2095,17 +1997,7 @@ export default {
         clearInterval(this.clickIn);
         this.currentRunMsg = "run";
         this.running();
-        // this.timeId = setInterval(() => {
-        //   this.moveLeft = window.getComputedStyle(timeMove).left;
-        //   this.timeCurrentLeft = this.setDetailTime(
-        //     parseFloat(
-        //       Math.floor(
-        //         (this.number / 100) * (timeMove.offsetLeft + 40) * 100
-        //       ) / 100
-        //     ).toFixed(2)
-        //   );
-        //   this.coverBoxWidth =parseFloat(this.moveLeft) - parseFloat(this.clickCurrentLeft);
-        // }, 10);
+        this.stop();
       } else if (this.clickmsg == "打入点") {
         // this.bofangFlag = false;
         clearInterval(this.timeId);
@@ -2172,106 +2064,6 @@ export default {
         ).toFixed(2)
       );
     },
-    // 自动拆条的确认
-    // autuEnsure() {
-    //   var timeMove = document.getElementById("blueBg");
-    //   var left = parseFloat(window.getComputedStyle(timeMove).left) + 40;
-    //   if (this.radio == 1) {
-    //     //自定义拆条
-    //     var timeLong = [];
-    //     for (var i = 0; i < this.tableData.length; i++) {
-    //       timeLong.push(parseInt(this.tableData[i].timeLong));
-    //     }
-    //     var setAutoList = [];
-    //     for (var i = 0; i < timeLong.length; i++) {
-    //       var prev = null;
-    //       if (i - 1 >= 0) {
-    //         prev = setAutoList[i - 1];
-    //       } else {
-    //         prev = {
-    //           left: left + "px",
-    //           width: "0",
-    //           clickFlag: true,
-    //           text: "片段" + (i + 1),
-    //           startTime: "00:00:00.00",
-    //           endTime: "00:00:00.00",
-    //           timeLong: "00:00:00.00"
-    //         };
-    //       }
-
-    //       var width = (timeLong[i] / this.number) * 100 + "px";
-    //       var left = parseFloat(prev.left) + parseFloat(prev.width) + "px";
-    //       setAutoList.push({
-    //         left,
-    //         width,
-    //         clickFlag: true,
-    //         text:
-    //           "片段" +
-    //           parseInt(
-    //             parseInt(this.cutCoverList.length) + setAutoList.length + 1
-    //           ),
-    //         startTime: this.getStartEndTime(parseFloat(left)),
-    //         endTime: this.getStartEndTime(parseFloat(left)) + parseFloat(width),
-    //         timeLong: this.getStartEndTime(parseFloat(width))
-    //       });
-    //     }
-    //     console.log(setAutoList);
-    //     for (var i = 0; i < setAutoList.length; i++) {
-    //       this.$set(
-    //         this.cutCoverList,
-    //         this.cutCoverList.length,
-    //         setAutoList[i]
-    //       );
-    //     }
-    //     this.dialogVisibleAuto = false;
-    //   } else {
-    //     // 平均拆条
-    //     // this.imgWidth //下面图片宽度
-    //     var autoWidth = (this.autoNum / this.number) * 100;
-    //     var maxNumber = Math.floor(parseFloat(this.imgWidth) / autoWidth);
-    //     var setAutoList = [];
-    //     for (var i = 0; i < maxNumber; i++) {
-    //       var prev = null;
-    //       if (i - 1 >= 0) {
-    //         prev = setAutoList[i - 1];
-    //       } else {
-    //         console.log(left);
-    //         prev = {
-    //           left: left + "px",
-    //           width: "0px",
-    //           clickFlag: true,
-    //           text: "拆条1",
-    //           startTime: this.getStartEndTime(left),
-    //           endTime: this.getStartEndTime(autoWidth),
-    //           timeLong: this.getStartEndTime(autoWidth)
-    //         };
-    //       }
-
-    //       var left = parseFloat(prev.left) + parseFloat(prev.width) + "px";
-    //       setAutoList.push({
-    //         left: parseFloat(prev.left) + parseFloat(prev.width) + "px",
-    //         width: autoWidth + "px",
-    //         clickFlag: true,
-    //         text: "拆条" + (this.cutCoverList.length + i + 1),
-    //         startTime: this.getStartEndTime(
-    //           parseFloat(prev.left) + parseFloat(prev.width)
-    //         ),
-    //         endTime: this.getStartEndTime(
-    //           parseFloat(prev.left) + parseFloat(prev.width) * 2
-    //         ),
-    //         timeLong: this.getStartEndTime(autoWidth)
-    //       });
-    //     }
-    //     for (var i = 0; i < setAutoList.length; i++) {
-    //       this.$set(
-    //         this.cutCoverList,
-    //         this.cutCoverList.length,
-    //         setAutoList[i]
-    //       );
-    //     }
-    //     this.dialogVisibleAuto = false;
-    //   }
-    // },
     async send(){
 
       const loadingInstance = this.$loading({
@@ -2474,10 +2266,20 @@ export default {
   },
   beforeDestroy() {
     this.pickeddeng.removeEventListener("scroll", this.handleScroll);
+    // this.removerKeydown();
+    if (this.timeId) {
+      clearInterval(this.timeId); // 清除定时器
+    }
+    if (this.subTimeId) {
+      clearInterval(this.subTimeId); // 清除定时器
+    }
+    if (this.clickIn) {
+      clearInterval(this.clickIn); // 清除定时器
+    }
   },
   destroyed() {
     this.removerKeydown();
-    // document.removeEventListener("keydown", this.keyboardEvent);
+    document.removeEventListener("keydown", this.keyboardEvent);
   },
   watch: {
     ov_list:{
@@ -2809,7 +2611,7 @@ button:disabled {
   padding: 20px;
 }
 .modal {
-  display: block;
+  // display: block;
   position: fixed;
   z-index: 1000;
   left: 0;

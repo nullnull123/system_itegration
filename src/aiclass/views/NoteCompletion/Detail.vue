@@ -1,40 +1,69 @@
 <template>
-  <div class="note-completion-detail">
+  <div class="note-detail">
     <h1 class="page-title">笔记详情</h1>
 
-    <!-- 加载成功并有数据时显示详情 -->
+    <!-- 笔记详情 -->
     <el-card class="detail-card" v-if="currentNote && !loading">
       <div class="detail-header">
-        <h2>{{ currentNote.title }} ({{ currentNote.subject }})</h2>
+        <h2>{{ currentNote.title }} ({{ getSubjectLabel(currentNote.subject) }})</h2>
         <div class="header-actions">
-          <!-- 添加 loading 状态到按钮 -->
+          <el-button 
+            v-if="!currentNote.course_display_id" 
+            type="warning" 
+            @click="openCourseDialog"
+          >
+            关联课程
+          </el-button>
           <el-button 
             type="primary" 
-            @click="handleCompleteNote"
+            @click="completeNote" 
             :loading="isCompleting"
           >
             {{ isCompleting ? '补全中...' : '补全笔记' }}
           </el-button>
-          <!-- 添加修改按钮 -->
-          <el-button 
-            type="warning" 
-            @click="startEditing"
-          >
-            修改笔记
-          </el-button>
+          <el-button type="info" @click="openEditDialog">修改笔记</el-button>
         </div>
       </div>
 
       <div class="detail-content">
-        <h3>原始笔记</h3>
-        <div class="original-content" v-html="formattedOriginalContent"></div>
+        <div class="info-section">
+          <h3>基本信息</h3>
+          <ul>
+            <li><strong>显示ID:</strong> {{ currentNote.display_id }}</li>
+            <li><strong>年级:</strong> {{ currentNote.grade || 'N/A' }}</li>
+            <li><strong>课程ID:</strong> {{ currentNote.course_display_id || 'N/A' }}</li>
+          </ul>
+        </div>
 
-        <h3 v-if="currentNote.completed_content">补全笔记</h3>
-        <div class="completed-content" v-html="formattedCompletedContent" v-if="currentNote.completed_content"></div>
+        <div class="content-section">
+          <h3>原始笔记</h3>
+          <div class="original-content">{{ currentNote.original_content }}</div>
+        </div>
 
-        <div v-if="currentNote.completion_notes" class="completion-notes">
+        <div v-if="currentNote.completed_content" class="content-section">
+          <h3>补全笔记</h3>
+          <div class="completed-content" v-html="formatContent(currentNote.completed_content)"></div>
+        </div>
+
+        <div v-if="currentNote.completion_notes" class="content-section">
           <h3>补全说明</h3>
-          <p>{{ currentNote.completion_notes }}</p>
+          <div class="completion-notes">{{ currentNote.completion_notes }}</div>
+        </div>
+
+        <!-- 补全结果区域（保持原逻辑，仅样式统一） -->
+        <div v-if="completionResult" class="content-section result-section">
+          <h3 :class="completionResult.status">{{
+            completionResult.status === 'success' ? '补全结果' :
+            completionResult.status === 'warning' ? '补全警告' : '补全错误'
+          }}</h3>
+          <div class="result-content" :class="completionResult.status">
+            <div v-if="completionResult.status === 'success'" v-html="formatContent(completionResult.data.completed_content)"></div>
+            <p v-else>{{ completionResult.message }}</p>
+          </div>
+          <div class="result-meta" v-if="completionResult.status === 'success'">
+            <p>说明: {{ completionResult.data.completion_notes }}</p>
+            <p>时间: {{ formatDate(completionResult.data.completion_time) }}</p>
+          </div>
         </div>
       </div>
 
@@ -54,52 +83,33 @@
 
     <!-- 错误或无数据状态 -->
     <el-card class="error-card" v-else>
-      <!-- 显示具体的错误信息 -->
       <p v-if="error">{{ error }}</p>
       <p v-else>未找到指定的笔记。</p>
-      <el-button type="primary" @click="retryFetchDetail" icon="el-icon-refresh">重试</el-button>
-      <el-button @click="goToList" icon="el-icon-arrow-left">返回列表</el-button>
+      <div class="error-actions">
+        <el-button type="primary" @click="retryFetch" icon="el-icon-refresh">重试</el-button>
+        <el-button @click="goToList" icon="el-icon-arrow-left">返回列表</el-button>
+      </div>
     </el-card>
 
-    <!-- 补全结果弹窗 -->
-    <el-dialog
-      title="补全后的笔记"
-      :visible.sync="showCompletedDialog"
-      width="80%"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      class="completed-dialog"
-      v-if="completedNote"
-    >
-      <div class="completed-header">
-        <h3>{{ completedNote.title }} ({{ getSubjectLabel(completedNote.subject) }})</h3>
-        <div class="header-actions">
-          <el-button 
-            type="primary" 
-            size="mini"
-            icon="el-icon-document-copy"
-            @click="copyCompletedContent"
-          >复制内容</el-button>
-        </div>
-      </div>
-
-      <div class="completed-content" v-html="formattedCompletedDialogContent"></div>
-
-      <div class="completion-notes" v-if="completedNote.completion_notes">
-        <h4>补全说明</h4>
-        <p>{{ completedNote.completion_notes }}</p>
-      </div>
-
-      <div class="completion-meta">
-        <span>补全时间: {{ formatDate(completedNote.completion_time) }}</span>
-      </div>
-
+    <!-- 关联课程对话框 -->
+    <el-dialog title="关联课程" :visible.sync="showCourseDialog" width="40%">
+      <el-select v-model="selectedCourse" placeholder="选择课程" style="width: 100%">
+        <el-option
+          v-for="course in courses"
+          :key="course.display_id"
+          :label="course.name"
+          :value="course.display_id"
+        >
+          <span>{{ course.name }} <em>ID: {{ course.display_id }}</em></span>
+        </el-option>
+      </el-select>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="closeDialog">关闭</el-button>
+        <el-button @click="showCourseDialog = false">取消</el-button>
+        <el-button type="primary" @click="associateCourse" :loading="associating">确认关联</el-button>
       </span>
     </el-dialog>
 
-    <!-- 编辑笔记弹窗 -->
+    <!-- 编辑对话框 -->
     <el-dialog
       title="编辑笔记"
       :visible.sync="showEditDialog"
@@ -108,97 +118,74 @@
       :close-on-press-escape="false"
       class="edit-dialog"
     >
-      <el-form :model="editForm" label-width="80px">
-        <el-form-item label="笔记标题">
+      <el-form :model="editForm" label-width="100px" :rules="editRules" ref="editForm">
+        <el-form-item label="标题" prop="title">
           <el-input v-model="editForm.title"></el-input>
         </el-form-item>
-        
-        <el-form-item label="学科">
+        <el-form-item label="学科" prop="subject">
           <el-select v-model="editForm.subject" placeholder="请选择学科">
             <el-option
               v-for="subject in subjects"
               :key="subject.value"
               :label="subject.label"
-              :value="subject.value">
-            </el-option>
+              :value="subject.value"
+            ></el-option>
           </el-select>
         </el-form-item>
-        
         <el-form-item label="年级">
           <el-input v-model="editForm.grade" placeholder="例如：九年级"></el-input>
         </el-form-item>
-        
         <el-form-item label="原始内容">
           <el-input
             type="textarea"
             v-model="editForm.original_content"
-            :rows="10"
+            :rows="8"
             placeholder="请输入原始笔记内容"
           ></el-input>
         </el-form-item>
-        
         <el-form-item label="补全内容">
           <el-input
             type="textarea"
             v-model="editForm.completed_content"
-            :rows="15"
-            placeholder="请输入补全后的笔记内容"
+            :rows="12"
+            placeholder="AI补全后的内容将显示在此"
           ></el-input>
         </el-form-item>
-        
         <el-form-item label="补全说明">
           <el-input
             type="textarea"
             v-model="editForm.completion_notes"
             :rows="3"
-            placeholder="请输入补全说明"
+            placeholder="记录AI补全时的注意事项"
           ></el-input>
         </el-form-item>
       </el-form>
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveEditedNote" :loading="saving">保存修改</el-button>
+        <el-button type="primary" @click="saveNote" :loading="saving">保存修改</el-button>
       </span>
     </el-dialog>
-
   </div>
 </template>
 
 <script>
 import { mapState, mapActions } from 'vuex'
-
 export default {
-  name: 'NoteCompletionDetailPage',
+  name: 'NoteDetail',
   data() {
     return {
-      // 1. 修改 data 属性名以反映其内容
-      noteDisplayId: this.$route.params.displayId, // 2. 使用 displayId
-      isCompleting: false, // 用于跟踪笔记补全的生成状态
-      showCompletedDialog: false,
-      showEditDialog: false, // 添加编辑弹窗状态
-      completedNote: null,
-      covering: false,
+      noteId: this.$route.params.displayId,
+      isCompleting: false,
+      showEditDialog: false,
+      showCourseDialog: false,
+      associating: false,
       saving: false,
-      processingStartTime: null,
-      // 编辑表单数据
-      editForm: {
-        display_id: '',
-        title: '',
-        subject: '',
-        grade: '',
-        original_content: '',
-        completed_content: '',
-        completion_notes: '',
-        completion_time: ''
-      }
-    }
-  },
-  computed: {
-    // 3. 从 Vuex 映射状态 
-    ...mapState('noteCompletion', ['currentNote', 'loading', 'error']), 
-    subjects() {
-      return [
+      courses: [],
+      selectedCourse: null,
+      editForm: {},
+      completionResult: null,
+      subjects: [
         { value: 'math', label: '数学' },
         { value: 'chinese', label: '语文' },
         { value: 'english', label: '英语' },
@@ -208,225 +195,164 @@ export default {
         { value: 'history', label: '历史' },
         { value: 'geography', label: '地理' },
         { value: 'politics', label: '政治' }
-      ]
+      ],
+      editRules: {
+        title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
+        subject: [{ required: true, message: '请选择学科', trigger: 'change' }],
+        original_content: [{ required: true, message: '请输入内容', trigger: 'blur' }]
+      }
+    }
+  },
+  computed: {
+    currentNote() {
+      return this.$store.state.noteCompletion.currentNote;
     },
-    formattedOriginalContent() {
-      if (!this.currentNote) return ''
-      // 4. 添加空值检查
-      return this.currentNote.original_content ? this.currentNote.original_content.replace(/\n/g, '<br>') : ''
+    loading() {
+      return this.$store.state.noteCompletion.loading;
     },
-    formattedCompletedContent() {
-      if (!this.currentNote || !this.currentNote.completed_content) return ''
-      // 5. 添加空值检查
-      return this.currentNote.completed_content ? this.currentNote.completed_content.replace(/\n/g, '<br>') : ''
+    error() {
+      return this.$store.state.noteCompletion.error;
+    }
+  },
+  methods: {
+    ...mapActions('noteCompletion', ['fetchDetail', 'completeNote_id', 'updateNote']),
+
+    getSubjectLabel(value) {
+      return this.subjects.find(s => s.value === value)?.label || value;
     },
-    formattedCompletedDialogContent() {
-      if (!this.completedNote?.completed_content) return ''
-      return this.completedNote.completed_content
+
+    formatDate(dateString) {
+      return dateString ? new Date(dateString).toLocaleString() : '';
+    },
+
+    formatContent(content) {
+      return content
         .replace(/# (.*)/g, '<h2>$1</h2>')
         .replace(/## (.*)/g, '<h3>$1</h3>')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>')
-    }
-  },
-  methods: {
-    // 6. 映射 Vuex actions
-    ...mapActions('noteCompletion', [
-      'fetchDetail', 
-      'completeNote_id', 
-      'coverNoteToServer', 
-      'setCurrentNote']), 
-
-    getSubjectLabel(value) {
-      const subject = this.subjects.find(s => s.value === value)
-      return subject ? subject.label : value
+        .replace(/\n/g, '<br>');
     },
 
-    formatDate(dateString) {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      return date.toLocaleString()
-    },
+    async completeNote() {
+      if (!this.currentNote?.id) return;
 
-    // 开始编辑笔记
-    startEditing() {
-      if (!this.currentNote) {
-        this.$message.warning("没有可编辑的笔记");
-        return;
+      this.isCompleting = true;
+      this.completionResult = null;
+
+      try {
+        const result = await this.completeNote_id(this.noteId);
+
+        if (result.status === 'success') {
+          this.completionResult = {
+            status: 'success',
+            message: result.message,
+            data: result.data
+          };
+          await this.fetchDetail(this.noteId);
+        } else {
+          this.completionResult = {
+            status: result.status,
+            message: result.message || '操作失败',
+            data: result.data
+          };
+        }
+      } catch (err) {
+        this.completionResult = {
+          status: 'error',
+          message: err.response?.data?.message || '操作失败'
+        };
+      } finally {
+        this.isCompleting = false;
       }
-      
-      // 将当前笔记数据填充到编辑表单
+    },
+
+    openEditDialog() {
+      if (!this.currentNote) return;
+
       this.editForm = {
-        display_id: this.currentNote.display_id || this.currentNote.id,
-        title: this.currentNote.title || '',
-        subject: this.currentNote.subject || '',
-        grade: this.currentNote.grade || '',
-        original_content: this.currentNote.original_content || '',
+        display_id: this.currentNote.display_id,
+        title: this.currentNote.title,
+        subject: this.currentNote.subject,
+        grade: this.currentNote.grade,
+        original_content: this.currentNote.original_content,
         completed_content: this.currentNote.completed_content || '',
-        completion_notes: this.currentNote.completion_notes || '',
-        completion_time: this.currentNote.completion_time || new Date().toISOString()
+        completion_notes: this.currentNote.completion_notes || ''
       };
-      
       this.showEditDialog = true;
     },
 
-    // 保存编辑后的笔记
-    async saveEditedNote() {
-      console.log('this.editForm:', this.editForm)
+    async saveNote() {
       try {
         this.saving = true;
-        
-        // 构造要保存的数据对象
-        const saveData = {
-          display_id: this.editForm.display_id,
-          title: this.editForm.title,
-          subject: this.editForm.subject,
-          grade: this.editForm.grade,
-          original_content: this.editForm.original_content,
-          completed_content: this.editForm.completed_content,
-          completion_notes: this.editForm.completion_notes,
-          completion_time: this.editForm.completion_time 
-        ? new Date(this.editForm.completion_time).toISOString().slice(0, 19).replace('T', ' ')
-        : null
-        };
-
-        // 调用 Vuex action 保存数据
-        await this.coverNoteToServer(saveData);
-        
-        this.$message.success("笔记修改已保存");
+        await this.updateNote(this.editForm);
+        this.$message.success('保存成功');
         this.showEditDialog = false;
-        
-        // 保存成功后刷新详情，获取最新的数据
-        await this.fetchDetail(this.noteDisplayId);
-        
+        await this.fetchDetail(this.noteId);
       } catch (err) {
-        console.error("保存失败:", err);
-        
-        // 更详细的错误处理
-        let errorMessage = "保存失败";
-        if (err.response) {
-          if (err.response.status === 404) {
-            errorMessage = "笔记不存在，请刷新页面重试";
-          } else if (err.response.status === 400) {
-            errorMessage = "数据格式错误，请检查输入内容";
-          } else if (err.response.data && err.response.data.message) {
-            errorMessage = err.response.data.message;
-          } else {
-            errorMessage = `服务器错误: ${err.response.status}`;
-          }
-        } else if (err.request) {
-          errorMessage = "网络连接失败，请检查网络";
-        } else {
-          errorMessage = err.message || "未知错误";
-        }
-        
-        this.$message.error(errorMessage);
+        this.$message.error(err.response?.data?.message || '保存失败');
       } finally {
         this.saving = false;
       }
     },
 
-    async handleCompleteNote() {
-      if (!this.currentNote?.id && !this.currentNote?.note_id) {
-        this.$message.warning("当前笔记信息不完整")
-        return
+    async openCourseDialog() {
+      try {
+        this.courses = await this.fetchCourses();
+        this.selectedCourse = null;
+        this.showCourseDialog = true;
+      } catch (err) {
+        this.$message.error('获取课程列表失败');
       }
+    },
 
-      this.isCompleting = true
-      this.processingStartTime = Date.now()
-      let loadingInstance = null
+    async associateCourse() {
+      if (!this.selectedCourse) {
+        this.$message.warning('请选择课程');
+        return;
+      }
 
       try {
-        // 显示处理提示
-        loadingInstance = this.$loading({
-          lock: true,
-          text: '正在补全笔记，请耐心等待...',
-          spinner: 'el-icon-loading',
-          background: 'rgba(0, 0, 0, 0.7)'
-        })
-
-        // 设置当前笔记
-        await this.setCurrentNote({
-          id: this.currentNote.id || this.currentNote.note_id,
-          title: this.currentNote.title,
-          subject: this.currentNote.subject
-        })
-
-        // 补全笔记
-        const result = await this.completeNote_id(this.noteDisplayId)
-        console.log('笔记补全成功:', result)
-        
-        this.completedNote = result.data || result
-        this.showCompletedDialog = true
-        
-        this.$message.success("笔记补全成功")
-      } catch (err) {
-        console.error("补全笔记失败:", err)
-        
-        // 计算处理时间
-        const processingTime = Date.now() - this.processingStartTime
-        const minutes = Math.floor(processingTime / 60000)
-        const seconds = ((processingTime % 60000) / 1000).toFixed(0)
-        
-        // 根据错误类型显示不同提示
-        if (err.code === 'ECONNABORTED') {
-          this.$message({
-            type: 'warning',
-            message: `请求超时（${minutes}分${seconds}秒）。请检查网络连接或联系管理员。`,
-            duration: 5000
-          })
-        } else {
-          const errorMsg = err?.response?.data?.message || err?.message || "补全笔记失败"
-          this.$message.error(errorMsg)
-        }
+        this.associating = true;
+        await this.updateNote({
+          display_id: this.currentNote.display_id,
+          course_display_id: this.selectedCourse
+        });
+        this.$message.success('关联成功');
+        this.showCourseDialog = false;
+        await this.fetchDetail(this.noteId);
       } finally {
-        this.isCompleting = false
-        if (loadingInstance) {
-          loadingInstance.close()
-        }
+        this.associating = false;
       }
     },
 
-    copyCompletedContent() {
-      if (!this.completedNote) return
-      const content = this.completedNote.completed_content
-      navigator.clipboard.writeText(content).then(() => {
-        this.$message.success("补全笔记内容已复制到剪贴板")
-      }).catch(err => {
-        console.error('复制失败:', err)
-        this.$message.error("复制失败，请手动选择内容")
-      })
+    async fetchCourses() {
+      return new Promise(resolve => {
+        setTimeout(() => resolve([
+          { display_id: 'MATH101', name: '高一数学' },
+          { display_id: 'ENG202', name: '高三英语' }
+        ]), 300);
+      });
     },
 
-    closeDialog() {
-      this.showCompletedDialog = false
-    },
-
-    retryFetchDetail() {
-      if (this.noteDisplayId) {
-        this.fetchDetail(this.noteDisplayId)
-      }
+    retryFetch() {
+      if (this.noteId) this.fetchDetail(this.noteId);
     },
 
     goToList() {
-      this.$router.push('/NoteCompletion')
+      this.$router.push({ name: 'NoteList' });
     }
   },
   created() {
-    if (this.noteDisplayId) {
-      this.fetchDetail(this.noteDisplayId)
-    } else {
-      console.error("路由中未找到 displayId 参数")
-    }
+    if (this.noteId) this.fetchDetail(this.noteId);
   },
   watch: {
     '$route.params.displayId': {
-      handler(newDisplayId) {
-        this.noteDisplayId = newDisplayId
-        if (newDisplayId) {
-          this.fetchDetail(newDisplayId)
+      handler(newId) {
+        if (newId) {
+          this.noteId = newId;
+          this.fetchDetail(newId);
         }
       },
       immediate: true
@@ -436,43 +362,102 @@ export default {
 </script>
 
 <style scoped>
-.note-completion-detail {
+.note-detail {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  background-color: #f5f7fa;
 }
 
 .page-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #333;
+  font-size: 28px;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.page-title::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 28px;
+  background: linear-gradient(to bottom, #409EFF, #1a56db);
+  margin-right: 12px;
+  border-radius: 2px;
 }
 
 .detail-card {
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+  margin-bottom: 25px;
+  background-color: #ffffff;
+  border: 1px solid #e4e7ed;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
+  align-items: flex-start;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-self: flex-start;
+  flex-wrap: wrap;
 }
 
 .detail-content {
   line-height: 1.6;
 }
 
-.original-content, .completed-content {
+.info-section,
+.content-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  border-left: 5px solid #409EFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.info-section h3,
+.content-section h3 {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.info-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.info-section li {
+  padding: 5px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.original-content,
+.completed-content {
   white-space: pre-wrap;
   margin-bottom: 20px;
   padding: 15px;
   background: #f9f9f9;
   border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  line-height: 1.5;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .completion-notes {
@@ -482,17 +467,59 @@ export default {
   border-left: 4px solid #409EFF;
 }
 
-.detail-footer {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-  color: #666;
-  font-size: 14px;
+.result-section h3.success {
+  color: #67c23a;
+}
+.result-section h3.warning {
+  color: #e6a23c;
+}
+.result-section h3.error {
+  color: #f56c6c;
 }
 
-.loading-card, .error-card {
+.result-content {
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+.result-content.success {
+  background: #f0f9ff;
+  border-left: 4px solid #67c23a;
+}
+.result-content.warning {
+  background: #fdf6ec;
+  border-left: 4px solid #e6a23c;
+}
+.result-content.error {
+  background: #fef0f0;
+  border-left: 4px solid #f56c6c;
+}
+
+.result-meta {
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.detail-footer {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+  color: #909399;
+  font-size: 14px;
+  text-align: right;
+}
+
+.loading-card,
+.error-card {
   text-align: center;
-  padding: 40px 20px;
+  padding: 50px 25px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+  border: 1px solid #e4e7ed;
 }
 
 .loading-content {
@@ -502,66 +529,11 @@ export default {
   gap: 15px;
 }
 
-/* 补全弹窗样式 */
-.completed-dialog .completed-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.completed-dialog .completed-content {
-  line-height: 1.6;
-  font-size: 16px;
-  white-space: pre-wrap;
-  background: #f9f9f9;
-  padding: 20px;
-  border-radius: 4px;
-  min-height: 300px;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.completed-dialog .completed-content h1, 
-.completed-dialog .completed-content h2, 
-.completed-dialog .completed-content h3 {
-  margin: 15px 0 10px;
-  color: #303133;
-}
-
-.completed-dialog .completed-content p {
-  margin: 10px 0;
-}
-
-.completed-dialog .completed-content code {
-  background: #e6e6e6;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.completed-dialog .completion-notes {
+.error-actions {
   margin-top: 20px;
-  padding: 15px;
-  background: #f0f7ff;
-  border-radius: 4px;
-  border-left: 4px solid #409EFF;
-}
-
-.completed-dialog .completion-notes h4 {
-  margin: 0 0 8px;
-  color: #303133;
-}
-
-.completed-dialog .completion-meta {
-  margin-top: 15px;
-  padding-top: 10px;
-  border-top: 1px dashed #ebeef5;
-  color: #909399;
-  font-size: 14px;
-  text-align: right;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
 }
 
 /* 编辑弹窗样式 */
@@ -571,5 +543,87 @@ export default {
 
 .edit-dialog .el-textarea {
   width: 100%;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .note-detail {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .detail-card {
+    padding: 20px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .header-actions {
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .info-section,
+  .content-section {
+    margin-bottom: 25px;
+    padding: 15px;
+  }
+
+  .info-section h3,
+  .content-section h3 {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    font-size: 16px;
+  }
+
+  .original-content,
+  .completed-content {
+    max-height: 300px;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .completion-notes,
+  .result-content {
+    padding: 12px;
+  }
+
+  .detail-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    font-size: 13px;
+  }
+
+  .loading-card,
+  .error-card {
+    padding: 40px 20px;
+    border-radius: 8px;
+  }
+
+  .loading-content {
+    gap: 10px;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .error-actions button {
+    width: 100%;
+  }
+
+  .edit-dialog .el-form-item {
+    margin-bottom: 15px;
+  }
 }
 </style>

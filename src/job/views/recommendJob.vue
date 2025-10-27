@@ -77,7 +77,7 @@
 			goToDetail(job) {
 				let id = job.DWZZJGDM;
 				let url = 'https://job.xidian.edu.cn/job/view/id/' + id;
-				window.open(url, '_blank');
+				// window.open(url, '_blank');
 			},
 			//分页请求
 			handleCurrentChange(page) {

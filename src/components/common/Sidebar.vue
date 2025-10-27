@@ -17,11 +17,11 @@
                             <i :class="item.icon"></i>
                             <span slot="title">{{ item.title }}</span>
                         </template>
-                        <template v-for="subItem in item.subs">
+                        <template v-for="(subItem,i) in item.subs">
                             <el-submenu
                                 v-if="subItem.subs"
                                 :index="subItem.index"
-                                :key="subItem.index"
+                                :key="i"
                             >
                                 <template slot="title">{{ subItem.title }}</template>
                                 <el-menu-item
@@ -33,7 +33,7 @@
                             <el-menu-item
                                 v-else
                                 :index="subItem.index"
-                                :key="subItem.index"
+                                :key="i"
                             >{{ subItem.title }}</el-menu-item>
                         </template>
                     </el-submenu>
@@ -204,11 +204,12 @@ export default {
                 //     title: '接入测试'
                 // }
             ]:
-            [{
-                    icon: 'el-icon-lx-home',
-                    index: '/enterprisehome',
-                    title: '系统首页'
-                },
+            [
+                // {
+                //     icon: 'el-icon-lx-home',
+                //     index: '/enterprisehome',
+                //     title: '系统首页'
+                // },
             {
                         icon: 'el-icon-user-solid',
                         index: '/manage',

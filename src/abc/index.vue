@@ -1,4 +1,4 @@
-c<template>
+<template>
   <div class="container-fluid">
     <div class="row">
       <!-- 左侧边栏：查询工具 -->
@@ -641,16 +641,11 @@ c<template>
                 <div class="mb-3">
                   <label class="form-label">关系类型</label>
                   <select class="form-select" v-model="newRelationship.relation_type">
-                    <option value="CONTAINS">包含</option>
-                    <option value="BELONGS_TO">属于</option>
                     <option value="RELATED_TO">相关于</option>
+                    <option value="CONTAINS">包含</option>
                     <option value="PREREQUISITE">先修于</option>
                     <option value="SIMILAR_TO">相似于</option>
                   </select>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">关系属性 (JSON格式)</label>
-                  <textarea class="form-control" v-model="newRelationship.propertiesJson" rows="2" placeholder='{"weight": 1}'></textarea>
                 </div>
               </form>
             </div>
@@ -692,10 +687,6 @@ c<template>
                     <option value="PREREQUISITE">先修于</option>
                     <option value="SIMILAR_TO">相似于</option>
                   </select>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">更新属性 (JSON格式)</label>
-                  <textarea class="form-control" v-model="updateRelationshipForm.propertiesJson" rows="2" placeholder='{"weight": 2}'></textarea>
                 </div>
               </form>
             </div>
@@ -779,7 +770,6 @@ c<template>
                   <label class="form-label">关系类型</label>
                   <select class="form-select" v-model="quickCreateKnowledgePointData.relationType">
                     <option value="CONTAINS">包含</option>
-                    <option value="BELONGS_TO">属于</option>
                     <option value="RELATED_TO">相关于</option>
                     <option value="PREREQUISITE">先修于</option>
                     <option value="SIMILAR_TO">相似于</option>
@@ -846,7 +836,7 @@ export default {
   name: 'KnowledgeGraph',
   data() {
     return {
-      baseUrl:'api/Graphapps/',
+      baseUrl: this.getBaseUrl(),
       queryText: '',
       presetQueries: [
         { label: '显示整个知识图谱', query: '显示整个知识图谱' },
@@ -891,10 +881,10 @@ export default {
       relationTypeMap: {
         "RELATED_TO": "相关于",
         "PART_OF": "属于",
-        "PREREQUISITE": "先决条件",
+        "PREREQUISITE": "先修于",
         "INCLUDES": "包含",
         "FOLLOWS": "跟随",
-        "SIMILAR_TO": "类似于",
+        "SIMILAR_TO": "相似于",
         "DEPENDS_ON": "依赖于",
         "APPLIES_TO": "应用于",
         "USED_IN": "用于",
@@ -902,7 +892,8 @@ export default {
         "INSTANCE_OF": "实例",
         "DEFINED_BY": "定义",
         "IMPLEMENTED_IN": "实现于",
-        "CONTAINS": "包含"
+        "CONTAINS": "包含",
+        "BELONGS_TO": "属于"
       },
       // 实体类型颜色映射
       colors: {
@@ -943,29 +934,25 @@ export default {
       newRelationship: {
         source: '',
         target: '',
-        relation_type: 'RELATED_TO',
-        propertiesJson: ''
+        relation_type: 'RELATED_TO'
       },
       updateRelationshipData: {
         source: '',
         target: '',
         old_relation_type: '',
-        new_relation_type: 'RELATED_TO',
-        propertiesJson: ''
+        new_relation_type: 'RELATED_TO'
       },
       updateRelationshipForm: {
         source: '',
         target: '',
         old_relation_type: '',
-        new_relation_type: 'RELATED_TO',
-        propertiesJson: ''
+        new_relation_type: 'RELATED_TO'
       },
       deleteRelationshipForm: {
         source: '',
         target: '',
         old_relation_type: '',
-        new_relation_type: '',
-        propertiesJson: ''
+        new_relation_type: ''
       },
 
       // 选中状态管理
@@ -1029,30 +1016,48 @@ export default {
       broadcastChannel: null,
       generationCompleteListener: null,
       lastProcessedCourse: null,
-      lastProcessedTime: 0
+      lastProcessedTime: 0,
+      
+      // 防抖定时器
+      nodeLimitUpdateTimer: null
     }
   },
 
   watch: {
-    nodeLimit(newVal) {
-      if (this.originalData && !this.hasUrlParams()) {
-        // 只有在没有URL参数（即正常浏览模式）下才重新应用节点限制
-        // 如果是从URL参数跳转进来的，保持当前的查询结果
-        console.log('[NODE LIMIT] 节点限制变化，重新应用到原始数据');
-        this.updateGraph(this.originalData, true, true, true);
-      } else if (this.originalData && this.hasUrlParams()) {
-        console.log('[NODE LIMIT] 有URL参数，跳过节点限制重新应用');
-      }
+    nodeLimit: {
+      handler(newVal, oldVal) {
+        // 防止初始化时触发和无限循环
+        if (oldVal === undefined || newVal === oldVal) return;
+        
+        // 使用防抖避免频繁更新
+        if (this.nodeLimitUpdateTimer) {
+          clearTimeout(this.nodeLimitUpdateTimer);
+        }
+        
+        this.nodeLimitUpdateTimer = setTimeout(() => {
+          if (this.originalData && !this.hasUrlParams()) {
+            console.log('[NODE LIMIT] 节点限制变化，重新应用到原始数据');
+            this.updateGraph(this.originalData, true, true, true);
+          }
+        }, 300);
+      },
+      immediate: false
     },
-    showLabels(newVal) {
-      if (this.nodeLabels) {
-        this.nodeLabels.style("display", newVal ? null : "none");
-      }
+    showLabels: {
+      handler(newVal) {
+        if (this.nodeLabels) {
+          this.nodeLabels.style("display", newVal ? null : "none");
+        }
+      },
+      immediate: false
     },
-    showRelationLabels(newVal) {
-      if (this.linkLabels) {
-        this.linkLabels.selectAll("text, rect").style("display", newVal ? null : "none");
-      }
+    showRelationLabels: {
+      handler(newVal) {
+        if (this.linkLabels) {
+          this.linkLabels.selectAll("text, rect").style("display", newVal ? null : "none");
+        }
+      },
+      immediate: false
     }
   },
   computed: {
@@ -1149,57 +1154,167 @@ export default {
     }
   },
   mounted() {
+    // 初始化基本组件
     this.initSvg();
-    this.loadStatistics();
+    
+    // 测试后端连接并加载数据
+    this.testBackendConnection().then(() => {
+      console.log('[INIT] 后端连接成功，开始加载数据');
+      this.loadStatistics();
 
-    // 检查URL参数，看是否是从管理页面跳转过来的
-    this.checkUrlParameters();
+      // 检查URL参数，看是否是从管理页面跳转过来的
+      this.checkUrlParameters();
 
-    // 只有在没有URL参数的情况下才加载初始图谱
-    // 如果有URL参数，checkUrlParameters会处理自动查询
-    if (!this.hasUrlParams()) {
-      this.loadInitialGraph();
+      // 只有在没有URL参数的情况下才加载初始图谱
+      // 如果有URL参数，checkUrlParameters会处理自动查询
+      if (!this.hasUrlParams()) {
+        this.loadInitialGraph();
+        
+        // 检查是否有新生成的课程需要自动搜索
+        this.checkForNewGeneratedCourse();
+      }
+    }).catch(error => {
+      console.error('[INIT] 后端连接失败:', error);
+      this.showError('无法连接到后端服务器，请确保Django服务器正在运行在 http://127.0.0.1:8000');
       
-      // 检查是否有新生成的课程需要自动搜索
-      this.checkForNewGeneratedCourse();
-    }
+      // 即使后端连接失败，也要初始化基本功能
+      console.log('[INIT] 继续初始化基本功能');
+    });
 
+    // 这些事件监听器不依赖后端，可以直接设置
     window.addEventListener('resize', this.handleResize);
     window.addEventListener('click', this.handleBackgroundClick);
 
     // 添加课程生成完成监听器
     this.setupCourseGenerationListeners();
 
-    // 添加视图变化监听器
-    if (this.zoom) {
-      this.zoom.on('zoom.viewTracker', () => {
-        try {
-          const currentTransform = d3.zoomTransform(this.svg.node());
-          console.log('[VIEW TRACKER] 检测到视图变化，当前变换:', currentTransform);
-        } catch (error) {
-          console.warn('[VIEW TRACKER] 获取变换失败:', error);
-        }
-      });
-    }
+    // 添加视图变化监听器（延迟执行，确保zoom已初始化）
+    this.$nextTick(() => {
+      if (this.zoom) {
+        this.zoom.on('zoom.viewTracker', () => {
+          try {
+            const currentTransform = d3.zoomTransform(this.svg.node());
+            console.log('[VIEW TRACKER] 检测到视图变化，当前变换:', currentTransform);
+          } catch (error) {
+            console.warn('[VIEW TRACKER] 获取变换失败:', error);
+          }
+        });
+      }
+    });
   },
   beforeDestroy() {
+    console.log('[CLEANUP] 开始清理组件资源');
+    
+    // 清理D3模拟器
     if (this.simulation) {
       this.simulation.stop();
+      this.simulation = null;
     }
+    
+    // 清理SVG和D3元素
+    if (this.svg) {
+      this.svg.selectAll("*").remove();
+      this.svg = null;
+    }
+    
+    // 清理事件监听器
     window.removeEventListener('resize', this.handleResize);
     window.removeEventListener('click', this.handleBackgroundClick);
-
-    // 清理课程生成监听器
-    this.cleanupCourseGenerationListeners();
-
-    // 清理自动刷新定时器
+    
+    
+    // 清理定时器
     if (this.autoRefreshTimer) {
       clearInterval(this.autoRefreshTimer);
       this.autoRefreshTimer = null;
     }
+    
+    if (this.nodeLimitUpdateTimer) {
+      clearTimeout(this.nodeLimitUpdateTimer);
+      this.nodeLimitUpdateTimer = null;
+    }
+
+    // 清理课程生成监听器
+    this.cleanupCourseGenerationListeners();
+    
+    // 清理数据引用
+    this.nodes = [];
+    this.links = [];
+    this.originalData = null;
+    
+    console.log('[CLEANUP] 组件资源清理完成');
   },
 
   methods: {
+    // 动态获取API基础URL
+    getBaseUrl() {
+      // 检查当前域名是否为内网穿透域名
+      const currentHost = window.location.host;
+      const currentProtocol = window.location.protocol;
+      const currentPort = window.location.port;
+      
+      console.log('当前访问域名:', currentHost);
+      console.log('当前协议:', currentProtocol);
+      console.log('当前端口:', currentPort);
+      
+      // 如果是内网穿透域名，使用绝对路径
+      if (currentHost.includes('vicp.fun') || currentHost.includes('ngrok') || currentHost.includes('tunnel')) {
+        const baseUrl = currentProtocol + '//' + currentHost + '/api/Graphapps/';
+        console.log('检测到内网穿透环境，使用绝对路径:', baseUrl);
+        return baseUrl;
+      }
+      
+      // 检测nginx代理环境（端口8081或其他非8000端口）
+      if (currentPort === '8081' || (currentPort && currentPort !== '8000')) {
+        const baseUrl = currentProtocol + '//' + currentHost + '/api/Graphapps/';
+        console.log('检测到nginx代理环境，使用相对路径:', baseUrl);
+        return baseUrl;
+      }
+      
+      // 本地开发环境，直接访问Django服务器
+      const backendHost = 'http://127.0.0.1:8000';
+      const baseUrl = backendHost + '/api/Graphapps/';
+      console.log('本地���发环境，使用后端服务器路径:', baseUrl);
+      return baseUrl;
+    },
+
+    // 测试后端连接
+    async testBackendConnection() {
+      console.log('[CONNECTION TEST] 测试后端连接...');
+      try {
+        // 创建一个兼容的超时控制器
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`${this.baseUrl}statistics/`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log('[CONNECTION TEST] ✅ 后端连接成功');
+          return true;
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('[CONNECTION TEST] ❌ 后端连接失败:', error);
+        
+        // 提供详细的错误信息
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+          throw new Error('网络连接失败：无法访问后端服务器。请检查：\n1. Django服务器是否在 http://127.0.0.1:8000 运行\n2. CORS配置是否正确\n3. 防火墙设置');
+        } else if (error.name === 'AbortError') {
+          throw new Error('连接超时：后端服务器响应时间过长');
+        } else {
+          throw error;
+        }
+      }
+    },
+
     // 初始化SVG
     initSvg(preserveTransform = false) {
       const container = this.$refs.graphContainer;
@@ -1454,7 +1569,17 @@ export default {
         .attr("stroke", "#999")
         .attr("stroke-width", d => this.isLinkSelected(d) ? 3 : 2)
         .attr("marker-end", "url(#arrowhead)")
-        .style("cursor", "pointer")
+        .style("cursor", "pointer");
+      
+      // 清理之前的事件监听器
+      this.linkElements
+        .on("mouseenter", null)
+        .on("mouseleave", null)
+        .on("click", null)
+        .on("contextmenu", null);
+      
+      // 重新绑定事件监听器
+      this.linkElements
         .on("mouseenter", function(event, d) {
           d3.select(this).attr("stroke-width", 4).attr("stroke-opacity", 0.8);
         })
@@ -1465,16 +1590,16 @@ export default {
             .attr("stroke-opacity", 1);
         })
         .on("click", (event, d) => {
-          console.log('关系点击事件触发:', d);
           event.stopPropagation();
+          event.preventDefault();
+          console.log('关系点击事件触发:', d);
           this.selectLink(d);
         })
         .on("contextmenu", (event, d) => {
-          console.log('关系右键事件触发:', d);
+          event.stopPropagation();
           event.preventDefault();
-          this.$nextTick(() => {
-            this.showContextMenu(event, 'link', d);
-          });
+          console.log('关系右键事件触发:', d);
+          this.showContextMenu(event, 'link', d);
         });
       
       // 更新节点 - 使用数据绑定
@@ -1503,18 +1628,31 @@ export default {
           .on("start", this.dragStarted)
           .on("drag", this.dragged)
           .on("end", this.dragEnded)
-        )
+        );
+      
+      // 清理之前的事件监听器，避免重复绑定
+      this.nodeElements
+        .on("click", null)
+        .on("dblclick", null)
+        .on("contextmenu", null);
+      
+      // 重新绑定事件监听器
+      this.nodeElements
         .on("click", (event, d) => {
           event.stopPropagation();
+          event.preventDefault();
           this.selectNode(d);
         })
-        .on("dblclick", (event, d) => this.fixNode(d))
-        .on("contextmenu", (event, d) => {
-          console.log('节点右键事件触发:', d);
+        .on("dblclick", (event, d) => {
+          event.stopPropagation();
           event.preventDefault();
-          this.$nextTick(() => {
-            this.showContextMenu(event, 'node', d);
-          });
+          this.fixNode(d);
+        })
+        .on("contextmenu", (event, d) => {
+          event.stopPropagation();
+          event.preventDefault();
+          console.log('节点右键事件触发:', d);
+          this.showContextMenu(event, 'node', d);
         });
       
       // 更新节点标签 - 使用数据绑定
@@ -2382,12 +2520,23 @@ export default {
         return;
       }
       
-      // 检查关系是否已存在
-      const existingRelationship = this.originalData.relationships.find(r => 
-        r.source === relationshipData.source && 
-        r.target === relationshipData.target && 
-        r.type === relationshipData.relation_type
-      );
+      // 标准化查找参数，确保与数据格式一致
+      const normalizeId = (id) => typeof id === 'object' ? id.name : id;
+      const sourceId = normalizeId(relationshipData.source);
+      const targetId = normalizeId(relationshipData.target);
+      const relationType = relationshipData.relation_type;
+      
+      // 检查关系是否已存在 - 支持双向匹配和对象/字符串格式
+      const existingRelationship = this.originalData.relationships.find(r => {
+        const rSource = normalizeId(r.source);
+        const rTarget = normalizeId(r.target);
+        const rType = r.type;
+        
+        // 支持双向匹配：A->B 或 B->A
+        return ((rSource === sourceId && rTarget === targetId) || 
+                (rSource === targetId && rTarget === sourceId)) && 
+               rType === relationType;
+      });
       
       if (existingRelationship) {
         console.log('关系已存在，跳过添加');
@@ -2407,6 +2556,21 @@ export default {
       
       // 重新渲染图谱，保持当前视图
       this.updateGraph(this.originalData, true, true, true, null);
+      
+      // 强制更新模拟器以确保新关系线正确渲染
+      if (this.simulation) {
+        // 给模拟器一些能量来重新计算连接线
+        this.simulation.alpha(0.1).restart();
+        
+        // 短暂运行后停止，保持节点位置
+        setTimeout(() => {
+          if (this.simulation) {
+            this.simulation.stop();
+          }
+        }, 200);
+        
+        console.log('[DEBUG] 关系添加后重启模拟器');
+      }
     },
 
     // 本地更新关系
@@ -2418,15 +2582,27 @@ export default {
         return;
       }
       
-      // 查找并更新关系
-      const relationshipIndex = this.originalData.relationships.findIndex(r => 
-        r.source === source && r.target === target && r.type === oldType
-      );
+      // 标准化查找参数，确保与数据格式一致
+      const normalizeId = (id) => typeof id === 'object' ? id.name : id;
+      const sourceId = normalizeId(source);
+      const targetId = normalizeId(target);
+      
+      // 查找并更新关系 - 支持双向匹配和对象/字符串格式
+      const relationshipIndex = this.originalData.relationships.findIndex(r => {
+        const rSource = normalizeId(r.source);
+        const rTarget = normalizeId(r.target);
+        const rType = r.type;
+        
+        // 支持双向匹配：A->B 或 B->A
+        return ((rSource === sourceId && rTarget === targetId) || 
+                (rSource === targetId && rTarget === sourceId)) && 
+               rType === oldType;
+      });
       
       if (relationshipIndex === -1) {
-        console.warn('[DEBUG] 未找到要更新的关系:', source, '->', target, '类型:', oldType);
+        console.warn('[DEBUG] 未找到要更新的关系:', sourceId, '->', targetId, '类型:', oldType);
         console.log('[DEBUG] 现有关系:', this.originalData.relationships.map(r => 
-          `${r.source}->${r.target} (${r.type})`));
+          `${normalizeId(r.source)}->${normalizeId(r.target)} (${r.type})`));
         return;
       }
       
@@ -2443,9 +2619,20 @@ export default {
       
       // 重新渲染图谱，保持当前视图
       this.updateGraph(this.originalData, true, true, true, null);
+      
+      // 强制更新模拟器以确保关系线正确渲染
       if (this.simulation) {
-        this.simulation.tick();
-        console.log('[DEBUG] 手动tick完成');
+        // 给模拟器一些能量来重新计算连接线
+        this.simulation.alpha(0.1).restart();
+        
+        // 短暂运行后停止，保持节点位置
+        setTimeout(() => {
+          if (this.simulation) {
+            this.simulation.stop();
+          }
+        }, 200);
+        
+        console.log('[DEBUG] 关系更新后重启模拟器');
       }
     },
 
@@ -2458,35 +2645,65 @@ export default {
         return;
       }
       
+      // 标准化查找参数，确保与数据格式一致
+      const normalizeId = (id) => typeof id === 'object' ? id.name : id;
+      const sourceId = normalizeId(source);
+      const targetId = normalizeId(target);
+      
       // 统计删除前的关系数量
       const beforeCount = this.originalData.relationships.length;
       
-      // 查找要删除的关系
-      const toDelete = this.originalData.relationships.find(r => 
-        r.source === source && r.target === target && r.type === relationType
-      );
+      // 查找要删除的关系 - 支持双向匹配和对象/字符串格式
+      const toDelete = this.originalData.relationships.find(r => {
+        const rSource = normalizeId(r.source);
+        const rTarget = normalizeId(r.target);
+        const rType = r.type;
+        
+        // 支持双向匹配：A->B 或 B->A
+        return ((rSource === sourceId && rTarget === targetId) || 
+                (rSource === targetId && rTarget === sourceId)) && 
+               rType === relationType;
+      });
       
       if (!toDelete) {
-        console.warn('[DEBUG] 未找到要删除的关系:', source, '->', target, '类型:', relationType);
+        console.warn('[DEBUG] 未找到要删除的关系:', sourceId, '->', targetId, '类型:', relationType);
         console.log('[DEBUG] 现有关系:', this.originalData.relationships.map(r => 
-          `${r.source}->${r.target} (${r.type})`));
+          `${normalizeId(r.source)}->${normalizeId(r.target)} (${r.type})`));
         return;
       }
       
       console.log('[DEBUG] 找到要删除的关系:', toDelete);
       
-      // 删除关系
-      this.originalData.relationships = this.originalData.relationships.filter(r => 
-        !(r.source === source && r.target === target && r.type === relationType)
-      );
+      // 删除关系 - 使用相同的匹配逻辑
+      this.originalData.relationships = this.originalData.relationships.filter(r => {
+        const rSource = normalizeId(r.source);
+        const rTarget = normalizeId(r.target);
+        const rType = r.type;
+        
+        // 保留不匹配的关系
+        return !(((rSource === sourceId && rTarget === targetId) || 
+                  (rSource === targetId && rTarget === sourceId)) && 
+                 rType === relationType);
+      });
       
       console.log('[DEBUG] 关系删除完成: 数量', beforeCount, '->', this.originalData.relationships.length);
       
       // 重新渲染图谱，保持当前视图
       this.updateGraph(this.originalData, true, true, true, null);
+      
+      // 强制更新模拟器以确保关系线删除后正确渲染
       if (this.simulation) {
-        this.simulation.tick();
-        console.log('[DEBUG] 手动tick完成');
+        // 给模拟器一些能量来重新计算连接线
+        this.simulation.alpha(0.1).restart();
+        
+        // 短暂运行后停止，保持节点位置
+        setTimeout(() => {
+          if (this.simulation) {
+            this.simulation.stop();
+          }
+        }, 200);
+        
+        console.log('[DEBUG] 关系删除后重启模拟器');
       }
     },
 
@@ -2552,11 +2769,11 @@ export default {
       // 创建反向映射
       const reverseMap = {
         "相关于": "RELATED_TO",
-        "属于": "PART_OF",
-        "先决条件": "PREREQUISITE",
+        "属于": "BELONGS_TO",
+        "先修于": "PREREQUISITE",
         "包含": "CONTAINS",
         "跟随": "FOLLOWS",
-        "类似于": "SIMILAR_TO",
+        "相似于": "SIMILAR_TO",
         "依赖于": "DEPENDS_ON",
         "应用于": "APPLIES_TO",
         "用于": "USED_IN",
@@ -2723,37 +2940,63 @@ export default {
 
     // 显示右键菜单
     showContextMenu(event, type, target) {
-      console.log('显示右键菜单:', type, target);
-      console.log('事件对象:', event);
-      console.log('鼠标位置:', event.clientX, event.clientY);
-
-      this.$set(this.contextMenu, 'show', true);
-      this.$set(this.contextMenu, 'x', event.clientX);
-      this.$set(this.contextMenu, 'y', event.clientY);
-      this.$set(this.contextMenu, 'type', type);
-      this.$set(this.contextMenu, 'target', target);
-
-      console.log('右键菜单状态:', this.contextMenu);
-
-      // 设置选中状态
-      if (type === 'node') {
-        this.selectNode(target);
-      } else {
-        this.selectLink(target);
+      // 防止在错误的时机显示菜单
+      if (!event || !type || !target) {
+        console.warn('右键菜单参数不完整，跳过显示');
+        return;
       }
+      
+      console.log('显示右键菜单:', type, target);
+      
+      // 先隐藏之前的菜单
+      this.hideContextMenu();
+      
+      // 使用nextTick确保DOM更新完成
+      this.$nextTick(() => {
+        this.contextMenu.show = true;
+        this.contextMenu.x = event.clientX;
+        this.contextMenu.y = event.clientY;
+        this.contextMenu.type = type;
+        this.contextMenu.target = target;
+
+        // 设置选中状态
+        if (type === 'node') {
+          this.selectNode(target);
+        } else if (type === 'link') {
+          this.selectLink(target);
+        }
+        
+        // 添加点击外部关闭菜单的监听器
+        setTimeout(() => {
+          document.addEventListener('click', this.handleContextMenuOutsideClick, { once: true });
+        }, 100);
+      });
     },
 
     // 隐藏右键菜单
     hideContextMenu() {
       console.log('隐藏右键菜单');
-      this.$set(this.contextMenu, 'show', false);
+      this.contextMenu.show = false;
+    },
+    
+    // 处理右键菜单外部点击
+    handleContextMenuOutsideClick(event) {
+      const contextMenuElement = event.target.closest('.context-menu');
+      if (!contextMenuElement) {
+        this.hideContextMenu();
+      }
     },
 
     // 背景点击事件
     handleBackgroundClick(event) {
-      // 检查是否点击在图谱容器内
+      // 检查是否点击在图谱容器内，但排除SVG元素和模态框
       const container = this.$refs.graphContainer;
-      if (container && container.contains(event.target)) {
+      const isModal = event.target.closest('.modal');
+      const isContextMenu = event.target.closest('.context-menu');
+      const isPropertiesPanel = event.target.closest('.properties-panel');
+      const isSvgElement = event.target.tagName === 'svg' || event.target.tagName === 'circle' || event.target.tagName === 'line';
+      
+      if (container && container.contains(event.target) && !isModal && !isContextMenu && !isPropertiesPanel && !isSvgElement) {
         this.selectedNode = null;
         this.selectedLink = null;
         this.hideContextMenu();
@@ -2935,8 +3178,7 @@ export default {
       this.newRelationship = {
         source: this.selectedNode.name,
         target: '',
-        relation_type: 'RELATED_TO',
-        propertiesJson: ''
+        relation_type: 'RELATED_TO'
       };
       this.showModal('createRelationshipModal');
     },
@@ -2982,8 +3224,7 @@ export default {
         source: link.source.name,
         target: link.target.name,
         old_relation_type: currentRelationType,
-        new_relation_type: currentRelationType,
-        propertiesJson: JSON.stringify((latestLink ? latestLink.properties : link.properties) || {}, null, 2)
+        new_relation_type: currentRelationType
       };
       this.showModal('updateRelationshipModal');
     },
@@ -3022,8 +3263,7 @@ export default {
         source: link.source.name,
         target: link.target.name,
         old_relation_type: currentRelationType,
-        new_relation_type: '',
-        propertiesJson: ''
+        new_relation_type: ''
       };
       this.showModal('deleteRelationshipModal');
     },
@@ -3292,15 +3532,8 @@ export default {
     // 创建关系
     async createRelationship() {
       try {
+        // 使用空的属性对象，不再从JSON输入获取
         let properties = {};
-        if (this.newRelationship.propertiesJson) {
-          try {
-            properties = JSON.parse(this.newRelationship.propertiesJson);
-          } catch (e) {
-            alert('属性JSON格式错误');
-            return;
-          }
-        }
 
         console.log('发送创建关系请求:', {
           source: this.newRelationship.source,
@@ -3395,14 +3628,7 @@ export default {
           // 更新统计信息
           await this.loadStatistics();
 
-          // 检查知识点节点是否在当前显示的节点列表中
-          const knowledgePointExists = this.nodes.find(node => node.name === savedKnowledgePointName);
-          if (!knowledgePointExists) {
-            console.log('[QUICK CREATE] 知识点节点不在当前显示列表中，刷新图谱');
-            setTimeout(() => {
-              this.refreshGraph(true, savedKnowledgePointName);
-            }, 300);
-          }
+
 
           // 重置操作来源标志
           this.operationSource.isFromContextMenu = false;
@@ -3442,15 +3668,8 @@ export default {
 
         console.log('[DEBUG] updateRelationshipForm:', this.updateRelationshipForm);
 
+        // 使用空的属性对象，不再从JSON输入获取
         let properties = {};
-        if (this.updateRelationshipForm.propertiesJson) {
-          try {
-            properties = JSON.parse(this.updateRelationshipForm.propertiesJson);
-          } catch (e) {
-            alert('属性JSON格式错误');
-            return;
-          }
-        }
 
         // 将中文关系类型转换为英文
         const englishOldRelationType = this.reverseTranslateRelationType(this.updateRelationshipForm.old_relation_type);
@@ -3746,23 +3965,20 @@ export default {
           this.addNodeLocally(knowledgePointData);
 
           // 检查知识点节点是否在当前显示的节点列表中
-          const knowledgePointExists = this.nodes.find(node => node.name === this.quickCreateKnowledgePointData.knowledgePointName);
+          const currentKnowledgePointName = this.quickCreateKnowledgePointData.knowledgePointName;
+          const knowledgePointExists = this.nodes.find(node => node.name === currentKnowledgePointName);
           if (!knowledgePointExists) {
-            console.log('[QUICK CREATE] 知识点节点不在当前显示列表中（关系创建失败），刷新图谱');
+            console.log('[QUICK CREATE] 知识点节点不在当前显示列表中，刷新图谱');
             setTimeout(() => {
-              this.refreshGraph(true, this.quickCreateKnowledgePointData.knowledgePointName);
+              this.refreshGraph(true, currentKnowledgePointName);
             }, 300);
           }
-
-          // 延迟聚焦到新创建的知识点（即使关系创建失败，节点还是成功的）
-          setTimeout(() => {
-            console.log('[FOCUS] 聚焦到新创建的知识点（关系创建失败）:', this.quickCreateKnowledgePointData.knowledgePointName);
-            this.focusOnNode(this.quickCreateKnowledgePointData.knowledgePointName);
-          }, 800);
 
           // 重置操作来源标志
           this.operationSource.isFromContextMenu = false;
           this.operationSource.nodeName = '';
+          this.contextMenuLock = false;
+          this.isContextMenuOperation = false;
         }
       } catch (error) {
         console.error('快速创建知识点失败:', error);
@@ -4553,41 +4769,9 @@ export default {
       }
     },
 
-    // 显示成功消息
-    showSuccess(message) {
-      this.successMessage = message;
-      this.showSuccessMessage = true;
-      this.showErrorMessage = false;
 
-      // 3秒后自动隐藏
-      setTimeout(() => {
-        this.hideSuccessMessage();
-      }, 3000);
-    },
 
-    // 显示错误消息
-    showError(message) {
-      this.errorMessage = message;
-      this.showErrorMessage = true;
-      this.showSuccessMessage = false;
 
-      // 5秒后自动隐藏
-      setTimeout(() => {
-        this.hideErrorMessage();
-      }, 5000);
-    },
-
-    // 隐藏成功消息
-    hideSuccessMessage() {
-      this.showSuccessMessage = false;
-      this.successMessage = '';
-    },
-
-    // 隐藏错误消息
-    hideErrorMessage() {
-      this.showErrorMessage = false;
-      this.errorMessage = '';
-    },
 
     // 检查是否有新生成的课程需要自动搜索
     checkForNewGeneratedCourse() {

@@ -286,7 +286,7 @@
 export default {
   data: function() {
     return {
-      baseUrl: 'api/Graphapps',  // 固定Django服务器地址
+      baseUrl: '',  // 将在mounted中动态设置
       autoRefreshEnabled: true,
       refreshInterval: null,
       lastBatch: 0,
@@ -345,6 +345,9 @@ export default {
   mounted: function() {
     console.log('组件已挂载，开始初始化...')
     console.log('当前window.location:', window.location)
+    
+    // 初始化baseUrl
+    this.baseUrl = this.getBaseUrl()
     console.log('当前baseUrl:', this.baseUrl)
     console.log('当前origin:', window.location.origin)
 
@@ -367,12 +370,52 @@ export default {
     this.stopAutoRefresh()
   },
   methods: {
+    // 获取API基础URL
+    getBaseUrl: function() {
+      // 检查当前域名是否为内网穿透域名
+      const currentHost = window.location.host;
+      const currentProtocol = window.location.protocol;
+      const currentPort = window.location.port;
+      
+      console.log('当前访问域名:', currentHost);
+      console.log('当前协议:', currentProtocol);
+      console.log('当前端口:', currentPort);
+      
+      // 如果是内网穿透域名，使用绝对路径
+      if (currentHost.includes('vicp.fun') || currentHost.includes('ngrok') || currentHost.includes('tunnel')) {
+        const baseUrl = currentProtocol + '//' + currentHost + '/api/Graphapps';
+        console.log('检测到内网穿透环境，使用绝对路径:', baseUrl);
+        return baseUrl;
+      }
+      
+      // 检测nginx代理环境（端口8081或其他非8000端口）
+      if (currentPort === '8081' || (currentPort && currentPort !== '8000')) {
+        const baseUrl = currentProtocol + '//' + currentHost + '/api/Graphapps';
+        console.log('检测到nginx代理环境，使用相对路径:', baseUrl);
+        return baseUrl;
+      }
+      
+      // 本地开发环境，直接访问Django服务器
+      const backendHost = 'http://127.0.0.1:8000';
+      const baseUrl = backendHost + '/api/Graphapps';
+      console.log('本地开发环境，使用后端服务器路径:', baseUrl);
+      return baseUrl;
+    },
+
     // 检查数据库状态
     checkDatabaseStatus: function() {
       console.log('[DATABASE] 检查数据库状态...')
+      console.log('[DATABASE] 请求URL:', this.baseUrl + '/statistics/')
       fetch(this.baseUrl + '/statistics/')
-        .then(response => response.json())
+        .then(response => {
+          console.log('[DATABASE] 响应状态:', response.status)
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+          return response.json()
+        })
         .then(data => {
+          console.log('[DATABASE] 响应数据:', data)
           if (data.success) {
             this.databaseStatus.nodeCount = data.entity_count || 0
             this.databaseStatus.relationCount = data.relation_count || 0
@@ -389,6 +432,10 @@ export default {
         })
         .catch(error => {
           console.error('[DATABASE] 检查数据库状态出错:', error)
+          // 显示详细错误信息
+          if (error.message.includes('Failed to fetch')) {
+            this.errorMessage = '无法连接到后端服务器，请确保Django服务器正在运行'
+          }
           // 如果出错，默认认为没有数据
           this.databaseStatus.hasData = false
           this.databaseStatus.nodeCount = 0
@@ -426,6 +473,9 @@ export default {
       .then(function(response) {
         console.log('测试响应状态:', response.status)
         console.log('测试响应头:', response.headers.get('content-type'))
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
         return response.text()
       })
       .then(function(text) {
@@ -440,6 +490,9 @@ export default {
       })
       .catch(function(error) {
         console.error('❌ API连接测试失败:', error)
+        if (error.message.includes('Failed to fetch')) {
+          console.error('网络连接失败，请检查Django服务器是否运行在 http://127.0.0.1:8000')
+        }
       })
     },
 

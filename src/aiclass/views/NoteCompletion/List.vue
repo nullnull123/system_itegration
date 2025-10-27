@@ -1,54 +1,67 @@
 <template>
-  <div class="note-list">
-    <h1 class="page-title">笔记列表</h1>
-    
+  <div class="note-list-container">
+    <div class="header-section">
+      <h1 class="page-title">学生笔记管理</h1>
+      <div class="header-actions">
+        <el-button
+          type="primary"
+          size="large"
+          @click="goToUpload"
+          class="upload-btn"
+        >
+          <!-- 移除 Element Plus 图标，使用 Element UI 图标 -->
+          <i class="el-icon-plus"></i>
+          上传笔记
+        </el-button>
+        <el-button
+          type="danger"
+          size="large"
+          @click="handleDeleteAll"
+          class="delete-all-btn"
+        >
+          <i class="el-icon-delete"></i>
+          删除所有
+        </el-button>
+      </div>
+    </div>
+
     <el-card class="list-card">
       <div class="card-header">
-        <h2>笔记管理</h2>
+        <h2>笔记列表</h2>
         <div class="button-group">
-          <el-button type="primary" @click="goToUpload">创建新笔记</el-button>
-          <!-- 全删除按钮 -->
-          <el-button
-            size="mini"
-            type="danger"
-            @click="delAll"
-            :loading="loading"
-          >
-            全部删除
-          </el-button>
-
-          <!-- 批量删除按钮 -->
           <el-button
             size="mini"
             type="warning"
-            @click="bulkDel"
+            @click="handleBulkDelete"
             :disabled="selectedNotes.length === 0"
             :loading="loading"
           >
-            批量删除
+            批量删除 ({{ selectedNotes.length }})
           </el-button>
         </div>
       </div>
-      
-      <!-- 表格容器 -->
+
       <div class="table-wrapper">
-        <el-table 
-          :data="notes" 
+        <el-table
+          :data="notes"
           v-loading="loading"
           style="width: 100%"
           @selection-change="handleSelectionChange"
-          :height="tableHeight"
-          max-height="600"
+          height="500"
           border
         >
-          <!-- 选择列：放在最前面 -->
           <el-table-column type="selection" width="55"></el-table-column>
-
-          <!-- 数据列 -->
-          <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
+          <el-table-column prop="display_id" label="ID" width="80"></el-table-column>
           <el-table-column prop="title" label="标题" min-width="200"></el-table-column>
           <el-table-column prop="subject" label="学科" width="100"></el-table-column>
           <el-table-column prop="grade" label="年级" width="100"></el-table-column>
+          <!-- 新增：显示课程编码 -->
+          <el-table-column
+            prop="course_display_id"
+            label="课程编码"
+            width="120"
+            :formatter="formatCourseDisplayId"
+          ></el-table-column>
           <el-table-column prop="is_completed" label="状态" width="100">
             <template slot-scope="scope">
               <el-tag :type="scope.row.is_completed ? 'success' : 'info'">
@@ -63,16 +76,18 @@
           </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
             <template slot-scope="scope">
-              <el-button 
-                size="mini" 
+              <el-button
+                size="mini"
+                type="primary"
                 @click="viewNote(scope.row.display_id)"
-              >查看</el-button>
+              >
+                查看
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
 
-      <!-- 分页组件 -->
       <div class="pagination-container" v-if="total > 0">
         <el-pagination
           @size-change="handleSizeChange"
@@ -82,7 +97,8 @@
           :page-size="pageSize"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
-          background>
+          background
+        >
         </el-pagination>
       </div>
     </el-card>
@@ -90,21 +106,27 @@
 </template>
 
 <script>
+// 移除 Element Plus 图标导入
+// import { Plus, Delete } from '@element-plus/icons-vue'
 import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'NoteListPage',
-  computed: {
-    ...mapState('noteCompletion', ['notes', 'loading', 'error'])
-  },
+  // 移除 components 定义
+  // components: {
+  //   Plus,
+  //   Delete,
+  // },
   data() {
     return {
-      selectedNotes: [],// 用于存储选中的笔记
+      selectedNotes: [],
       currentPage: 1,
       pageSize: 10,
-      total: 0, // 添加缺失的total属性
-      tableHeight: 500 // 表格高度
+      total: 0,
     }
+  },
+  computed: {
+    ...mapState('noteCompletion', ['notes', 'loading', 'error']),
   },
   methods: {
     ...mapActions('noteCompletion', ['fetchList', 'deleteAllNotes', 'bulkDeleteNotes']),
@@ -113,27 +135,25 @@ export default {
       const date = new Date(dateString)
       return date.toLocaleString()
     },
+    formatCourseDisplayId(row) {
+      // 如果 course_display_id 为 null 或 undefined，显示 "未关联"
+      return row.course_display_id || '未关联'
+    },
     goToUpload() {
       this.$router.push('/NoteCompletion/upload')
     },
-    // 修改这里：参数名改为 displayId
     viewNote(displayId) {
-      // 修改这里：路由路径中使用 displayId
       this.$router.push(`/NoteCompletion/detail/${displayId}`)
     },
-
-
-    // 全删除方法
-    async delAll() {
+    async handleDeleteAll() {
       try {
-        await this.$confirm('此操作将永久删除所有教案, 是否继续?', '提示', {
+        await this.$confirm('此操作将永久删除所有笔记, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
         })
         await this.deleteAllNotes()
         this.$message.success('全部删除成功')
-        // 删除成功后刷新列表
         this.fetchList()
       } catch (error) {
         if (error !== 'cancel') {
@@ -141,123 +161,128 @@ export default {
         }
       }
     },
-
     handleSelectionChange(selection) {
       this.selectedNotes = selection
     },
-
-    // 批量删除方法
-    async bulkDel() {
+    async handleBulkDelete() {
       if (this.selectedNotes.length === 0) {
-        this.$message.warning('请先选择要删除的教案')
+        this.$message.warning('请先选择要删除的笔记')
         return
       }
-
       try {
-        await this.$confirm(`此操作将永久删除选中的 ${this.selectedNotes.length} 个教案, 是否继续?`, '提示', {
+        await this.$confirm(`此操作将永久删除选中的 ${this.selectedNotes.length} 个笔记, 是否继续?`, '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
         })
-        
         const displayIds = this.selectedNotes.map(note => note.display_id)
         await this.bulkDeleteNotes(displayIds)
         this.$message.success('批量删除成功')
         this.fetchList()
-        // this.selectedNotes = [] // 这行可以去掉，因为表格会自动更新
       } catch (error) {
         if (error !== 'cancel') {
           this.$message.error('批量删除失败')
         }
       }
     },
-
-    // 分页相关方法
     handleSizeChange(val) {
       this.pageSize = val
-      this.currentPage = 1
       this.fetchList({ page: this.currentPage, size: this.pageSize })
     },
-    
     handleCurrentChange(val) {
       this.currentPage = val
       this.fetchList({ page: this.currentPage, size: this.pageSize })
-    }
-
-  },
-
-  mounted() {
-    // 动态计算表格高度
-    this.$nextTick(() => {
-      const windowHeight = window.innerHeight
-      this.tableHeight = windowHeight - 300
-    })
+    },
   },
   created() {
     this.fetchList()
-  }
+  },
 }
 </script>
 
 <style scoped>
-.smart-prep-list {
+.note-list-container {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  background-color: #f5f7fa;
 }
 
-.page-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.list-card {
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-/* 添加或修改表格包装器样式 */
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.header-actions .el-button {
+  margin-left: 10px;
+}
+
+.list-card {
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.card-header h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+  color: #303133;
+}
+
 .table-wrapper {
-  margin-bottom: 20px;
-  /* 确保包装器本身有明确的高度或允许内容撑开 */
-  /* 如果需要固定高度，可以设置 height */
-  /* height: 500px; */ 
-  /* 但通常让 el-table 的 height 属性控制滚动更合适 */
+  margin: 20px 0;
 }
 
-/* 确保表格填满容器 */
-.table-wrapper .el-table {
-  width: 100%;
-  /* el-table 的 height 属性会使其内部滚动 */
-}
-
-/* 分页容器样式 */
 .pagination-container {
   display: flex;
   justify-content: center;
   padding: 20px 0;
 }
 
-/* 响应式设计 */
+/* 响应式调整 */
 @media (max-width: 768px) {
-  .card-header {
+  .header-section {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 15px;
   }
-  
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .header-actions .el-button {
+    flex: 1;
+    margin-left: 0;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
   .button-group {
-    width: 100%;
-    justify-content: space-between;
+    align-self: flex-end;
   }
 }
 </style>

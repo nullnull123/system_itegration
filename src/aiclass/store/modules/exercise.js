@@ -215,31 +215,26 @@ const state = {
       }
     },
     
-    async submitAnswer({ commit, dispatch }, data ) {
-      commit('SET_LOADING', true)
+    // exercise.js
+    async submitAnswer({ commit, dispatch }, { display_id, data }) {
+      commit('SET_LOADING', true);
       try {
-        const response = await dispatch('post', { 
-          url: AC_URL + `/api/v1/exercises/submit/${data.display_id}/`, 
-          data
-        }, { root: true })
-        // 提交答案的响应不应该设置到习题列表
-        const submissionResult = response.data.data || response.data
-        
-        // 可以更新提交记录或当前习题状态
-        commit('SET_SUBMISSION_RESULT', submissionResult) // 专门的mutation
-        commit('SET_ERROR', null)
-        
-        return submissionResult
+        // URL 中包含 display_id
+        const response = await dispatch('post', {
+          url: AC_URL + `/api/v1/exercises/submit/${display_id}/`, // ✅ 正确路径
+          data // 只包含 { answer: "..." }
+        }, { root: true });
+
+        const submissionResult = response.data.data || response.data;
+        commit('SET_SUBMISSION_RESULT', submissionResult);
+        commit('SET_ERROR', null);
+        return submissionResult;
       } catch (error) {
-        console.error('提交答案失败:', error)
-        console.error('answer:', data.answer)
-        console.error('data.display_id:', data.display_id)
-        console.error('data:', data)
-        console.error('请求的URL:', AC_URL + `/api/v1/exercises/submit/${data.display_id}/`)
-        commit('SET_ERROR', error.message || '提交答案失败')
-        throw error
+        console.error('提交答案失败:', error);
+        commit('SET_ERROR', error.message || '提交失败');
+        throw error;
       } finally {
-        commit('SET_LOADING', false)
+        commit('SET_LOADING', false);
       }
     },
 

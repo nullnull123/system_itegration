@@ -8,7 +8,7 @@ const service = axios.create({
 	// 请求URL公共部分
 	baseURL: 'api',
 	// 超时时间
-	timeout: 60000,
+	timeout: 180000,
 	// 允许携带cookies
 	withCredentials: true,
 })
@@ -48,6 +48,11 @@ service.interceptors.request.use(
 		if (config.data instanceof FormData) {
 			// 文件上传时删除Content-Type，让浏览器自动设置
 			delete config.headers['Content-Type'];
+		}
+
+		if (config.url && config.url.includes('/ai_class_workshop/api/v1/prep/')) { // 修改此条件以匹配您的 SmartPrep 相关 API 路径
+			config.timeout = 300000; // 10分钟，根据需要调整
+			console.log(`[Request Interceptor] Set longer timeout (600000ms) for API: ${config.baseURL}${config.url}`);
 		}
 		
 		return config;

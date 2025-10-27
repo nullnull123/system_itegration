@@ -92,25 +92,124 @@ export default new Router({
                     component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/SmartPrep/index.vue'),
                     meta: { title: '智能备课' },
                     children: [
+                            // --- 首页 ---
                             {
-                                path: '',
-                                name: 'SmartPrepList',
-                                component: () => import('../aiclass/views/SmartPrep/List.vue'),
-                                meta: {title: '教案列表',}
+                                path: '', 
+                                component: () => import('../aiclass/views/SmartPrep/Course/List.vue'), // 假设的组件路径
+                                meta: { title: '课程列表' }
+                            },
+                            // --- Course 相关路由 ---
+                            {
+                                path: 'course', 
+                                component: () => import('../aiclass/views/SmartPrep/Course/List.vue'), // 假设的组件路径
+                                meta: { title: '课程列表' }
                             },
                             {
-                                path: 'list',
-                                component: () => import('../aiclass/views/SmartPrep/List.vue'),
-                                meta: { title: '教案列表',}
+                                path: 'course/list',
+                                name: 'CourseList', // 添加 name
+                                component: () => import('../aiclass/views/SmartPrep/Course/List.vue'),
+                                meta: { title: '课程列表' }
                             },
                             {
-                                path: 'upload',
-                                component: () => import('../aiclass/views/SmartPrep/Upload.vue'),
+                                path: 'course/upload', 
+                                name: 'CourseUpload', // 添加 name
+                                component: () => import('../aiclass/views/SmartPrep/Course/Upload.vue'), // 假设的组件路径
+                                meta: { title: '创建课程' }
+                            },
+                            {
+                                path: 'course/detail/:displayId',
+                                name: 'CourseDetail',
+                                component: () => import('../aiclass/views/SmartPrep/Course/Detail.vue'), // 假设的组件路径
+                                meta: { title: '课程详情' }
+                            },
+                    
+                            // --- Outline 相关路由 ---
+                            {
+                                path: 'outline',
+                                component: () => import('../aiclass/views/SmartPrep/Outline/List.vue'), // 假设的组件路径
+                                meta: { title: '大纲列表' }
+                            },
+                            {
+                                path: 'outline/list',
+                                name: 'OutlineList',
+                                component: () => import('../aiclass/views/SmartPrep/Outline/List.vue'),
+                                meta: { title: '大纲列表' }
+                            },
+                            {
+                                path: 'outline/upload', 
+                                name: 'OutlineUpload',
+                                component: () => import('../aiclass/views/SmartPrep/Outline/Upload.vue'), // 假设的组件路径
+                                meta: { title: '创建大纲' }
+                            },
+                            {
+                                path: 'outline/detail/:displayId',
+                                name: 'OutlineDetail',
+                                component: () => import('../aiclass/views/SmartPrep/Outline/Detail.vue'), // 假设的组件路径
+                                meta: { title: '大纲详情' }
+                            },
+                    
+                            // --- KnowledgeList 相关路由 ---
+                            {
+                                path: 'knowledge-list', // 或者 'knowledge'
+                                component: () => import('../aiclass/views/SmartPrep/KnowledgeList/List.vue'), // 假设的组件路径
+                                meta: { title: '知识列表' }
+                            },
+                            {
+                                path: 'knowledge-list/list',
+                                name: 'KnowledgeList',
+                                component: () => import('../aiclass/views/SmartPrep/KnowledgeList/List.vue'),
+                                meta: { title: '知识列表' }
+                            },
+                            
+                            {
+                                path: 'knowledge-list/detail/:displayId',
+                                name: 'KnowledgelistDetail',
+                                component: () => import('../aiclass/views/SmartPrep/KnowledgeList/Detail.vue'), // 假设的组件路径
+                                meta: { title: '知识列表详情' }
+                            },
+                    
+                            // --- ClassPlan 相关路由 ---
+                            {
+                                path: 'classplan', // 或者 'classplan'
+                                component: () => import('../aiclass/views/SmartPrep/ClassPlan/List.vue'), // 假设的组件路径
+                                meta: { title: '教学计划' }
+                            },
+                            {
+                                path: 'classplan/list',
+                                name: 'ClassplanList',
+                                component: () => import('../aiclass/views/SmartPrep/ClassPlan/List.vue'),
+                                meta: { title: '教学计划' }
+                            },
+                            
+                            {
+                                path: 'classplan/detail/:displayId',
+                                name: 'ClassplanDetail',
+                                component: () => import('../aiclass/views/SmartPrep/ClassPlan/Detail.vue'), // 假设的组件路径
+                                meta: { title: '教学计划详情' }
+                            },
+                    
+                            // --- LessonPlan 相关路由 ---
+                            {
+                                path: 'lesson-plan', 
+                                component: () => import('../aiclass/views/SmartPrep/LessonPlan/List.vue'),
+                                meta: { title: '教案列表' }
+                            },
+                            {
+                                path: 'lesson-plan/list', 
+                                name: 'LessonplanList',
+                                component: () => import('../aiclass/views/SmartPrep/LessonPlan/List.vue'),
+                                meta: { title: '教案列表' }
+                            },
+                            {
+                                path: 'lesson-plan/upload',
+                                name: 'LessonplanUpload',
+                                component: () => import('../aiclass/views/SmartPrep/LessonPlan/Upload.vue'),
                                 meta: { title: '上传教案' }
                             },
                             {
-                                path: 'detail/:displayId',
-                                component: () => import('../aiclass/views/SmartPrep/Detail.vue'),
+                                path: 'lesson-plan/detail/:displayId',
+                                name: 'LessonplanDetail',
+                                component: () => import('../aiclass/views/SmartPrep/LessonPlan/Detail.vue'),
                                 meta: { title: '教案详情' }
                             },
                     ]
@@ -134,11 +233,13 @@ export default new Router({
                             },
                             {
                                 path: 'upload',
+                                name: 'NoteUpload',
                                 component: () => import('../aiclass/views/NoteCompletion/Upload.vue'),
                                 meta: { title: '上传笔记',}
                             },
                             {
                                 path: 'detail/:displayId',
+                                name: 'NoteDetail',
                                 component: () => import('../aiclass/views/NoteCompletion/Detail.vue'),
                                 meta: { title: '笔记详情',}
                             }
@@ -153,13 +254,11 @@ export default new Router({
                             {
                                 path: '',
                                 component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
-                                name: 'ExerciseList',
                                 meta: {title: '习题列表',}
                             },
                             {
                                 path: 'list',
                                 component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
-                                name: 'ExerciseList',
                                 meta: { title: '习题列表',}
                             },
                             {
@@ -167,18 +266,13 @@ export default new Router({
                                 component: () => import('../aiclass/views/ExerciseAssessment/Create.vue'),
                                 meta: { title: '创建习题',}
                             },
-                            // {
-                            //     path: 'submit/:displayId',
-                            //     component: () => import('../aiclass/views/ExerciseAssessment/Submit.vue'),
-                            //     meta: { title: '提交答案',}
-                            // },
                             {
                                 path: 'submissions',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Submissions.vue'),
                                 meta: { title: '提交记录',}
                             },
                             {
-                                path: 'detail/:displayId',
+                                path: 'detail/:display_id',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Detail.vue'),
                                 meta: { title: '习题详情',}
                             }
@@ -235,7 +329,7 @@ export default new Router({
                 {
                     // 视频裁剪
                     path: '/VideoCut',
-                    component: () => import(/* webpackChunkName: "upload" */ '../videocut/VideoCut.vue'),
+                    component: () => import(/* webpackChunkName: "VideoCut" */ '../videocut/VideoCut.vue'),
                     meta: { title: '视频裁剪' }
                 },
                 {

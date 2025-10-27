@@ -5,7 +5,13 @@
             <i v-if="!collapse" class="el-icon-s-fold"></i>
             <i v-else class="el-icon-s-unfold"></i>
         </div>
-        <div class="logo">后台管理系统</div>
+        <!-- <div class="logo">智慧教育平台</div> -->
+        <div class="logo">  
+            <img src="https://sai.imnu.edu.cn/public/imgs/logo1.png"   
+                alt="智慧教育平台logo"   
+                style="vertical-align: middle; width: 180px; height: auto;">  
+            <span style="margin-left: auto;">智慧教育平台</span>  
+        </div>
         <div class="header-right">
             <div class="header-user-con">
                 <!-- 全屏显示 -->
@@ -122,6 +128,7 @@ export default {
     height: 70px;
     font-size: 22px;
     color: #fff;
+    background-color: #acc2f5; /*后加 */
 }
 .collapse-btn {
     float: left;
@@ -131,9 +138,15 @@ export default {
 }
 .header .logo {
     float: left;
-    width: 250px;
+    /* width: 250px; */
     line-height: 70px;
+    
+    width: 900px;
 }
+.logo span {  
+    float: right; /* 将文字推到右边 */  
+}
+
 .header-right {
     float: right;
     padding-right: 50px;
