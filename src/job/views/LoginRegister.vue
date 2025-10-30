@@ -23,7 +23,8 @@
 					</el-form-item>
 					<template v-if="isLogin">
 						<el-button type="primary" class="login-btn" @click="handleFormSubmit">
-							{{ isLogin ? '统一身份认证' : '注册' }}
+							<!-- {{ isLogin ? '统一身份认证' : '注册' }} -->
+							{{ isLogin ? '免密登录' : '注册' }}
 						</el-button>
 					</template>
 					<template v-else>
@@ -160,10 +161,10 @@
 							let url =
 								'https://ids.xidian.edu.cn/authserver/login?service=https%3A%2F%2Fjyxxw.xidian.edu.cn';
 							window.location.href = url;
-							// 调用统一身份认证接口
-							// casLogin().then(response => {
-							// 	console.log("casLogin", response);
-							// })
+							调用统一身份认证接口
+							casLogin().then(response => {
+								console.log("casLogin", response);
+							})
 						} else {
 							// 注册逻辑
 							if (isValidUser && isValidPass && this.activeForm.password === this.activeForm
