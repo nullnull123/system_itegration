@@ -704,6 +704,7 @@ export default {
         this.loadVideo(videoName);
         this.VV_dialogVisible = false; // 确认后关闭弹窗
         this.cutCoverList = [];
+        this.clickmsg = "打入点"
         this.simulateRealDoubleClick();
 
         this.timeCurrentLeft = this.setDetailTime(

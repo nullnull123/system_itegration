@@ -6,7 +6,8 @@ axios.defaults.headers['Content-Type'] = 'application/json;charset=utf-8'
 // 创建axios实例
 const service = axios.create({
 	// 请求URL公共部分
-	baseURL: 'api',
+	baseURL: 'http://10.104.73.235:8000',
+	// baseURL: 'api',
 	// 超时时间
 	timeout: 180000,
 	// 允许携带cookies
