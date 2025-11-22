@@ -8,6 +8,7 @@ const service = axios.create({
 	// 请求URL公共部分
 	baseURL: 'http://10.104.73.235:8000',
 	// baseURL: 'api',
+	// baseURL: 'http://127.0.0.1:8000',
 	// 超时时间
 	timeout: 180000,
 	// 允许携带cookies
@@ -83,6 +84,7 @@ export const JOB_URL = '/JobRec/api'
 export const KL_URL = '/Graphapps' 
 export const AC_URL = '/ai_class_workshop' 
 export const VC_URL = '/videocut'
+// export const VC_URL = '/api'
 
 // 导出axios实例
 export default service

@@ -205,11 +205,11 @@ export default {
                 // }
             ]:
             [
-                // {
-                //     icon: 'el-icon-lx-home',
-                //     index: '/enterprisehome',
-                //     title: '系统首页'
-                // },
+                {
+                    icon: 'el-icon-lx-home',
+                    index: '/enterprisehome',
+                    title: '系统首页'
+                },
             {
                         icon: 'el-icon-user-solid',
                         index: '/manage',
@@ -247,6 +247,22 @@ export default {
 }
 .sidebar-el-menu:not(.el-menu--collapse) {
     width: 250px;
+}
+
+/* 折叠状态 —— 但依然显示文字 */
+.sidebar-el-menu.el-menu--collapse {
+    width: 120px !important;
+}
+
+/* 强制显示文字 */
+.sidebar-el-menu.el-menu--collapse .el-submenu__title span,
+.sidebar-el-menu.el-menu--collapse .el-menu-item span {
+    display: inline !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    white-space: nowrap;
+    padding-left: 5px;
 }
 .sidebar > ul {
     height: 100%;

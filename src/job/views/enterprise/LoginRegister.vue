@@ -231,7 +231,7 @@
 		/**
 		 * 设置背景图片
 		 */
-		background-image: url(../../assets/background1.jpg);
+		background-image: url(../../assets/background3.jpg);
 		background-size: 100% 100%;
 	}
 

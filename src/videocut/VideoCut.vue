@@ -101,31 +101,31 @@
           </el-dialog>
         </div>
         <div class="container1">  
-          <button type="primary" class="upload-btn" @click="openUploadDialog">
+          <el-button type="primary" class="upload-btn" @click="openUploadDialog">
               上传视频
-          </button>
+          </el-button>
         </div> 
         <!-- 选择视频按钮 -->
         <div class="container1">  
-          <button type="primary" class="upload-btn" @click="fetchAndShowDialog" :loading="isFetching">选择视频</button>  
+          <el-button type="primary" class="upload-btn" @click="fetchAndShowDialog" :loading="isFetching">选择视频</el-button>  
         </div> 
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="showGuide" class="upload-btn">
+          <el-button  type="primary" @click="showGuide" class="upload-btn">
             快捷按键
-          </button>
+          </el-button>
         </div>
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="backTostart" class="upload-btn">
+          <el-button  type="primary" @click="backTostart" class="upload-btn">
             跳到开始
-          </button>
+          </el-button>
         </div>
         <div class="container1">
           <!-- 触发按钮 -->
-          <button  type="primary" @click="backToend" class="upload-btn">
+          <el-button  type="primary" @click="backToend" class="upload-btn">
             跳到末尾
-          </button>
+          </el-button>
         </div>
       </div>
       <div class="video-play">
@@ -151,9 +151,6 @@
           >
             <span>快速选段</span>
           </div>
-          <!-- <div @click="onControl(4)" class="iconfont icon-zidong" title="自动选段">
-            <span>自动选段</span>
-          </div> -->
           <div class="contorlBtn">
             <el-button type="primary" size="mini" @click="serveSubmit()">提交视频</el-button>
           </div>
@@ -177,22 +174,9 @@
         </div>
       </div>
       <div class="controlLine">
-        <div class="signshowImg" v-if="signFlag" :style="`left:${signLeft}`">
-          <span class="signDetail icon-qingchu iconfont" @click="signDelete"></span>
-          <span class="signClose icon-chuyidong iconfont" @click="signFlag = false"></span>
-          
-          <div class="icon-xiugai iconfont text" @click="changeSignText">{{signText}}</div>
-        </div>
         <div class="dyc" id="pickeddeng">
           <div class="canFa" @mouseup="blueBgUp">
             <canvas id="canvas" :width="canvasWidth" height="80" @mousemove="showMoveImg"></canvas>
-            <div
-              class="signcircle"
-              v-for="(item,index) in makeSignList"
-              :key="index"
-              :style="`left:${item.left}`"
-              @click="signClick(item,index)"
-            ></div>
             <div class="blueBg" id="blueBg" ref="timeMove" @mousedown="blueBgDown" @mousemove="blueBgMove" @mouseup="blueBgUp">
               {{timeCurrentLeft}}
               <span class="turnDowm"></span>
@@ -236,55 +220,7 @@
         </div>
       </div>
 
-      <!-- <el-dialog
-        title="拆条设置"
-        :visible.sync="dialogVisibleAuto"
-        width="600"
-        append-to-body
-        class="autuSplice"
-      >
-        <el-radio-group v-model="radio">
-          <el-radio :label="1">自定义拆条</el-radio>
-          <el-radio :label="2">平均拆条</el-radio>
-        </el-radio-group>
-        <el-table :data="tableData" style="width: 100%" v-if="radio==1">
-          <el-table-column type="index" label="拆条列表" width="200" align="center"></el-table-column>
-          <el-table-column prop="timeLong" label="时长" align="center"></el-table-column>
-          <el-table-column fixed="right" label="操作" align="center">
-            <template slot-scope="scope">
-              <el-button
-                @click.native.prevent="deleteRow(scope.$index, tableData)"
-                type="text"
-                size="small"
-              >移除</el-button>
-              <el-button
-                @click.native.prevent="addRow(scope.$index, tableData)"
-                type="text"
-                size="small"
-              >添加</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="round" v-else>
-          <span>每段时长</span>
-          <el-input-number
-            v-model="autoNum"
-            :min="1"
-            :max="60"
-            label="设置平均拆条时间"
-            controls-position="right"
-          ></el-input-number>
-        </div>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogVisibleAuto = false">取 消</el-button>
-          <el-button type="primary" @click="autuEnsure">确 定</el-button>
-        </span>
-      </el-dialog> -->
       <el-dialog :title="spliceMsg" :visible.sync="dialogVisible" width="600" append-to-body>
-        <!-- <span>选择存放文件夹</span>
-        <div class="wenjianBox" style="height:160px;overflow:auto;">
-          <el-tree :data="wenjianList" accordion @node-click="handleNodeClick"></el-tree>
-        </div> -->
         <el-table :data="cutCoverList" style="width: 100%">
           <el-table-column label="名称" align="center" show-overflow-tooltip prop="text"></el-table-column>
           <el-table-column label="开始时间" align="center" show-overflow-tooltip prop="startTime"></el-table-column>
@@ -299,7 +235,6 @@
         </el-table>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogVisible = false">取 消</el-button>
-          <!-- <el-button type="primary" @click="entureChaitiao">确 定</el-button> -->
           <el-button type="primary" @click="send">确 定</el-button>
         </span>
       </el-dialog>
@@ -327,27 +262,15 @@ export default {
       wenjianList: [], //个人文件list
       turnFlag: "",
       index: null,
-      // tableData: [
-      //   {
-      //     timeLong: "3秒"
-      //   },
-      //   {
-      //     timeLong: "4秒"
-      //   }
-      // ],
-      autoNum: 5,
+
       ctNum: 0, //剪辑的视频段落数量
       isCtData: false, //是否已剪辑了视频
       isVideoData: false, //是否已添加视频文件
       dialogVisible: false, //弹框显示隐藏
 
-      // 自动拆条
-      // dialogVisibleAuto: false, //拆条flag
       radio: 1,
 
       videoList: null, //视频列表
-      // dialogVisible: false,
-      //   底部dyc
       topMoveBox: null, //移动的蓝色时间盒子
       number: 5, //刻度对应秒数
       maxTimeLong: 360000, //除以10 即为刻度尺 个 刻度
@@ -358,7 +281,7 @@ export default {
       cxt: null,
       clickmsg: "打入点", //打入打出
       config: {},
-      timeCurrentLeft: "00:00:00:00", //当前距离左侧时间
+      timeCurrentLeft: "00:00:00.00", //当前距离左侧时间
       clickCurrentTime: null, //点击距离
 
       timeId: null, //计算定时器
@@ -369,14 +292,12 @@ export default {
       subPlayValue: null, //分段播放数据
       moveLeft: -40, //移动中bgleft坐标
       cutCoverList: [], //裁剪列表
-      makeSignList: [], //标记列表
       coverBoxWidth: "0px",
       clickCurrentLeft: null, //点击打入时，距离左侧位置
       videoLong: 600,
       imgWidth: "0px", //图片的宽度
       pickeddeng: null,
       bofangFlag: true, //播放flag
-      signFlag: false, //标记flag
       scrollFlag: false, //滚动标识
       target: 1400, //目标位置
       // 盒子拖拽部分
@@ -385,15 +306,10 @@ export default {
       offsetEnd: null,
       currentRunMsg: "run",
       signIndex: null, //当前点击标记的index
-      signLeft: "0px",
-      signText: "标记1",
-
       // 快速选段
       quickChoseTime: 6,
 
-      mainImgUrl: "../assets/demo.jpg", //底部封面图
       mainFlag: false, //是否选择了视频
-      numberFlag: "00", //00 拆分  01合并
       spliceMsg: "提交视频",
       countNumber: 1,
       firstCutVideo:{},//页面拆分相关数据
@@ -408,7 +324,9 @@ export default {
       newFilename: '',
       uploading: false,
       message: '',
-      messageType: ''
+      messageType: '',
+
+      writing: false
     };
   },
   created() {
@@ -487,10 +405,6 @@ export default {
 
     // 设置图片盒子宽度
     this.imgWidth = (this.videoLong / this.number) * 100 + "px";
-    // this.pickeddeng = document.getElementById("pickeddeng");
-    // this.pickeddeng.addEventListener("scroll", this.handleScroll, true);
-
-    
 
     // 快速选段改变
     this.Event.$on("quickChooseTime", val => {
@@ -596,29 +510,12 @@ export default {
     handleVideoEnded() {
       this.stop();
       this.backTostart();
-      this.simulateRealDoubleClick();
       console.log("视频播放完,已自动跳到视频开始")
     },
 
-    simulateRealDoubleClick() {
-      if (this.canvas) {
-        // 创建 MouseEvent
-        const event = new MouseEvent("dblclick", {
-          bubbles: true,
-          cancelable: true,
-          clientX: 0, // 模拟点击位置（需根据实际 canvas 位置调整）
-          clientY: 0
-        });
-  
-        // 手动设置 offsetX/offsetY（MouseEvent 默认不支持）
-        Object.defineProperty(event, "offsetX", { value: 20 });
-        // 触发事件
-        this.canvas.dispatchEvent(event);
-      }
-    },
     showGuide() {
             this.$alert(
-                '<div style="text-align:center;"><img src="/quickKey.jpg" style="max-width:100%;"></div>',
+                '<div style="text-align:center;"><img src="/quickKey.png" style="max-width:100%;"></div>',
                 '快捷键',
                 { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' ,customClass: 'custom-alert-dialog'}
             );
@@ -705,7 +602,7 @@ export default {
         this.VV_dialogVisible = false; // 确认后关闭弹窗
         this.cutCoverList = [];
         this.clickmsg = "打入点"
-        this.simulateRealDoubleClick();
+        this.backTostart();
 
         this.timeCurrentLeft = this.setDetailTime(
           parseFloat(
@@ -886,28 +783,6 @@ export default {
       this.stop();
       this.blueBgFlag = true;
     },
-    // blueBgMove(e){
-    //   if(!this.blueBgFlag){
-    //     return;
-    //   }
-    //   var pickeddeng = document.getElementById("pickeddeng");
-    //   var finleft = pickeddeng.scrollLeft + e.pageX - 40;
-    //   // console.log(finleft)
-    //   if(finleft>(parseFloat(this.imgWidth)-40) || finleft < -40){
-    //     this.stop();
-    //     this.$message.error("超过限制区域")
-    //     return
-    //   }
-    //   document.getElementById("blueBg").style.left = finleft +  "px";
-    //     this.timeCurrentLeft = this.setDetailTime(
-    //       parseFloat(
-    //         Math.floor(
-    //           (this.number / 100) * (this.topMoveBox.offsetLeft + 40) * 100
-    //         ) / 100
-    //       ).toFixed(2)
-    //     );
-    //     this.Event.$emit("currentTime", this.timeCurrentLeft);
-    // },
     blueBgMove(e) {
       if (!this.blueBgFlag) return;
 
@@ -938,12 +813,6 @@ export default {
     },
     blueBgUp(){
       this.blueBgFlag = false;
-    },
-    handleNodeClick(data) {
-      this.$store.commit("setparentId", data.id);
-      this.$store.commit("setfileFirstDir", data.firstDir);
-      this.$store.commit("setfileFL", data.fileFL);
-      // console.log(this.$store.state.curVideo)
     },
     // pk
     faPKMove($event) {
@@ -1028,58 +897,7 @@ export default {
         this.Event.$emit("currentTime", this.timeCurrentLeft);
       }
     },
-    //   if (!this.downFlag) return;
-      
-    //   const pickeddeng = document.getElementById("pickeddeng");
-    //   // 关键修正1：使用getBoundingClientRect获取容器相对视口的位置
-    //   const rect = pickeddeng.getBoundingClientRect();
-    //   const currentBox = this.cutCoverList[this.index];
-      
-    //   // 关键修正2：计算鼠标相对于容器的坐标（考虑子页面嵌套）
-    //   const mouseX = $event.clientX - rect.left + pickeddeng.scrollLeft;
-      
-    //   let finleft;
-    //   let newWidth;
-    
-    //   switch (this.turnFlag) {
-    //     case "left":
-    //       // 关键修正3：基于容器相对坐标计算新位置
-    //       finleft = mouseX - 30;
-    //       // 计算新宽度（保持右侧位置不变）
-    //       newWidth = parseFloat(currentBox.width) + currentBox.left - finleft;
-    //       // 添加边界约束
-    //       finleft = Math.max(0, Math.min(finleft, rect.width - 100));
-    //       newWidth = Math.max(50, Math.min(newWidth, rect.width - finleft));
-          
-    //       currentBox.left = `${finleft}px`;
-    //       currentBox.width = `${newWidth}px`;
-    //       break;
-    
-    //     case "center":
-    //       // 中心拖动直接设置位置
-    //       finleft = mouseX - 30;
-    //       finleft = Math.max(0, Math.min(finleft, rect.width - parseFloat(currentBox.width)));
-    //       currentBox.left = `${finleft}px`;
-    //       break;
-    
-    //     case "right":
-    //       // 右侧拖动计算新宽度
-    //       finleft = mouseX - 30;
-    //       newWidth = finleft - parseFloat(currentBox.left) + 30;
-    //       newWidth = Math.max(50, Math.min(newWidth, rect.width - parseFloat(currentBox.left)));
-    //       currentBox.width = `${newWidth}px`;
-    //       break;
-    //   }
-    
-    //   // 统一更新时间属性
-    //   this.updateTimeAttributes(currentBox);
-      
-    //   // 关键修正4：减少事件触发频率
-    //   if (!this.lastEmitTime || Date.now() - this.lastEmitTime > 100) {
-    //     this.lastEmitTime = Date.now();
-    //     this.Event.$emit("currentTime", this.timeCurrentLeft);
-    //   }
-    // },
+
     faPKup() {
       this.downFlag = false;
     },
@@ -1109,17 +927,14 @@ export default {
     pkRup() {
       this.downFlag = false;
     },
-    // pk
-    handleScroll() {
-      // this.countNumber = this.pickeddeng.scrollLeft/1400 + 1;
-    },
+
     //快捷键
     keyboardEvent() {
     //   console.log(event);
       var e = event || window.event || arguments.callee.caller.arguments[0];
       if (e.keyCode == 122) {
         e.preventDefault(); //阻止F11的全屏事件
-      } else if (e.keyCode == 83) {
+      } else if (e.keyCode == 83 && this.writing == false) {
         //S键
         this.onControl(3);
       } else if (e.keyCode == 27) {
@@ -1127,35 +942,38 @@ export default {
         this.isfullScreen = false;
       } else if (e.keyCode == 32) {
         //space空格键
+        e.preventDefault();
         if (this.bofangFlag) {
           this.play();
         } else {
           this.stop();
         }
-      } else if (e.ctrlKey && e.keyCode == 77) {
-        // console.log('ctrl+m');打标记
-        // this.onControl(2);
       } else if (e.keyCode == 40) {
         // 打入点打出点
+        e.preventDefault();
         this.timeMove();
         this.clickmsg = this.clickmsg == "打入点" ? "打出点" : "打入点";
       } else if (e.keyCode == 35) {
         //end
+        e.preventDefault();
         this.backToend();
       } else if (e.keyCode == 46) {
         //清空拆条
+        e.preventDefault();
         this.clearAllVideo();
       } else if (e.keyCode == 37) {
         //←
         // console.log('←');
         // 上一帧
+        e.preventDefault();
         this.prevPage();
       } else if (e.keyCode == 39) {
         //→
         // console.log('→');
         // 下一帧
+        e.preventDefault();
         this.nextpage();
-      } else if (e.ctrlKey && e.keyCode == 189) {
+      } else if (e.keyCode == 109) {
         //ctrl + -
         e.preventDefault(); //阻止浏览器默认行为
         // console.log('ctrl + -');
@@ -1165,7 +983,7 @@ export default {
         }
         this.value2 -= 20;
         this.stepChange();
-      } else if (e.ctrlKey && e.keyCode == 187) {
+      } else if (e.keyCode == 107) {
         //ctrl + +
         e.preventDefault(); //阻止浏览器默认行为
         // console.log('ctrl + +');
@@ -1178,6 +996,7 @@ export default {
       } else if (e.keyCode == 36) {
         //Home
         // console.log("Home");
+        e.preventDefault();
         this.backTostart();
       }
     },
@@ -1284,66 +1103,16 @@ export default {
           });
         });
     },
-    deleteRow(index, rows) {
-      rows.splice(index, 1);
-    },
-    addRow(index, rows) {
-      this.$prompt("请输拆条时长（总秒数）", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        inputPattern: /^[0-9]*$/,
-        inputErrorMessage: "请输入数字"
-      })
-        .then(({ value }) => {
-          rows.splice(index + 1, 0, {
-            timeLong: value + "秒"
-          });
-        })
-        .catch(() => {
-          this.$message({
-            type: "info",
-            message: "取消输入"
-          });
-        });
-    },
 
-    signDelete() {
-      this.$confirm("是否删除标记?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      })
-        .then(() => {
-          this.makeSignList.splice(this.index, 1);
-          this.signFlag = false;
-          this.$message({
-            type: "success",
-            message: "删除成功"
-          });
-        })
-        .catch(() => {
-          this.$message({
-            type: "info",
-            message: "已取消删除"
-          });
-        });
-
-      // this.signLeft = this.makeSignList[index-1].left
-    },
-    signClick(item, index) {
-      console.log(item);
-      // this.signText = item.text;
-      // this.signIndex = index;
-      // this.signLeft = item.left;
-      // this.signFlag = true;
-    },
     // 修改分段标题
     handleEdit(index, row) {
       if(this.clickmsg === "打出点"){
-          this.$message.error("请先打出点后再删除")
+          this.$message.error("请先打出点后再修改")
           return;
       }
+      this.writing = true;
       this.changeText(index);
+      this.writing = false;
     },
     handleDelt(index, row) {
       this.cutCoverList.splice(index, 1);
@@ -1351,14 +1120,16 @@ export default {
     // 分段播放
     subSection(value) {
       if(this.clickmsg === "打出点"){
-          this.$message.error("请先打出点后再删除")
+          this.$message.error("请先打出点后再播放")
           return;
       }
+      if (this.timeId) {
+      clearInterval(this.timeId); // 清除定时器
+    }
       this.subPlayValue = value;
       this.Event.$emit("subSectionPlay", value);
       this.topMoveBox.style.left = parseFloat(value.left) - 40 + "px";
       this.subplay(parseFloat(value.left) + parseFloat(value.width));
-      // this.subrunning(parseFloat(value.left) + parseFloat(value.width));
     },
     subplay(value){
       this.bofangFlag = false;
@@ -1368,11 +1139,11 @@ export default {
         this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
         const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
         timeMove.style.left = `${newLeft-40}px`;
-        console.log('value',value);
-        console.log('timeMove.style.left',timeMove.style.left)
-        console.log('newLeft',newLeft)
+        // console.log('value',value);
+        // console.log('timeMove.style.left',timeMove.style.left)
+        // console.log('newLeft',newLeft)
         if (parseFloat(newLeft)> value) {
-          clearInterval(this.subTimeId);
+          clearInterval(this.timeId);
           this.stop();
         }
       }, 50);
@@ -1456,23 +1227,7 @@ export default {
       );
       this.Event.$emit("currentTime", this.timeCurrentLeft);
     },
-    // 修改标记名称
-    changeSignText(index) {
-      this.$prompt("请输入标记标题", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消"
-      })
-        .then(({ value }) => {
-          this.makeSignList[this.signIndex].text = value;
-          this.signText = value;
-        })
-        .catch(() => {
-          this.$message({
-            type: "info",
-            message: "取消输入"
-          });
-        });
-    },
+
     // 修改片段名称
     changeText(index) {
       this.$prompt("请输入拆条标题", "提示", {
@@ -1758,7 +1513,10 @@ export default {
       this.showCanvas();
       this.imgWidth = (this.videoLong / this.number) * 100 + "px";
       this.stop();
-      this.simulateRealDoubleClick();
+      const timeMove = document.getElementsByClassName("blueBg")[0];
+      this.timeCurrentLeft = this.formatTime(this.$refs.videoPlayer.currentTime);
+      const newLeft = 100/this.number*this.$refs.videoPlayer.currentTime;
+      timeMove.style.left = `${newLeft-40}px`;
     },
     // 获取总秒树
     getCountS(time) {
@@ -2055,6 +1813,7 @@ export default {
               ) / 100
             ).toFixed(2)
           );
+          this.Event.$emit("currentTime", this.timeCurrentLeft);
           break;
       }
     },
@@ -2102,74 +1861,8 @@ export default {
     }
     },
 
-    entureChaitiao() {
-      var curVideo = this.$store.state.curVideo;
-      var optionTimes = [];
-        for (var i = 0; i < this.cutCoverList.length; i++) {
-          var Lstart = this.cutCoverList[i].startTime.split(".")[0];
-          var Rstart = String(
-            (parseInt(this.cutCoverList[i].startTime.split(".")[1]) / 100) *
-              1000
-          );
-          var timeLone = null;
-          var Lend = null;
-          var Rend = null;
-          if (this.cutCoverList[i].timeLong.length > 8) {
-            Lend = this.cutCoverList[i].timeLong.split(".")[0];
-            Rend = String(
-              (parseInt(this.cutCoverList[i].timeLong.split(".")[1]) / 100) *
-                1000
-            );
-            timeLone = Lend + "." + Rend;
-          } else {
-            Rend = this.cutCoverList[i].timeLong;
-            timeLone = Rend;
-          }
-
-          optionTimes.push({
-            fileName: this.cutCoverList[i].text,
-            startTime: Lstart + "." + Rstart,
-            endTime: timeLone
-          });
-        }
-      // }
-      // var curVideo = this.$store.state.curVideo;
-      var data = {
-        id: curVideo.id,
-        fileMD5: curVideo.fileId,
-        optionTimes: optionTimes, //起止时间
-        optionType: this.numberFlag, //00拆分  01合并,
-        fileFirstDir: curVideo.fileFirstDir,
-        fileFL: curVideo.fileFL,
-        parentId: curVideo.parentId,
-        isSrcVideo: false,
-        fileName: "拆条1"
-      };
-      console.log(data);
-      // return
-    },
     serveSubmit() {
         this.dialogVisible = true;
-    },
-    submitOne() {
-      if (this.cutCoverList.length == 0) {
-        this.$message.error("还没有进行拆条");
-        return;
-      }
-      this.$confirm("是否合并提交视频?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "info"
-      })
-        .then(() => {
-          this.entureChaitiao("01");
-        })
-        .catch(() => {
-          this.$message({
-            type: "info",
-            message: "已取消删除"
-          });
-        });
     },
 
     // 获取时间间隔
@@ -2266,8 +1959,6 @@ export default {
     }
   },
   beforeDestroy() {
-    this.pickeddeng.removeEventListener("scroll", this.handleScroll);
-    // this.removerKeydown();
     if (this.timeId) {
       clearInterval(this.timeId); // 清除定时器
     }
@@ -2423,12 +2114,22 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  outline: none;
 }
- 
-.upload-btn:hover {
+
+.upload-btn:hover,
+.upload-btn:focus:hover {
   background: #1a75d0;
 }
- 
+
+.upload-btn:active {
+  background: #1a75d0;
+}
+
+.upload-btn:focus {
+  background: #2c8df0;
+}
+
 /* 弹窗样式 */
 .modal-overlay {
   position: fixed;
@@ -2736,18 +2437,6 @@ button:disabled {
       margin: 20px 0;
     }
   }
-  .round {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -ms-flex-pack: distribute;
-    justify-content: left;
-    -ms-flex-wrap: nowrap;
-    flex-wrap: nowrap;
-    line-height: 40px;
-    width: 300px;
-    margin: 30px auto;
-  }
 }
 footer {
   width: 100%;
@@ -2932,51 +2621,6 @@ footer {
     width: 100%;
     height: calc(100% - 40px);
     background: #1d1e22;
-    .signshowImg {
-      width: 150px;
-      height: 100px;
-      background: #fff;
-      position: absolute;
-      top: -121px;
-      z-index: 30;
-      text-align: center;
-      padding: 10px;
-      transform: translateX(-50%);
-      .text {
-        font-size: 13px;
-        color: #666;
-      }
-      > img {
-        height: 80px;
-        width: 100%;
-      }
-      .signDetail {
-        width: 15px;
-        height: 15px;
-        color: #fff;
-        background-color: #e92322;
-        position: absolute;
-        right: 10px;
-        top: 10px;
-        font-size: 13px;
-        text-align: center;
-        line-height: 15px;
-        cursor: pointer;
-      }
-      .signClose {
-        width: 15px;
-        height: 15px;
-        color: #fff;
-        background-color: #e92322;
-        position: absolute;
-        right: 10px;
-        top: 26px;
-        font-size: 13px;
-        text-align: center;
-        line-height: 15px;
-        cursor: pointer;
-      }
-    }
     .dyc {
       position: relative;
       overflow: auto;
@@ -2998,15 +2642,6 @@ footer {
       }
       .canFa {
         position: relative;
-        .signcircle {
-          width: 8px;
-          height: 8px;
-          background: orange;
-          border-radius: 50%;
-          position: absolute;
-          top: 60px;
-          cursor: pointer;
-        }
         // overflow: hidden;
       }
       .imgbackground {

@@ -2,7 +2,7 @@
 	<div>
 		<el-container>
 			<el-container>
-				<!-- <el-header><common-header></common-header></el-header> -->
+				<el-header><common-header></common-header></el-header>
 				<el-main class="main">
 					<div>
 						<!-- <el-row style="margin-left: 50px;">
@@ -14,7 +14,7 @@
 						<router-view></router-view>
 					</div>
 				</el-main>
-				<!-- <el-footer class="footer" height='200px'>
+				<el-footer class="footer" height='200px'>
 					<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
 						<div style="font-size: 14px; color: white;width: 600px;margin-top: 10px;">
 							<el-row>
@@ -47,7 +47,7 @@
 							<el-image style="width: 130px; height: 130px" :src="rightUrl"></el-image>
 						</div>
 					</div>
-				</el-footer> -->
+				</el-footer>
 			</el-container>
 		</el-container>
 

@@ -53,7 +53,7 @@ export default new Router({
                 {
                     // 系统首页
                     path: '/dashboard',
-                    component: () => import(/* webpackChunkName: "dashboard" */ '../components/page/Dashboard.vue'),
+                    component: () => import(/* webpackChunkName: "dashboard" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '系统首页' }
                 },
                 {
@@ -71,19 +71,19 @@ export default new Router({
                 {
                     // 留言互动
                     path: '/interaction',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '留言互动' }
                 },
                 {
                     // 知识点检索
                     path: '/KnowledgeRetrieval',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '知识点检索' }
                 },
                 {
                     // 大纲匹配
                     path: '/OutlineMatching',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '大纲匹配' }
                 },
                 {
@@ -281,38 +281,20 @@ export default new Router({
                 {
                     // 课堂到课率和抬头率
                     path: '/car',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '课堂到课率和抬头率' }
                 },
                 {
                     // 智能课堂数据采集
                     path: '/icdc',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '智能课堂数据采集' }
                 },
                 {
                     // 多智能体协同督导
                     path: '/macs',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
+                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '多智能体协同督导' }
-                },
-                {
-                    // 实体识别
-                    path: '/EntityRecognition',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '实体识别' }
-                },
-                {
-                    // 关系抽取
-                    path: '/RelationExtraction',
-                    component: () => import(/* webpackChunkName: "upload" */ '../abc/index.vue'),
-                    meta: { title: '关系抽取' }
-                },
-                {
-                    // 知识融合
-                    path: '/KnowledgeFusion',
-                    component: () => import(/* webpackChunkName: "upload" */ '../components/page/Upload.vue'),
-                    meta: { title: '知识融合' }
                 },
                 {
                     // 数据采集
@@ -342,28 +324,7 @@ export default new Router({
                     component: () => import(/* webpackChunkName: "403" */ '../components/page/403.vue'),
                     meta: { title: '403' }
                 },
-                {
-                    path: '/donate',
-                    component: () => import(/* webpackChunkName: "donate" */ '../components/page/Donate.vue'),
-                    meta: { title: '支持作者' }
-                },
-                {
-                    path: '/test1',
-                    component: () => import(/* webpackChunkName: "test1" */ '../components/page/test1.vue'),
-                    meta: { title: '测试' }
-                }
-                ,
-                {
-                    path: '/Tabs',
-                    component: () => import(/* webpackChunkName: "tabs" */ '../components/page/Tabs.vue'),
-                    meta: { title: '消息' }
-                },
             ]
-        },
-        {
-            path: '/logintest',
-            component: () => import(/* webpackChunkName: "logintest" */ '../components/page/Login.vue'),
-            meta: { title: '登录测试' }
         },
         {
             path: '/login',

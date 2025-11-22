@@ -49,3 +49,26 @@ export default {
     }
 };
 </script>
+<style scoped>
+.wrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 关键：使用 absolute 定位 */
+.content-box {
+  position: absolute;
+  top: 70px; /* Header 高度 */
+  left: 250px; /* 展开时 Sidebar 宽度 */
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  transition: left 0.2s ease;
+}
+
+.content-box.content-collapse {
+  left: 120px !important; /* 折叠时 Sidebar 宽度 */
+}
+</style>

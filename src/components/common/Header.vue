@@ -7,9 +7,9 @@
         </div>
         <!-- <div class="logo">智慧教育平台</div> -->
         <div class="logo">  
-            <img src="https://sai.imnu.edu.cn/public/imgs/logo1.png"   
+            <img src="logo.png"   
                 alt="智慧教育平台logo"   
-                style="vertical-align: middle; width: 180px; height: auto;">  
+                style="vertical-align: middle; width: 250px; height: auto;">  
             <span style="margin-left: auto;">智慧教育平台</span>  
         </div>
         <div class="header-right">

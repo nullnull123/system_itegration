@@ -246,7 +246,7 @@
 		/**
 		 * 设置背景图片
 		 */
-		background-image: url(../assets/background.jpg);
+		background-image: url(../assets/background2.jpg);
 		background-size: 100% 100%;
 	}
 
