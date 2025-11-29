@@ -31,7 +31,6 @@
                 
                 <div v-if="selectedFile">
                   <p>已选择文件: {{ selectedFile.name }}</p>
-                  <input v-model="newFilename" placeholder="请输入新文件名" />
                 </div>
                 
                 <div v-if="message" :class="['message', messageType]">
@@ -52,55 +51,6 @@
             </div>
           </div>
         </div>
-        <div class="video-selector"> 
-          <!-- Element UI Dialog 弹窗 -->
-          <el-dialog
-            title="请选择一个视频"
-            :visible.sync="VV_dialogVisible"
-            width="50%"
-            :before-close="handleDialogClose"
-          >
-            <div>
-              <button @click="toggle(true)" :class="[mode === true ? 'btn-selected' : '']"
-                  style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">原始视频</button>
-              <button @click="toggle(false)" :class="[mode === false ? 'btn-selected' : '']"
-                  style="border-top-right-radius: 8px; border-bottom-right-radius: 8px;">剪辑后视频</button>
-            </div>
-            <!-- 加载指示器 -->
-            <div v-if="isLoadingList" style="text-align: center; padding: 20px;">
-              <i class="el-icon-loading" style="font-size: 24px;"></i>
-              <p>加载中...</p>
-            </div>
-
-            <!-- 视频列表 -->
-            <div v-else>
-              <el-table
-                :data="formattedVideoList"
-                style="width: 100%"
-                max-height="350"
-                @row-click="onRowClick"
-                :highlight-current-row="true"
-              >
-                <el-table-column prop="name" label="视频名称" min-width="150" show-overflow-tooltip></el-table-column>
-                <el-table-column label="操作" width="210" align="center">
-                  <template slot-scope="scope">
-                    <div class = "select-video">
-                      <el-button size="mini" type="primary" @click.stop="onDownloadClick(scope.row.name)">下载</el-button>
-                      <el-button size="mini" type="danger" @click.stop="onDeleteClick(scope.row.name)">删除</el-button>
-                      <el-button size="mini" type="success" @click.stop="onSelectClick(scope.row.name)">选择</el-button>
-                    </div>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <p v-if="formattedVideoList.length === 0">没有找到视频文件。</p>
-            </div>
-
-            <!-- 弹窗底部按钮 -->
-            <span slot="footer" class="dialog-footer">
-              <el-button @click="VV_dialogVisible = false">取 消</el-button>
-            </span>
-          </el-dialog>
-        </div>
         <div class="container1">  
           <el-button type="primary" class="upload-btn" @click="openUploadDialog">
               上传视频
@@ -108,7 +58,7 @@
         </div> 
         <!-- 选择视频按钮 -->
         <div class="container1">  
-          <el-button type="primary" class="upload-btn" @click="fetchAndShowDialog" :loading="isFetching">选择视频</el-button>  
+          <el-button type="primary" class="upload-btn" @click="downloadSpecifiedVideos" :loading="isFetching">下载视频</el-button>  
         </div> 
         <div class="container1">
           <!-- 触发按钮 -->
@@ -177,7 +127,7 @@
       <div class="controlLine">
         <div class="dyc" id="pickeddeng">
           <div class="canFa" @mouseup="blueBgUp">
-            <canvas id="canvas" :width="canvasWidth" height="80" @mousemove="showMoveImg"></canvas>
+            <canvas id="canvas_simple" :width="canvasWidth" height="80" @mousemove="showMoveImg"></canvas>
             <div class="blueBg" id="blueBg" ref="timeMove" @mousedown="blueBgDown" @mousemove="blueBgMove" @mouseup="blueBgUp">
               {{timeCurrentLeft}}
               <span class="turnDowm"></span>
@@ -244,7 +194,7 @@
 </template>
 <script>
 import request from '../api/request.js'; // 引入封装的 axios 实例
-import {VC_URL} from '../api/request.js';
+import {VCS_URL} from '../api/request.js';
 
 export default {
   data() {
@@ -253,12 +203,11 @@ export default {
       video_name:'',
 
       videoSrc: '', // 绑定到 <video> 的 source src
-      VV_dialogVisible: false, // 控制 Element UI Dialog 显示
+      tempLocalFileUrl: null,
       ov_list:[],
       cv_list:[],
       rawVideoList: [],    // 存储从后端获取的原始视频名数组 ['a.mp4', 'b.mp4']
       isFetching: false,   // 主按钮加载状态
-      isLoadingList: false, // 弹窗内列表加载状态
 
       wenjianList: [], //个人文件list
       turnFlag: "",
@@ -373,7 +322,7 @@ export default {
   mounted() {
     // 获取时间
 
-    var canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas_simple");
     this.canvas = canvas;
     var cxt = canvas.getContext("2d");
     cxt.fillStyle = "#fff";
@@ -416,9 +365,7 @@ export default {
   },
   computed: {
     // 计算属性：将原始视频名数组格式化为表格需要的对象数组
-    formattedVideoList() {
-      return this.rawVideoList.map(name => ({ name: name }));
-    }
+
   },
   methods: {
     openUploadDialog() {
@@ -446,6 +393,7 @@ export default {
         this.selectedFile = file;
         // 默认文件名
         if (!this.newFilename) {
+
           this.newFilename = file.name.replace(/\.[^/.]+$/, ""); // 移除扩展名
         }
       } else {
@@ -462,17 +410,21 @@ export default {
         return;
       }
       
+      if (this.tempLocalFileUrl) {
+        URL.revokeObjectURL(this.tempLocalFileUrl);
+        console.log("已释放本地文件 URL:", this.tempLocalFileUrl);
+        this.tempLocalFileUrl = null; // 清空引用
+      }
       this.uploading = true;
       this.message = '上传中...';
       this.messageType = 'info';
 
       const formData = new FormData();
       formData.append('file', this.selectedFile);
-      formData.append('filename', this.newFilename.trim());
-      
+      console.log("formData",formData)
       try {
         // 这里应该是实际的上传逻辑
-        const response = await request.post(VC_URL + '/upload', formData, {
+        const response = await request.post(VCS_URL + '/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
@@ -481,31 +433,86 @@ export default {
 
         if (response.data.success) {
           this.showMessage(response.data.message, 'success');
-          // 重置表单
+
+          this.video_name = this.selectedFile.name
+          const localFileUrl = URL.createObjectURL(this.selectedFile);
+          this.tempLocalFileUrl = localFileUrl; // 保存引用以便后续清理
+          this.videoSrc = localFileUrl;
+          console.log("设置视频源为:", this.videoSrc);
+          // 可选：在下次 DOM 更新后尝试加载视频
+          this.$nextTick(() => {
+            const videoElement = document.getElementById('myVideo');
+            if (videoElement) {
+              videoElement.load(); // 强制重新加载新的 src
+              // videoElement.play(); // 尝试自动播放（可能被浏览器阻止）
+            } else {
+              console.warn("未找到 ID 为 'myVideo' 的 video 元素");
+            }
+        });
+        // 重置表单
           this.selectedFile = null;
           this.newFilename = '';
           this.$refs.fileInput.value = '';
-        } else {
-            this.showMessage(response.data.message || '上传失败', 'error');
-            this.$confirm(`该命名视频已存在，确定覆盖原视频 "${this.newFilename.trim()}" 吗?`, '确认选择', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              this.VV_dialogVisible = false; // 确认后关闭弹窗
-              this.cover_video(true)
-            }).catch(() => {
-              // 用户取消选择
-              console.log('用户取消选择');
-              this.cover_video(false)
-            });
-        }
+          this.showDialog = false;
+        } 
         this.messageType = 'success';
         this.uploading = false;
       } catch (error) {
         this.message = `上传失败: ${error.message || '请重试'}`;
         this.messageType = 'error';
         this.uploading = false;
+      }
+    },
+    async downloadSpecifiedVideos() {
+      this.isFetching = true;
+      try {
+        const response = await request({
+          url: VCS_URL + '/get_videos',
+          method: 'get',
+          responseType: 'blob',
+        });
+        // ------------------------------------------
+        console.log("response",response);
+        // --- 处理后端返回的 ZIP 文件 Blob ---
+        // 检查响应类型，确保确实是 ZIP 文件
+        const contentType = response.headers['content-type'];
+        if (contentType && contentType.includes('application/zip')) {
+            const blob = new Blob([response.data], { type: 'application/zip' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            // 后端已经设置了 Content-Disposition: attachment; filename="..."
+            // 浏览器通常会使用那个文件名，但也可以在这里指定一个默认的
+            link.setAttribute('download', 'downloaded_videos.zip'); // 这个名字可能被后端覆盖
+            document.body.appendChild(link);
+            link.click();
+
+            // 清理
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            console.log("ZIP 文件下载已触发");
+
+        } else {
+            // 如果后端返回了非 ZIP 的错误信息（例如 JSON），处理它
+            // 因为我们用了 responseType: 'blob'，错误信息也可能是 Blob
+            let errorMsg = '服务器返回了意外的数据格式。';
+            if (response.data instanceof Blob) {
+                try {
+                   const text = await response.data.text();
+                   errorMsg = text || errorMsg;
+                } catch (e) {
+                   console.error("读取非 ZIP 响应文本失败:", e);
+                }
+            }
+            throw new Error(errorMsg);
+        }
+        // ----------------------------------
+
+      } catch (err) {
+        console.error("下载视频失败:", err);
+      } finally {
+        this.isFetching = false;
       }
     },
     handleVideoEnded() {
@@ -521,9 +528,6 @@ export default {
                 { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' ,customClass: 'custom-alert-dialog'}
             );
         },
-    toggle(type) {
-            this.mode = type;
-        },
     formData(time){
       var h = time.split(":")[0];
       var m = time.split(":")[1];
@@ -531,268 +535,12 @@ export default {
       var ms = time.split(".")[1];
       return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s) + "." + ms;
     },
-    async cover_video(type){
-      try {
-      const requestData = {
-        confirm:type,
-      };
-      const response = await request.post(VC_URL + '/cover', requestData);
-      if (response.data.success) {
-        this.showMessage(response.data.message, 'success');
-        // 重置表单
-        if(response.data.covered){
-          this.selectedFile = null;
-          this.newFilename = '';
-          this.$refs.fileInput.value = '';
-        }
-      } else {
-        this.showMessage(response.data.message || '上传失败', 'error');
-      }
-    } catch (error) {
-      console.error('上传请求失败:', error);
-      this.showMessage('网络错误或服务器无响应', 'error');
-    }
-    },
     showMessage(msg, type) {
       this.message = msg;
       this.messageType = type;
     },
-
-    // 获取视频列表
-    async fetchAndShowDialog() {
-      this.isFetching = true;
-      try {
-        const response = await request({
-          url: VC_URL + '/videos', // 确保与后端路由匹配，且 request.js 配置正确
-          method: 'get'
-        });
-
-        if (response.data && Array.isArray(response.data.original_videos) && Array.isArray(response.data.cuted_videos)) {
-          this.ov_list = response.data.original_videos;
-          this.cv_list = response.data.cuted_videos;
-          this.VV_dialogVisible = true; // 获取成功后显示弹窗
-        } else {
-          this.$message.error('获取视频列表失败：数据格式错误');
-          console.error('Unexpected response format:', response.data);
-        }
-      } catch (error) {
-        console.error('获取视频列表失败:', error);
-        this.$message.error('获取视频列表失败');
-      } finally {
-        this.isFetching = false;
-      }
-    },
-    // 处理弹窗关闭
-    handleDialogClose(done) {
-      // 可以添加关闭确认逻辑，这里直接关闭
-      done();
-    },
-    // 点击表格行
-    onRowClick(row, column, event) {
-      // 可以在这里添加点击行的逻辑，例如高亮或预览
-      console.log('Row clicked:', row.name);
-    },
-    // 点击行内的“选择”按钮
-    onSelectClick(videoName) {
-      this.$confirm(`确定选择视频 "${videoName}" 吗?`, '确认选择', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.loadVideo(videoName);
-        this.VV_dialogVisible = false; // 确认后关闭弹窗
-        this.cutCoverList = [];
-        this.clickmsg = "打入点"
-        this.backTostart();
-
-        this.timeCurrentLeft = this.setDetailTime(
-          parseFloat(
-            Math.floor((this.number / 100) * (timeMove.offsetLeft + 40) * 100) /
-              100
-          ).toFixed(2)
-        );
-      }).catch(() => {
-        // 用户取消选择
-        console.log('用户取消选择:', videoName);
-      });
-    },
-    async onDownloadClick(videoName) {
-      try {
-        // 等待用户确认
-        await this.$confirm(`确定下载视频 "${videoName}" 吗?`, '确认选择', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        });
-        this.download_video(videoName);
-        
-      } catch (error) {
-        // 处理错误场景
-        if (error === 'cancel') {
-          console.log('用户取消选择:', videoName);
-        } else {
-          console.error('下载失败:', error);
-          // 可选：显示错误提示
-          this.$message.error('视频下载失败');
-        }
-      }
-    },
-    async download_video(videoName) {
-      if (!videoName) {
-        this.$message.warning('视频名称不能为空');
-        return;
-      }
-
-      try {
-        // 注意：这里的 URL 需要与 Django urls.py 中定义的路径匹配
-        // 构造带查询参数的 URL
-        const params = new URLSearchParams(); // 使用 URLSearchParams 来安全地构建查询字符串
-        params.append('video_name', encodeURIComponent(videoName)); // 对文件名编码
-        params.append('mode', this.mode.toString()); // 将布尔值转换为字符串
-
-        const fullUrl = VC_URL + `/download_video/?${params.toString()}`; // 假设你的 API 前缀是 /api/
-
-        console.log(`准备下载: ${fullUrl}`);
-
-        // 发起 GET 请求下载文件 (responseType 必须是 blob)
-        const response = await request({
-          url: fullUrl,
-          method: 'get',
-          responseType: 'blob', // 关键：告诉 axios 返回二进制数据
-        });
-
-        // --- 处理 Blob 数据并触发浏览器下载 ---
-        // 1. 获取文件名（尝试从 Content-Disposition 头部获取，如果没有则使用原始名称）
-        let finalFileName = videoName;
-        const disposition = response.headers['content-disposition'];
-        if (disposition && disposition.indexOf('attachment') !== -1) {
-            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-            const matches = filenameRegex.exec(disposition);
-            if (matches != null && matches[1]) {
-              // 尝试解码 RFC 5987 格式的文件名 (如果有的话)
-              finalFileName = matches[1].replace(/['"]/g, '');
-              // 简单解码 (对于复杂编码需要更精确的处理)
-              try {
-                 finalFileName = decodeURIComponent(finalFileName);
-              } catch (e) {
-                 console.warn("Could not decode filename from header:", finalFileName);
-              }
-            }
-        }
-
-        // 2. 创建 Blob 对象
-        const blob = new Blob([response.data]);
-
-        // 3. 创建一个指向 Blob 对象的 URL
-        const blobUrl = window.URL.createObjectURL(blob);
-
-        // 4. 创建一个隐藏的 <a> 元素用于触发下载
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', finalFileName); // 设置下载后的文件名
-
-        // 5. 将链接附加到 DOM，点击它，然后移除
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // 6. 释放创建的 URL 对象，节省内存
-        window.URL.revokeObjectURL(blobUrl);
-
-        this.$message.success(`视频 ${finalFileName} 开始下载`);
-
-      } catch (error) {
-        console.error("视频下载失败:", error);
-        let errorMsg = '下载失败';
-        if (error.response) {
-            if (error.response.status === 404) {
-                errorMsg = '文件未找到';
-            } else if (error.response.status === 400) {
-                errorMsg = error.response.data || '请求参数错误';
-            } else {
-                errorMsg = `HTTP ${error.response.status}`;
-            }
-        } else if (error.request) {
-            errorMsg = '网络错误或服务器无响应';
-        } else {
-            errorMsg = error.message;
-        }
-        this.$message.error(errorMsg);
-      }
-    },
-    async onDeleteClick(videoName) {
-      try {
-        // 等待用户确认
-        await this.$confirm(`确定删除视频 "${videoName}" 吗?`, '确认选择', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        });
     
-        // 确保删除完成后再刷新
-        await this.delete_video(videoName);  // 关键：等待删除完成
-        this.fetchAndShowDialog();
-        
-      } catch (error) {
-        // 处理错误场景
-        if (error === 'cancel') {
-          console.log('用户取消选择:', videoName);
-        } else {
-          console.error('删除失败:', error);
-          // 可选：显示错误提示
-          this.$message.error('视频删除失败');
-        }
-      }
-    },
-    async delete_video(videoName){
-      try {
-        const requestData = {
-          video_name:'',
-          mode:null
-        };
-        requestData.video_name = videoName;
-        requestData.mode = this.mode;
-        const response = await request.post(VC_URL +'/delete_videos', requestData);
-        if (response.data.success) {
-          this.$message.success('视频删除成功！');
-        } else {
-          this.$message.error(response.data.message || '视频删除失败');
-        }
-      } catch (error) {
-        console.error('视频删除请求失败:', error);
-      }
-    },
-    // 加载并设置视频源
-    loadVideo(videoName) {
-      try {
-        // *** 关键：构造正确的后端视频访问 URL ***
-        // 请根据你的实际后端地址和端口修改
-        this.video_name = videoName
-        const baseUrl = 'api' + VC_URL; // <--- 请检查这里
-        if(this.mode){
-          this.videoSrc = `${baseUrl}/original_videos/${encodeURIComponent(videoName)}`;
-        }
-        else{
-          this.videoSrc = `${baseUrl}/cuted_videos/${encodeURIComponent(videoName)}`;
-        }
-        console.log("设置视频源为:", this.videoSrc);
-
-        // 可选：在下次 DOM 更新后尝试加载视频
-        this.$nextTick(() => {
-          const videoElement = document.getElementById('myVideo');
-          if (videoElement) {
-            videoElement.load(); // 强制重新加载新的 src
-            // videoElement.play(); // 尝试自动播放（可能被浏览器阻止）
-          } else {
-            console.warn("未找到 ID 为 'myVideo' 的 video 元素");
-          }
-        });
-
-      } catch (error) {
-        console.error('加载视频失败:', error);
-        this.$message.error('获取视频失败');
-      }
-    },
+    // 点击表格行
     //微调
     weitiao(index,flag1,flag2){
       // flag1 1 为左边微调  2为右边微调
@@ -1950,7 +1698,7 @@ export default {
           requestData.segments[i].end_time=this.cutCoverList[i].endTime
       };
       console.log("requestData",requestData)
-      const response = await request.post(VC_URL + '/cut-video', requestData);
+      const response = await request.post(VCS_URL + '/cut-video', requestData);
       if (response.data.success) {
         this.$message.success('视频剪辑成功！');
       } else {
@@ -2070,6 +1818,11 @@ export default {
     }
     if (this.clickIn) {
       clearInterval(this.clickIn); // 清除定时器
+    }
+    if (this.tempLocalFileUrl) {
+      URL.revokeObjectURL(this.tempLocalFileUrl);
+      console.log("已释放本地文件 URL:", this.tempLocalFileUrl);
+      this.tempLocalFileUrl = null; // 清空引用
     }
   },
   destroyed() {
@@ -2392,14 +2145,6 @@ button:disabled {
   color: #721c24;
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
-}
-
-.video-selector {
-  padding: 10px;
-}
-
-.select-video{
-  display: flex;
 }
 
 .container1 {  

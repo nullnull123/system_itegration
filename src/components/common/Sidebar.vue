@@ -8,7 +8,7 @@
             text-color="#bfcbd9"
             active-text-color="#20a0ff"
             unique-opened
-            router
+            @select="handleMenuSelect"
         >
             <template v-for="item in items">
                 <template v-if="item.subs">
@@ -190,6 +190,25 @@ export default {
                         {
                             index: '/VideoCut',
                             title: '视频裁剪'
+                        },
+                        {
+                            index: '/VideoCutS',
+                            title: '视频裁剪S'
+                        }
+                    ]
+                },
+                {
+                    icon: 'el-icon-suitcase',
+                    index: '12',
+                    title: 'PPT转视频',
+                    subs: [
+                        {
+                            index: '/PPT2Video',
+                            title: '基础版'
+                        },
+                        {
+                            index: 'http://luzixiang.cn:6002/',
+                            title: '完整版'
                         }
                     ]
                 },
@@ -221,6 +240,18 @@ export default {
     computed: {
         onRoutes() {
             return this.$route.path.replace('/', '');
+        }
+    },
+     methods: {
+        handleMenuSelect(index) {
+            // 判断是否是外部链接
+            if (index.startsWith('http')) {
+                // 在新标签页打开（也可用 location.href = index 在当前页跳转）
+                window.open(index, '_blank');
+            } else {
+                // 内部路由，手动跳转
+                this.$router.push(index);
+            }
         }
     },
     created() {

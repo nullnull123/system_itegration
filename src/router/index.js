@@ -315,6 +315,18 @@ export default new Router({
                     meta: { title: '视频裁剪' }
                 },
                 {
+                    // 视频裁剪S
+                    path: '/VideoCutS',
+                    component: () => import(/* webpackChunkName: "VideoCut" */ '../videocut/VideoCutsimple.vue'),
+                    meta: { title: '视频裁剪S' }
+                },
+                {
+                    // PPT2Video
+                    path: '/PPT2Video',
+                    component: () => import(/* webpackChunkName: "VideoCut" */ '../ppt2video/ppt2video.vue'),
+                    meta: { title: 'PPT2Video' }
+                },
+                {
                     path: '/404',
                     component: () => import(/* webpackChunkName: "404" */ '../components/page/404.vue'),
                     meta: { title: '404' }
