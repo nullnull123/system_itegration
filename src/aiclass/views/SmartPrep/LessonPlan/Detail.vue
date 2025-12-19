@@ -2,15 +2,26 @@
   <div class="lesson-plan-detail">
     <h1 class="page-title">教案详情</h1>
 
-    <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
+    <!-- 加载成功并有数据时显示详情 -->
     <el-card class="detail-card" v-if="currentPrep && !loading">
       <div class="detail-header">
-        <h2>{{ currentPrep.title }} ({{ currentPrep.subject }})</h2>
+        <div class="header-main">
+          <h2 class="lesson-plan-title">{{ currentPrep.title }}</h2>
+          <div class="lesson-plan-meta">
+            <el-tag size="small" type="info">ID: {{ currentPrep.display_id }}</el-tag>
+            <el-tag size="small" :type="getSubjectTagType(currentPrep.subject)">
+              {{ getSubjectLabel(currentPrep.subject) }}
+            </el-tag>
+            <el-tag size="small" v-if="currentPrep.grade">{{ currentPrep.grade }}</el-tag>
+            <el-tag size="small" v-if="currentPrep.course_name" type="success">{{ currentPrep.course_name }}</el-tag>
+          </div>
+        </div>
         <div class="header-actions">
           <el-button 
             type="primary" 
             @click="handleGenerateOptimizedLesson"
             :loading="isGenerating"
+            icon="el-icon-magic-stick"
           >
             {{ isGenerating ? '生成中...' : '生成优化教案' }}
           </el-button>
@@ -18,6 +29,7 @@
           <el-button 
             type="warning" 
             @click="startEditing"
+            icon="el-icon-edit"
           >
             修改教案
           </el-button>
@@ -25,40 +37,85 @@
       </div>
 
       <div class="detail-content">
-        <div class="info-section">
-          <h3>基本信息</h3>
-          <ul>
-            <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
-            <li><strong>显示ID:</strong> {{ currentPrep.display_id }}</li>
-            <li><strong>课程名:</strong> {{ currentPrep.course_name || 'N/A' }}</li>
-            <li><strong>课程ID:</strong> {{ currentPrep.course_display_id || 'N/A' }}</li>
-            <li><strong>年级:</strong> {{ currentPrep.grade || 'N/A' }}</li>
-            <li><strong>时长(分钟):</strong> {{ currentPrep.duration }}</li>
-            <li><strong>第几次课:</strong> {{ currentPrep.lesson_number }}</li>
-          </ul>
-        </div>
+        <!-- 修复关键点：添加v-if="tabsReady"确保DOM完全渲染 -->
+        <el-tabs v-model="activeTab" type="border-card" class="detail-tabs" v-if="tabsReady">
+          <el-tab-pane label="基本信息" name="basic">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">标题:</span>
+                <span class="value">{{ currentPrep.title }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">学科:</span>
+                <span class="value">{{ getSubjectLabel(currentPrep.subject) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">年级:</span>
+                <span class="value">{{ currentPrep.grade || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">时长(分钟):</span>
+                <span class="value">{{ currentPrep.duration }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">第几次课:</span>
+                <span class="value">{{ currentPrep.lesson_number }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">所属课程:</span>
+                <span class="value">{{ currentPrep.course_name || 'N/A' }}</span>
+              </div>
+              <div class="info-item full-width">
+                <span class="label">创建时间:</span>
+                <span class="value">{{ formatDate(currentPrep.created_at) }}</span>
+              </div>
+            </div>
+          </el-tab-pane>
 
-        <div class="content-section">
-          <h3>原始教案</h3>
-          <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
-          <div class="original-content">{{ currentPrep.original_content }}</div>
-        </div>
+          <el-tab-pane label="教案内容" name="content">
+            <div class="tab-content">
+              <h3>教案内容</h3>
+              <div class="content-display">{{ currentPrep.original_content }}</div>
+              
+              <div v-if="currentPrep.optimized_content" class="optimized-section">
+                <h3>优化内容</h3>
+                <div class="content-display">{{ currentPrep.optimized_content }}</div>
+              </div>
+              
+              <div v-if="currentPrep.optimization_notes" class="notes-section">
+                <h3>优化说明</h3>
+                <p>{{ currentPrep.optimization_notes }}</p>
+              </div>
+            </div>
+          </el-tab-pane>
 
-        <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
-        <div v-if="currentPrep.optimized_content" class="content-section">
-          <h3>优化教案</h3>
-          <div class="optimized-content">{{ currentPrep.optimized_content }}</div>
-        </div>
-
-        <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
-        <div v-if="currentPrep.optimization_notes" class="content-section">
-          <h3>优化说明</h3>
-          <div class="optimization-notes">{{ currentPrep.optimization_notes }}</div>
-        </div>
+          <!-- 新增：教学建议标签页 -->
+          <el-tab-pane label="教学建议" name="suggestion" v-if="currentTeachingSuggestion">
+            <div class="suggestion-content">
+              <div class="suggestion-section">
+                <h3>讲授建议</h3>
+                <div class="content-display">{{ currentTeachingSuggestion.lecture_suggestions }}</div>
+              </div>
+              
+              <div class="suggestion-section">
+                <h3>互动与兴趣激发</h3>
+                <div class="content-display">{{ currentTeachingSuggestion.engagement_suggestions }}</div>
+              </div>
+              
+              <div class="suggestion-section">
+                <h3>教学资源推荐</h3>
+                <div class="content-display">{{ currentTeachingSuggestion.teacher_resources }}</div>
+              </div>
+              
+              <div class="suggestion-meta">
+                <p>生成时间: {{ formatDate(currentTeachingSuggestion.generated_at) }}</p>
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
       </div>
 
       <div class="detail-footer">
-        <!-- 修改：使用 currentPrep 代替 currentLessonPlan -->
         <p>创建时间: {{ formatDate(currentPrep.created_at) }}</p>
         <p v-if="currentPrep.optimization_time">优化时间: {{ formatDate(currentPrep.optimization_time) }}</p>
         <p>更新时间: {{ formatDate(currentPrep.updated_at) }}</p>
@@ -83,6 +140,42 @@
       </div>
     </el-card>
 
+    <!-- 优化提示词编辑弹窗 -->
+    <el-dialog
+      title="编辑优化提示词"
+      :visible.sync="showPromptDialog"
+      width="60%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      class="prompt-dialog"
+    >
+      <div class="prompt-content">
+        <h4>AI生成的优化提示词</h4>
+        <p>您可以在此基础上进行修改，以获得更符合您需求的优化教案：</p>
+        
+        <el-input
+          type="textarea"
+          v-model="optimizationPrompt"
+          :rows="12"
+          placeholder="请输入优化提示词..."
+        ></el-input>
+        
+        <div class="prompt-hint">
+          <h5>提示：</h5>
+          <ul>
+            <li>您可以添加具体的教学要求、学生特点等信息</li>
+            <li>可以指定希望强调的知识点或教学方法</li>
+            <li>可以要求添加特定的案例或活动设计</li>
+          </ul>
+        </div>
+      </div>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showPromptDialog = false">取消</el-button>
+        <el-button type="primary" @click="applyOptimizedLesson" :loading="isApplying">应用优化</el-button>
+      </span>
+    </el-dialog>
+
     <!-- 优化结果弹窗 -->
     <el-dialog
       title="优化后的教案"
@@ -93,7 +186,6 @@
       class="optimized-dialog"
     >
       <div class="optimized-header">
-        <!-- 修改：使用 optimizedLesson 代替 currentLessonPlan -->
         <h3>{{ optimizedLesson.title }} ({{ optimizedLesson.subject }})</h3>
         <div class="header-actions">
           <el-button 
@@ -118,7 +210,7 @@
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="showOptimizedDialog = false">关闭</el-button>
-        </span>
+      </span>
     </el-dialog>
 
     <!-- 编辑教案弹窗 -->
@@ -158,12 +250,12 @@
           <el-input-number v-model="editForm.duration" :min="1" :max="240"></el-input-number>
         </el-form-item>
         
-        <el-form-item label="原始内容">
+        <el-form-item label="教案内容">
           <el-input
             type="textarea"
             v-model="editForm.original_content"
             :rows="10"
-            placeholder="请输入原始教案内容"
+            placeholder="请输入教案内容"
           ></el-input>
         </el-form-item>
         
@@ -202,11 +294,17 @@ export default {
   data() {
     return {
       lessonPlanDisplayId: this.$route.params.displayId,
+      activeTab: 'basic', // 默认激活的 Tab
       isGenerating: false,
+      isApplying: false,
+      showPromptDialog: false,
       showOptimizedDialog: false,
       showEditDialog: false,
+      optimizationPrompt: '',
       optimizedLesson: {},
       saving: false,
+      // 新增：添加tabsReady状态控制Tabs渲染时机
+      tabsReady: false,
       // 编辑表单数据
       editForm: {
         display_id: '',
@@ -235,12 +333,16 @@ export default {
     }
   },
   computed: {
-    // 关键修改：将 currentLessonPlan 改为 currentPrep
-    ...mapState('smartPrep', ['currentPrep', 'loading', 'error']),
+    ...mapState('smartPrep', ['currentPrep', 'loading', 'error', 'currentTeachingSuggestion']),
+  
     
-    // 添加计算属性，保持代码一致性
-    currentLessonPlan() {
-      return this.currentPrep;
+    // 添加这个计算属性用于模板中的条件判断
+    hasTeachingSuggestion() {
+      return this.currentTeachingSuggestion && 
+             typeof this.currentTeachingSuggestion === 'object' &&
+             (Object.keys(this.currentTeachingSuggestion).length > 0 ||
+             this.currentTeachingSuggestion.lecture_suggestions || 
+             this.currentTeachingSuggestion.engagement_suggestions);
     },
     
     formattedOptimizedDialogContent() {
@@ -255,37 +357,72 @@ export default {
     }
   },
   methods: {
-    ...mapActions('smartPrep', ['fetchLessonPlanDetail', 'generateOptimizedLesson_id', 'updateLessonPlan']),
+    ...mapActions('smartPrep', [
+      'fetchLessonPlanDetail', 
+      'fetchOptimizationPrompt',
+      'applyOptimizedLesson',
+      'updateLessonPlan',
+      'fetchTeachingSuggestionDetail'
+    ]),
+    
     formatDate(dateString) {
       if (!dateString) return ''
       const date = new Date(dateString)
       return date.toLocaleString()
     },
 
+    getSubjectTagType(subject) {
+      const typeMap = {
+        'math': 'success',
+        'chinese': 'warning',
+        'english': 'primary',
+        'physics': 'info',
+        'chemistry': '',
+        'biology': 'success',
+        'history': 'warning',
+        'geography': 'primary',
+        'politics': 'info'
+      };
+      return typeMap[subject] || 'info';
+    },
+    getSubjectLabel(subjectValue) {
+      const subjectMap = {
+        'math': '数学',
+        'chinese': '语文',
+        'english': '英语',
+        'physics': '物理',
+        'chemistry': '化学',
+        'biology': '生物',
+        'history': '历史',
+        'geography': '地理',
+        'politics': '政治'
+      };
+      return subjectMap[subjectValue] || subjectValue;
+    },
+
     startEditing() {
-      if (!this.currentPrep) { // 修改：使用 currentPrep
+      if (!this.currentPrep) {
         this.$message.warning("没有可编辑的教案");
         return;
       }
       
       this.editForm = {
-        display_id: this.currentPrep.display_id || this.currentPrep.id, // 修改：使用 currentPrep
-        title: this.currentPrep.title || '', // 修改：使用 currentPrep
-        subject: this.currentPrep.subject || '', // 修改：使用 currentPrep
-        grade: this.currentPrep.grade || '', // 修改：使用 currentPrep
-        lesson_number: this.currentPrep.lesson_number || 1, // 修改：使用 currentPrep
-        duration: this.currentPrep.duration || 45, // 修改：使用 currentPrep
-        original_content: this.currentPrep.original_content || '', // 修改：使用 currentPrep
-        optimized_content: this.currentPrep.optimized_content || '', // 修改：使用 currentPrep
-        optimization_notes: this.currentPrep.optimization_notes || '', // 修改：使用 currentPrep
-        optimization_time: this.currentPrep.optimization_time || new Date().toISOString() // 修改：使用 currentPrep
+        display_id: this.currentPrep.display_id || this.currentPrep.id,
+        title: this.currentPrep.title || '',
+        subject: this.currentPrep.subject || '',
+        grade: this.currentPrep.grade || '',
+        lesson_number: this.currentPrep.lesson_number || 1,
+        duration: this.currentPrep.duration || 45,
+        original_content: this.currentPrep.original_content || '',
+        optimized_content: this.currentPrep.optimized_content || '',
+        optimization_notes: this.currentPrep.optimization_notes || '',
+        optimization_time: this.currentPrep.optimization_time || new Date().toISOString()
       };
       
       this.showEditDialog = true;
     },
 
     async saveEditedLesson() {
-      console.log('this.editForm:', this.editForm)
       try {
         this.saving = true;
         
@@ -349,18 +486,20 @@ export default {
       try {
         loadingInstance = this.$loading({
           lock: true,
-          text: '正在优化教案，请稍候...',
+          text: '正在获取优化提示词...',
           spinner: 'el-icon-loading',
           background: 'rgba(0, 0, 0, 0.7)'
         });
 
-        const result = await this.generateOptimizedLesson_id(this.lessonPlanDisplayId);
-        this.optimizedLesson = result;
-        this.showOptimizedDialog = true;
-        this.$message.success("优化教案生成成功");
+        // 1. 首先获取优化提示词
+        const promptData = await this.fetchOptimizationPrompt({ display_id: this.lessonPlanDisplayId });
+        // 2. 设置提示词并显示编辑对话框
+        this.optimizationPrompt = promptData.data.prompt || '';
+        this.showPromptDialog = true;
+        
       } catch (err) {
-        console.error("生成优化教案失败:", err);
-        const errorMsg = err?.response?.data?.message || err?.message || "生成优化教案失败";
+        console.error("获取优化提示词失败:", err);
+        const errorMsg = err?.response?.data?.message || err?.message || "获取优化提示词失败";
         this.$message.error(errorMsg);
       } finally {
         this.isGenerating = false;
@@ -370,7 +509,49 @@ export default {
       }
     },
 
-    
+    async applyOptimizedLesson() {
+      if (!this.lessonPlanDisplayId || !this.optimizationPrompt) {
+        this.$message.warning("缺少必要的参数");
+        return;
+      }
+
+      this.isApplying = true;
+      let loadingInstance = null;
+
+      try {
+        loadingInstance = this.$loading({
+          lock: true,
+          text: '正在应用优化教案...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+
+        // 调用优化教案API
+        const result = await this.$store.dispatch('smartPrep/applyOptimizedLesson', {
+          display_id: this.lessonPlanDisplayId,
+          custom_prompt: this.optimizationPrompt
+        });
+
+        // 更新当前教案
+        this.optimizedLesson = result.lesson_plan;
+        this.showOptimizedDialog = true;
+        this.showPromptDialog = false;
+        
+        // 重新获取教学建议
+        await this.fetchTeachingSuggestionDetail(this.lessonPlanDisplayId);
+        
+        this.$message.success("优化教案生成成功");
+      } catch (err) {
+        console.error("应用优化教案失败:", err);
+        const errorMsg = err?.response?.data?.message || err?.message || "应用优化教案失败";
+        this.$message.error(errorMsg);
+      } finally {
+        this.isApplying = false;
+        if (loadingInstance) {
+          loadingInstance.close();
+        }
+      }
+    },
 
     copyOptimizedContent() {
       const content = this.optimizedLesson.optimized_content;
@@ -388,27 +569,74 @@ export default {
 
     async retryFetchDetail() {
       if (this.lessonPlanDisplayId) {
-        await this.fetchLessonPlanDetail(this.lessonPlanDisplayId);
+        try {
+          await this.fetchLessonPlanDetail(this.lessonPlanDisplayId);
+          // 修复关键点：等待DOM更新后再设置tabsReady
+          await this.$nextTick();
+          this.tabsReady = true;
+          
+          // 尝试获取教学建议
+          try {
+            await this.fetchTeachingSuggestionDetail(this.lessonPlanDisplayId);
+          } catch (error) {
+            console.log("该教案可能还没有教学建议:", error);
+          }
+        } catch (error) {
+          console.error("重试加载失败:", error);
+          this.tabsReady = false; // 确保错误时重置状态
+        }
       }
     },
 
     goToList() {
-      this.$router.push({ name: 'LessonplanList' }); // 修改：与路由配置一致
+      this.$router.push({ name: 'LessonplanList' });
     }
   },
-  created() {
+  async created() {
     if (this.lessonPlanDisplayId) {
-      this.fetchLessonPlanDetail(this.lessonPlanDisplayId);
+      try {
+        await this.fetchLessonPlanDetail(this.lessonPlanDisplayId);
+        // 修复关键点：等待DOM更新后再设置tabsReady
+        await this.$nextTick();
+        this.tabsReady = true;
+        
+        // 尝试获取教学建议
+        try {
+          await this.fetchTeachingSuggestionDetail(this.lessonPlanDisplayId);
+          console.log('[Detail] 成功获取教学建议:', this.currentTeachingSuggestion);
+        } catch (error) {
+          console.log("该教案可能还没有教学建议:", error);
+        }
+      } catch (error) {
+        console.error("加载教案详情失败", error);
+        this.tabsReady = false; // 确保错误时重置状态
+      }
     } else {
       console.error("路由中未找到 displayId 参数");
     }
   },
   watch: {
     '$route.params.displayId': {
-      handler(newDisplayId) {
+      async handler(newDisplayId) {
         this.lessonPlanDisplayId = newDisplayId;
         if (newDisplayId) {
-          this.fetchLessonPlanDetail(newDisplayId);
+          try {
+            await this.fetchLessonPlanDetail(newDisplayId);
+            // 修复关键点：等待DOM更新后再设置tabsReady
+            await this.$nextTick();
+            this.tabsReady = true;
+            
+            // 尝试获取教学建议
+            try {
+              await this.fetchTeachingSuggestionDetail(newDisplayId);
+              console.log('[Detail] 路由变化后获取教学建议:', this.currentTeachingSuggestion);
+            } catch (error) {
+              console.log("该教案可能还没有教学建议:", error);
+            }
+          } catch (error) {
+            console.error("路由变化加载失败:", error);
+            this.tabsReady = false; // 确保错误时重置状态
+          }
         }
       },
       immediate: true
@@ -422,41 +650,41 @@ export default {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  background-color: #f5f7fa; /* 添加背景色 */
+  background-color: #f5f7fa;
 }
 
 .page-title {
-  font-size: 28px; /* 稍大一点的标题 */
-  margin-bottom: 25px;
-  color: #2c3e50; /* 更深的标题色 */
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #2c3e50;
   display: flex;
   align-items: center;
-  font-weight: 600; /* 加粗 */
+  font-weight: 600;
 }
 
 .page-title::before {
   content: "";
   display: inline-block;
-  width: 5px; /* 稍宽一点 */
+  width: 5px;
   height: 28px;
-  background: linear-gradient(to bottom, #409EFF, #1a56db); /* 渐变色条 */
+  background: linear-gradient(to bottom, #409EFF, #1a56db);
   margin-right: 12px;
   border-radius: 2px;
 }
 
 .detail-card {
-  padding: 25px; /* 增加内边距 */
-  border-radius: 12px; /* 更圆润的角 */
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08); /* 更柔和的阴影 */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
   margin-bottom: 25px;
-  background-color: #ffffff; /* 卡片背景色 */
-  border: 1px solid #e4e7ed; /* 添加边框 */
+  background-color: #ffffff;
+  border: 1px solid #e4e7ed;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* 顶部对齐 */
+  align-items: flex-start;
   margin-bottom: 25px;
   padding-bottom: 20px;
   border-bottom: 1px solid #ebeef5;
@@ -465,14 +693,14 @@ export default {
 .header-main {
   flex: 1;
   display: flex;
-  flex-direction: column; /* 垂直排列 */
-  gap: 10px; /* 添加间距 */
+  flex-direction: column;
+  gap: 10px;
 }
 
 .lesson-plan-title {
   margin: 0;
   color: #303133;
-  font-size: 24px; /* 标题字体大小 */
+  font-size: 24px;
   font-weight: 500;
 }
 
@@ -484,60 +712,145 @@ export default {
 
 .header-actions {
   display: flex;
-  gap: 12px; /* 增加按钮间距 */
-  align-self: flex-start; /* 按钮靠上对齐 */
-  flex-wrap: wrap; /* 允许按钮换行 */
+  gap: 12px;
+  align-self: flex-start;
+  flex-wrap: wrap;
 }
 
 .detail-content {
   line-height: 1.6;
 }
 
-.info-section, .content-section {
-  margin-bottom: 30px; /* 增加区块间距 */
-  padding: 20px;
-  background-color: #fafafa; /* 区块背景色 */
+/* Tabs 样式 */
+.detail-tabs {
   border-radius: 8px;
-  border-left: 5px solid #409EFF; /* 左侧强调色 */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02); /* 微弱阴影 */
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
-
-.info-section h3, .content-section h3 {
-  margin-bottom: 15px; /* 增加标题与内容的间距 */
-  padding-bottom: 10px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #333;
-  font-size: 18px; /* 标题字体大小 */
+.detail-tabs ::v-deep .el-tabs__header {
+  margin: 0;
+  background-color: #f8f9fa;
+}
+.detail-tabs ::v-deep .el-tabs__nav-scroll {
+  padding-left: 20px;
+}
+.detail-tabs ::v-deep .el-tabs__item {
+  height: 45px;
+  line-height: 45px;
   font-weight: 500;
 }
-
-.info-section ul {
-  list-style: none;
-  padding-left: 0;
+.detail-tabs ::v-deep .el-tabs__content {
+  padding: 20px;
+  background-color: #fff;
 }
 
-.info-section li {
-  padding: 5px 0;
-  border-bottom: 1px dashed #eee;
+.tab-content {
+  line-height: 1.6;
+}
+.tab-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+.placeholder-message {
+  text-align: center;
+  color: #909399;
+  font-style: italic;
+  padding: 20px;
 }
 
-.original-content, .optimized-content {
+/* Info Grid 样式 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+.label {
+  font-weight: 600;
+  color: #606266;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.value {
+  color: #303133;
+  font-size: 15px;
+  word-break: break-all;
+}
+
+/* Content Display 样式 */
+.content-display {
   white-space: pre-wrap;
   margin-bottom: 20px;
   padding: 15px;
-  background: #f9f9f9;
-  border-radius: 4px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
   font-family: 'Consolas', 'Monaco', monospace;
   line-height: 1.5;
   max-height: 400px;
   overflow-y: auto;
 }
 
-.optimization-notes {
-  background: #f0f7ff;
+/* Optimized Section 样式 */
+.optimized-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px dashed #dcdfe6;
+}
+.notes-section {
+  margin-top: 20px;
   padding: 15px;
-  border-radius: 4px;
+  background: #f0f7ff;
+  border-radius: 6px;
   border-left: 4px solid #409EFF;
+}
+.notes-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+.notes-section p {
+  margin: 0;
+  color: #606266;
+}
+
+/* Suggestion Section 样式 */
+.suggestion-content {
+  line-height: 1.6;
+}
+.suggestion-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+.suggestion-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.suggestion-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+.suggestion-meta {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #ebeef5;
+  color: #909399;
+  font-size: 14px;
+  text-align: right;
 }
 
 .detail-footer {
@@ -551,10 +864,10 @@ export default {
 
 .loading-card, .error-card {
   text-align: center;
-  padding: 50px 25px; /* 增加内边距 */
-  background-color: #ffffff; /* 卡片背景色 */
-  border-radius: 12px; /* 圆角 */
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08); /* 阴影 */
+  padding: 50px 25px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
   border: 1px solid #e4e7ed;
 }
 
@@ -572,7 +885,40 @@ export default {
   gap: 15px;
 }
 
-/* 优化结果弹窗样式 */
+/* Prompt Dialog 样式 */
+.prompt-dialog .prompt-content {
+  line-height: 1.6;
+}
+.prompt-dialog .prompt-content h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+.prompt-dialog .prompt-content p {
+  margin-bottom: 15px;
+  color: #606266;
+}
+.prompt-dialog .prompt-hint {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0f7ff;
+  border-radius: 6px;
+  border-left: 4px solid #409EFF;
+}
+.prompt-dialog .prompt-hint h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+.prompt-dialog .prompt-hint ul {
+  padding-left: 20px;
+}
+.prompt-dialog .prompt-hint li {
+  margin-bottom: 8px;
+  color: #606266;
+}
+
+/* Optimized Dialog 样式 */
 .optimized-dialog .optimized-header {
   display: flex;
   justify-content: space-between;
@@ -581,7 +927,6 @@ export default {
   padding-bottom: 15px;
   border-bottom: 1px solid #ebeef5;
 }
-
 .optimized-dialog .optimized-content {
   line-height: 1.6;
   font-size: 16px;
@@ -593,7 +938,6 @@ export default {
   max-height: 500px;
   overflow-y: auto;
 }
-
 .optimized-dialog .optimization-notes {
   margin-top: 20px;
   padding: 15px;
@@ -601,7 +945,6 @@ export default {
   border-radius: 4px;
   border-left: 4px solid #409EFF;
 }
-
 .optimized-dialog .optimization-meta {
   margin-top: 15px;
   padding-top: 10px;
@@ -611,39 +954,27 @@ export default {
   text-align: right;
 }
 
-/* 编辑弹窗样式 */
+/* Edit Dialog 样式 */
 .edit-dialog .el-form-item {
   margin-bottom: 20px;
 }
-
 .edit-dialog .el-textarea {
   width: 100%;
-}
-
-/* 添加处理状态样式 */
-.processing-info {
-  margin-top: 20px;
-}
-.estimated-time {
-  color: #606266;
-  font-size: 13px;
-  margin-left: 10px;
-  font-style: italic;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .lesson-plan-detail {
-    padding: 15px; /* 减少移动端内边距 */
+    padding: 15px;
   }
 
   .page-title {
-    font-size: 24px; /* 移动端标题大小 */
+    font-size: 24px;
     margin-bottom: 20px;
   }
 
   .detail-card {
-    padding: 20px; /* 减少移动端卡片内边距 */
+    padding: 20px;
   }
 
   .detail-header {
@@ -662,44 +993,17 @@ export default {
 
   .header-actions {
     justify-content: center;
-    gap: 10px; /* 移动端按钮间距 */
+    gap: 10px;
     flex-wrap: wrap;
   }
 
-  .info-section, .content-section {
-    margin-bottom: 25px; /* 减少移动端区块间距 */
-    padding: 15px;
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
   }
 
-  .info-section h3, .content-section h3 {
-    margin-bottom: 10px; /* 减少移动端标题与内容的间距 */
-    padding-bottom: 8px;
-    font-size: 16px; /* 移动端标题字体大小 */
-  }
-
-  .original-content, .optimized-content {
-    max-height: 300px; /* 减少移动端最大高度 */
-    padding: 12px;
-    font-size: 14px; /* 减少移动端字体大小 */
-  }
-
-  .optimization-notes {
-    padding: 12px;
-  }
-
-  .detail-footer {
-    margin-top: 20px; /* 减少移动端顶部间距 */
-    padding-top: 15px;
-    font-size: 13px; /* 减少移动端字体大小 */
-  }
-
-  .loading-card, .error-card {
-    padding: 40px 20px; /* 减少移动端内边距 */
-    border-radius: 8px; /* 减少移动端圆角 */
-  }
-
-  .loading-content {
-    gap: 10px;
+  .info-item.full-width {
+    grid-column: auto;
   }
 
   .error-actions {
@@ -709,44 +1013,6 @@ export default {
 
   .error-actions button {
     width: 100%;
-  }
-
-  /* 优化结果弹窗样式 (移动端) */
-  .optimized-dialog .optimized-content {
-    padding: 15px;
-    font-size: 14px; /* 减少移动端字体大小 */
-    min-height: 250px;
-    max-height: 400px; /* 减少移动端最大高度 */
-  }
-
-  .optimized-dialog .optimization-notes {
-    margin-top: 15px;
-    padding: 12px;
-  }
-
-  .optimized-dialog .optimization-meta {
-    margin-top: 12px;
-    padding-top: 8px;
-    font-size: 13px; /* 减少移动端字体大小 */
-  }
-
-  /* 编辑弹窗样式 (移动端) */
-  .edit-dialog .el-form-item {
-    margin-bottom: 15px;
-  }
-
-  .edit-dialog .el-textarea {
-    width: 100%;
-  }
-
-  /* 添加处理状态样式 (移动端) */
-  .processing-info {
-    margin-top: 15px;
-  }
-
-  .estimated-time {
-    font-size: 12px; /* 减少移动端字体大小 */
-    margin-left: 8px;
   }
 }
 </style>

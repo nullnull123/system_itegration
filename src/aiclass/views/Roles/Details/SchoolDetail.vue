@@ -1,209 +1,213 @@
 <template>
   <div class="school-detail-container">
-    <!-- 学校用户详情部分 -->
-    <div class="user-detail-container">
-      <div class="user-header">
-        <div class="avatar">
-          <i class="el-icon-school"></i>
-        </div>
-        <h1>学校用户详情</h1>
-        <div class="user-tag">
-          <el-tag type="info" effect="dark">学校用户</el-tag>
-        </div>
-      </div>
 
-      <el-card v-if="displayUserData" class="user-card">
-        <div class="user-basic-info">
-          <h2>基本信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">用户名</span>
-              <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+
+    <el-tabs v-model="activeSchoolTab" type="border-card" class="detail-tabs">
+      <!-- 学校详情标签页 -->
+      <el-tab-pane label="学校详情" name="schoolDetail">
+        <div class="user-detail-container">
+          <div class="user-header">
+            <div class="avatar">
+              <i class="el-icon-school"></i>
             </div>
-            <div class="info-item">
-              <span class="info-label">显示ID</span>
-              <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+            <h1>学校用户详情</h1>
+            <div class="user-tag">
+              <el-tag type="info" effect="dark">学校用户</el-tag>
             </div>
-            <div class="info-item">
-              <span class="info-label">状态</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
-                  {{ displayUserData.is_active ? '活跃' : '非活跃' }}
+          </div>
+
+          <el-card v-if="displayUserData" class="user-card">
+            <div class="user-basic-info">
+              <h2>基本信息</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">用户名</span>
+                  <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">显示ID</span>
+                  <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">状态</span>
+                  <span class="info-value">
+                    <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
+                      {{ displayUserData.is_active ? '活跃' : '非活跃' }}
+                    </el-tag>
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">创建时间</span>
+                  <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">最后更新</span>
+                  <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="user-organization-info">
+              <h2>组织信息</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">所属学校</span>
+                  <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="user-contact-info">
+              <h2>联系信息</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">电子邮箱</span>
+                  <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="user-account-info">
+              <h2>账户信息</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">初始设置</span>
+                  <span class="info-value">
+                    <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
+                      {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
+                    </el-tag>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </el-card>
+          
+          <!-- 添加加载状态显示 -->
+          <div v-if="loading && !displayUserData" class="loading-container">
+            <div class="custom-spinner" style="
+              width: 32px;
+              height: 32px;
+              border: 3px solid #e0e0e0;
+              borderTopColor: #409EFF;
+              borderRadius: 50%;
+              animation: system-admin-rotate 1.2s linear infinite;
+              margin: 0 auto;
+            "></div>
+            <div class="loading-text">加载学校信息中...</div>
+          </div>
+          
+          <!-- 添加错误处理 -->
+          <div v-if="error && !displayUserData" class="error-container">
+            <el-alert
+              title="加载失败"
+              type="error"
+              :description="error"
+              show-icon>
+            </el-alert>
+            <el-button type="primary" @click="loadUserData" class="retry-button">
+              重试
+            </el-button>
+          </div>
+        </div>
+      </el-tab-pane>
+
+      <!-- 学院管理标签页 -->
+      <el-tab-pane label="学院管理" name="colleges">
+        <management-section 
+          title="学院管理" 
+          icon="el-icon-reading"
+          :loading="collegeLoading"
+          :error="collegeError"
+          @retry="loadColleges">
+          
+          <div class="management-toolbar">
+            <el-button type="primary" icon="el-icon-plus" @click="showCreateCollegeDialog = true" class="create-btn">
+              创建学院
+            </el-button>
+          </div>
+          
+          <el-table :data="colleges" border stripe>
+            <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
+            <el-table-column prop="name" label="学院名称"></el-table-column>
+            <el-table-column prop="school_name" label="所属学校"></el-table-column>
+            <el-table-column prop="user_count" label="用户数" width="100"></el-table-column>
+            <el-table-column prop="has_active_users" label="状态" width="100">
+              <template slot-scope="{row}">
+                <el-tag :type="row.has_active_users ? 'success' : 'info'">
+                  {{ row.has_active_users ? '有用户' : '无用户' }}
                 </el-tag>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">创建时间</span>
-              <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">最后更新</span>
-              <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
-            </div>
-          </div>
-        </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="160">
+              <template slot-scope="{row}">
+                <el-button size="mini" @click="viewCollegeDetail(row)">详情</el-button>
+                <el-popconfirm
+                  v-if="!row.has_active_users"
+                  title="确定删除该学院吗？"
+                  @confirm="delete_College(row)"
+                  style="margin-left: 5px;">
+                  <el-button slot="reference" size="mini" type="danger">删除</el-button>
+                </el-popconfirm>
+                <el-tooltip v-else content="学院内有用户，无法直接删除" placement="top">
+                  <el-button size="mini" type="danger" disabled style="margin-left: 5px;">删除</el-button>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <el-pagination
+            class="pagination"
+            @current-change="handleCollegePageChange"
+            :current-page="collegePagination.page"
+            :page-size="collegePagination.pageSize"
+            :total="collegePagination.total"
+            layout="total, prev, pager, next, jumper">
+          </el-pagination>
+        </management-section>
+      </el-tab-pane>
 
-        <div class="user-organization-info">
-          <h2>组织信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">所属学校</span>
-              <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
-            </div>
+      <!-- 人员管理标签页（教师和学生） -->
+      <el-tab-pane label="人员管理" name="personnel">
+        <!-- 教师管理区域 -->
+        <management-section 
+          title="教师管理" 
+          icon="el-icon-user-solid"
+          :loading="teacherLoading"
+          :error="teacherError">
+          
+          <div class="management-toolbar">
+            <el-button 
+              type="primary" 
+              icon="el-icon-upload" 
+              @click="showBulkTeacherDialog = true"
+              :disabled="colleges.length === 0">
+              批量创建教师
+            </el-button>
+            <el-button type="danger" icon="el-icon-delete" @click="showBulkDeleteTeacherDialog = true">
+              批量删除教师
+            </el-button>
           </div>
-        </div>
+        </management-section>
+        
+        <!-- 学生管理区域 -->
+        <management-section 
+          title="学生管理" 
+          icon="el-icon-user"
+          :loading="studentLoading"
+          :error="studentError">
+          
+          <div class="management-toolbar">
+            <el-button type="primary" icon="el-icon-upload" @click="showBulkStudentDialog = true">
+              批量创建学生
+            </el-button>
+            <el-button type="danger" icon="el-icon-delete" @click="showBulkDeleteStudentDialog = true">
+              批量删除学生
+            </el-button>
+          </div>
+        </management-section>
+      </el-tab-pane>
+    </el-tabs>
 
-        <div class="user-contact-info">
-          <h2>联系信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">电子邮箱</span>
-              <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="user-account-info">
-          <h2>账户信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">初始设置</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
-                  {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
-                </el-tag>
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-      
-      <!-- 添加加载状态显示 -->
-      <div v-if="loading && !displayUserData" class="loading-container">
-        <div class="custom-spinner" style="
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          borderTopColor: #409EFF;
-          borderRadius: 50%;
-          animation: system-admin-rotate 1.2s linear infinite;
-          margin: 0 auto;
-        "></div>
-        <div class="loading-text">加载学校信息中...</div>
-      </div>
-      
-      <!-- 添加错误处理 -->
-      <div v-if="error && !displayUserData" class="error-container">
-        <el-alert
-          title="加载失败"
-          type="error"
-          :description="error"
-          show-icon>
-        </el-alert>
-        <el-button type="primary" @click="loadUserData" class="retry-button">
-          重试
-        </el-button>
-      </div>
-    </div>
-    
-    <!-- 学院管理区域 -->
-    <management-section 
-      title="学院管理" 
-      icon="el-icon-reading"
-      :loading="collegeLoading"
-      :error="collegeError"
-      @retry="loadColleges">
-      
-      <div class="management-toolbar">
-        <el-input 
-          v-model="collegeSearchQuery" 
-          placeholder="搜索学院名称/ID" 
-          style="width: 240px;"
-          clearable
-          @keyup.enter.native="searchColleges">
-          <el-button slot="append" icon="el-icon-search" @click="searchColleges"></el-button>
-        </el-input>
-        <el-button type="primary" icon="el-icon-plus" @click="showCreateCollegeDialog = true" class="create-btn">
-          创建学院
-        </el-button>
-      </div>
-      
-      <el-table :data="colleges" border stripe>
-        <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
-        <el-table-column prop="name" label="学院名称"></el-table-column>
-        <el-table-column prop="school_name" label="所属学校"></el-table-column>
-        <el-table-column prop="user_count" label="用户数" width="100"></el-table-column>
-        <el-table-column prop="has_active_users" label="状态" width="100">
-          <template slot-scope="{row}">
-            <el-tag :type="row.has_active_users ? 'success' : 'info'">
-              {{ row.has_active_users ? '有用户' : '无用户' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="160">
-          <template slot-scope="{row}">
-            <el-button size="mini" @click="viewCollegeDetail(row)">详情</el-button>
-            <el-popconfirm
-              v-if="!row.has_active_users"
-              title="确定删除该学院吗？"
-              @confirm="deleteCollege(row)"
-              style="margin-left: 5px;">
-              <el-button slot="reference" size="mini" type="danger">删除</el-button>
-            </el-popconfirm>
-            <el-tooltip v-else content="学院内有用户，无法直接删除" placement="top">
-              <el-button size="mini" type="danger" disabled style="margin-left: 5px;">删除</el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <el-pagination
-        class="pagination"
-        @current-change="handleCollegePageChange"
-        :current-page="collegePagination.page"
-        :page-size="collegePagination.pageSize"
-        :total="collegePagination.total"
-        layout="total, prev, pager, next, jumper">
-      </el-pagination>
-    </management-section>
-    
-    <!-- 教师管理区域 -->
-    <management-section 
-      title="教师管理" 
-      icon="el-icon-user-solid"
-      :loading="teacherLoading"
-      :error="teacherError">
-      
-      <div class="management-toolbar">
-        <el-button 
-          type="primary" 
-          icon="el-icon-upload" 
-          @click="showBulkTeacherDialog = true"
-          :disabled="colleges.length === 0">
-          批量创建教师
-        </el-button>
-        <el-button type="danger" icon="el-icon-delete" @click="showBulkDeleteTeacherDialog = true">
-          批量删除教师
-        </el-button>
-      </div>
-    </management-section>
-    
-    <!-- 学生管理区域 -->
-    <management-section 
-      title="学生管理" 
-      icon="el-icon-user"
-      :loading="studentLoading"
-      :error="studentError">
-      
-      <div class="management-toolbar">
-        <el-button type="primary" icon="el-icon-upload" @click="showBulkStudentDialog = true">
-          批量创建学生
-        </el-button>
-        <el-button type="danger" icon="el-icon-delete" @click="showBulkDeleteStudentDialog = true">
-          批量删除学生
-        </el-button>
-      </div>
-    </management-section>
     
     <!-- 创建学院对话框 -->
     <el-dialog title="创建新学院" :visible.sync="showCreateCollegeDialog" width="400px">
@@ -374,6 +378,43 @@
         <el-button type="danger" @click="handleBulkDeleteStudents" :loading="bulkDeleteStudentLoading">删除</el-button>
       </div>
     </el-dialog>
+
+
+    <!-- 创建结果对话框 -->
+    <el-dialog 
+      :title="getResultDialogTitle" 
+      :visible.sync="showCreateResultDialog" 
+      width="700px"
+      append-to-body>
+      
+      <el-alert
+        :type="createResultType === 'college' ? 'info' : 'success'"
+        :title="getResultAlertTitle"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 20px;">
+      </el-alert>
+      
+      <el-table :data="createResultData" border stripe max-height="400">
+        <el-table-column 
+          v-for="(col, index) in createResultColumns" 
+          :key="index"
+          :prop="col.prop"
+          :label="col.label"
+          :width="col.width || ''">
+        </el-table-column>
+      </el-table>
+      
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="showCreateResultDialog = false">关闭</el-button>
+        <el-button 
+          type="primary" 
+          @click="exportResults" 
+          icon="el-icon-download">
+          导出结果
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -445,11 +486,35 @@ export default {
     displayUserData() {
       // 优先使用从sessionStorage获取的登录用户数据
       return this.loginUserData || this.userData;
-    }
+    },
+
+    // 添加这两个计算属性
+    getResultDialogTitle() {
+      if (this.createResultType === 'teacher') {
+        return '教师创建结果';
+      } else if (this.createResultType === 'student') {
+        return '学生创建结果';
+      } else if (this.createResultType === 'college') {
+        return '学院创建结果';
+      }
+      // 提供一个默认返回值以防 createResultType 有意外值
+      return '创建结果';
+    },
+
+    getResultAlertTitle() {
+      if (this.createResultType === 'college') {
+        // 对于学院，每次都只创建一个
+        return '成功创建 1 个学院';
+      } else {
+        // 对于教师和学生，使用原来的逻辑
+        return `成功创建 ${this.createResultData.length} 个${this.createResultType === 'teacher' ? '教师' : '学生'}`;
+      }
+    },
   },
   
   data() {
     return {
+      activeSchoolTab: 'schoolDetail',
       error: null,
       loading: true,
       loginUserData: null, // 存储从sessionStorage获取的登录用户数据
@@ -457,7 +522,7 @@ export default {
       // 学院管理相关
       collegePagination: {
         page: 1,
-        pageSize: 10,
+        pageSize: 5,
         total: 0
       },
       collegeSearchQuery: '',
@@ -512,7 +577,11 @@ export default {
         student_ids: '',
         reason: ''
       },
-      bulkDeleteStudentLoading: false
+      bulkDeleteStudentLoading: false,
+      showCreateResultDialog: false,  // 控制结果对话框显示
+      createResultData: [],           // 存储创建结果数据
+      createResultType: '',           // 区分是教师还是学生
+      createResultColumns: []         // 动态列配置
     };
   },
   
@@ -573,9 +642,9 @@ export default {
       return null;
     },
     
-    async loadColleges() {
+    async loadColleges(page = this.collegePagination.page) {
       try {
-        const result = await this.getColleges(this.collegePagination.page);
+        const result = await this.getColleges(page);
         if (result && typeof result.total === 'number') {
           this.collegePagination.total = result.total;
         } else {
@@ -590,12 +659,9 @@ export default {
     
     handleCollegePageChange(page) {
       this.collegePagination.page = page;
-      this.loadColleges();
+      this.loadColleges(page);
     },
     
-    searchColleges() {
-      console.log('搜索学院:', this.collegeSearchQuery);
-    },
     
     viewCollegeDetail(college) {
       this.selectedCollege = college;
@@ -661,13 +727,24 @@ export default {
         
         console.log('[SchoolDetail] 发送创建学院请求:', payload);
         
-        await this.createCollege(payload);
+        const result = await this.createCollege(payload);
+
+        console.log('[result] 发送创建学院请求:', result);
+
+        // 处理成功响应 - 关键修改点
+        if (result.college_admin) {
+          this._showCreationResults('college', result.college_admin);
+        }
         
         this.$message({
           type: 'success',
           message: '学院创建成功',
           duration: 2000
         });
+
+        // ✅ 新增：重置分页状态并刷新列表
+        this.collegePagination.page = 1; // 重置到第一页（新学校通常在第一页）
+        await this.loadColleges();       // 重新获取数据（更新total和列表）
         
         this.closeCreateCollegeDialog();
       } catch (error) {
@@ -701,9 +778,10 @@ export default {
       }
     },
     
-    async deleteCollege(college) {
+    
+    async delete_College(college) {
       try {
-        this.collegeLoading = true;
+        // ✅ 移除：this.collegeLoading = true;
         
         // 如果学院内有用户，需要强制删除
         const force = college.has_active_users;
@@ -720,16 +798,19 @@ export default {
           message: '学院删除成功',
           duration: 2000
         });
+
+        // ✅ 新增：重置分页状态并刷新列表
+        this.collegePagination.page = 1; // 重置到第一页（新学校通常在第一页）
+        await this.loadColleges();       // 重新获取数据（更新total和列表）
       } catch (error) {
-        this.collegeError = error.message || '删除学院失败';
+        // ✅ 移除：this.collegeError = error.message || '删除学院失败';
         this.$message({
           type: 'error',
           message: error.message || '删除学院失败',
           duration: 3000
         });
-      } finally {
-        this.collegeLoading = false;
       }
+      // ✅ 移除：finally 块，因为 loading 状态已由 store 管理
     },
     
     // 新增：处理学院选择变化，加载课程组
@@ -810,6 +891,11 @@ export default {
           this.bulkCreateTeachers(payload),
           timeoutPromise
         ]);
+
+        // 处理成功响应 - 关键修改点
+        if (result.created_accounts && result.created_accounts.length > 0) {
+          this._showCreationResults('teacher', result.created_accounts);
+        }
         
         // 请求成功，清除可能的超时定时器
         if (timeoutId) {
@@ -894,7 +980,12 @@ export default {
           school_display_id: this._getSchoolId()  // ✅ 使用正确的school_display_id
         };
         
-        await this.bulkCreateStudents(payload);
+        const result = await this.bulkCreateStudents(payload);
+
+        // 处理成功响应 - 关键修改点
+        if (result.created_accounts && result.created_accounts.length > 0) {
+          this._showCreationResults('student', result.created_accounts);
+        }
         
         this.$message({
           type: 'success',
@@ -903,6 +994,7 @@ export default {
         });
         
         this.showBulkStudentDialog = false;
+        return result;
       } catch (error) {
         this.$message({
           type: 'error',
@@ -953,6 +1045,37 @@ export default {
         this.bulkDeleteStudentLoading = false;
       }
     },
+
+    // 辅助方法：显示创建结果
+    _showCreationResults(type, data) {
+      this.createResultType = type;
+      // 修改点：确保 createResultData 是一个数组
+      // 如果是 'college' 类型，data 是一个对象，需要将其包装在数组中
+      // 如果是 'teacher' 或 'student' 类型，data 本身应该是数组
+      this.createResultData = (type === 'college') ? [data] : data;
+      // 根据类型配置表格列
+      if (type === 'teacher') {
+        this.createResultColumns = [
+          { label: '工号', prop: 'employee_id' },
+          { label: '用户名', prop: 'username' },
+          { label: '初始密码', prop: 'initial_password' }
+        ];
+      } else if(type === 'student') {
+        this.createResultColumns = [
+          { label: '学号', prop: 'student_id' },
+          { label: '用户名', prop: 'username' },
+          { label: '初始密码', prop: 'initial_password' }
+        ];
+      } else{ // type === 'college'
+        this.createResultColumns = [
+          { label: '用户名', prop: 'username' },
+          { label: '初始密码', prop: 'initial_password' }
+          // 可选：也可以包含 message
+          // { label: '提示信息', prop: 'message' }
+        ];
+      }
+      this.showCreateResultDialog = true;
+    },
     
     // ✅ 添加：安全获取学校ID的方法
     _getSchoolId() {
@@ -996,6 +1119,36 @@ export default {
       } catch {
         return '格式错误';
       }
+    },
+
+    
+    // 导出结果为CSV
+    exportResults() {
+      const type = this.createResultType;
+      const fileName = `${type}创建结果_${new Date().toISOString().slice(0,10)}`;
+      
+      // 创建CSV内容
+      const headers = this.createResultColumns.map(col => col.label).join(',');
+      const rows = this.createResultData.map(item => 
+        this.createResultColumns.map(col => 
+          col.prop === 'initial_password' ? 
+            `"${item[col.prop]}"` : 
+            item[col.prop]
+        ).join(',')
+      );
+      
+      const csvContent = [headers, ...rows].join('\n');
+      
+      // 创建并下载文件
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${fileName}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   }
 };
@@ -1258,4 +1411,27 @@ export default {
     transform: rotate(360deg);
   }
 }
+
+
+/* 结果对话框样式 */
+.result-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.result-icon {
+  font-size: 24px;
+  color: #67c23a;
+  margin-right: 10px;
+}
+
+.result-count {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+}
+
 </style>

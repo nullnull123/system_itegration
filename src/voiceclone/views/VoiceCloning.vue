@@ -1,22 +1,29 @@
 <template>
     <div class="container mb-2" style="padding: 15px">
-        <div class="alert rounded-0">
-            <p class="mb-0 custom-text">用自己的声音或使用任意音色录制一段音频</p>
-            <p class="mb-0 custom-text">用于克隆的最佳音频素材时长为 30s-120s, 为确保清晰准确的人声不要有杂音、背景音</p>
+        <div class="alert voice-tip mb-3">
+            <div class="voice-tip-icon">
+                <img src="/static/images/logo.jpg" alt="语音克隆提示" class="voice-tip-icon-img" />
+            </div>
+            <div class="voice-tip-body">
+                <p class="voice-tip-title">
+                    录制或上传音频，轻松复刻
+                </p>
+                <p class="voice-tip-desc">
+                    用于克隆的最佳音频素材时长为 15s ~ 30s。为确保清晰准确的人声，建议在安静环境录制，避免多人对话、明显杂音、噪音、混响等情况。
+                </p>
+            </div>
         </div>
 
-        <div class="my-2 btn-group">
-            <button @click="toggle('tts')" :class="['btn border', mode === 'tts' ? 'btn-primary' : '']"
-                style="font-size: 18px; border-top-left-radius: 8px; border-bottom-left-radius: 8px">
-                语音克隆
+        <!-- 模式切换：语音克隆 / 音色转换 -->
+        <div class="mode-switch my-2">
+            <button type="button" class="mode-switch-item" :class="{ 'is-active': mode === 'tts' }"
+                @click="toggle('tts')">
+                <span class="mode-switch-label">语音克隆</span>
             </button>
-            <button @click="toggle('sts')" :class="['btn border', mode === 'sts' ? 'btn-primary' : '']"
-                style="font-size: 18px; border-top-right-radius: 8px; border-bottom-right-radius: 8px">
-                音色转换
+            <button type="button" class="mode-switch-item" :class="{ 'is-active': mode === 'sts' }"
+                @click="toggle('sts')">
+                <span class="mode-switch-label">音色转换</span>
             </button>
-            <!-- <span class="question-mark" @click="showGuide(mode)" title="操作指南">
-                <i class="fas fa-question-circle"></i>
-            </span> -->
         </div>
 
         <div class="p-3 shadow bg-white">
@@ -185,23 +192,48 @@
                     <div class="d-flex justify-content-center" style="margin-bottom: 8px">
                         <span style="font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02rem"> ③ 输入文本 </span>
                     </div>
-                    <!-- 描述 -->
-                    <p style="text-align: center; margin-bottom: 18px; color: #6b7280; font-size: 0.9rem">
-                        请输入希望合成的文字，或直接导入文本文件（txt / srt）
-                    </p>
+
+                    <!-- 描述 + 右侧快捷按钮 -->
+                    <div class="d-flex justify-content-between align-items-center"
+                        style="margin-bottom: 12px; padding: 0 2px;">
+                        <!-- 左侧占位 -->
+                        <div style="width: 120px;"></div>
+                        <!-- 中间说明文字 -->
+                        <div class="flex-grow-1 text-center" style="color: #6b7280; font-size: 0.9rem;">
+                            请输入希望合成的文字，或直接导入文本文件
+                        </div>
+                        <!-- 右侧快捷工具按钮 -->
+                        <div class="repeat-helper-wrapper" @mouseenter="showRepeatTooltip = true"
+                            @mouseleave="showRepeatTooltip = false" @click="showRepeatTooltip = !showRepeatTooltip">
+                            <button type="button" class="mark-repeat-btn" @click.stop="markSelectionWithBrackets">
+                                <span class="icon">⚠️</span>
+                                <span class="text">标记问题</span>
+                                <span class="help-circle">?</span>
+                            </button>
+                            <!-- 深色说明气泡 -->
+                            <div v-if="showRepeatTooltip" class="repeat-tooltip">
+                                <div class="repeat-tooltip-body">
+                                    用于改善<span class="hl">复读、吞字</span>等问题。
+                                    请在文本框中<span class="hl">选中有问题的片段</span>后点击此按钮，然后重新合成。例如：早上好，选中并点击后会变成【早上好】。
+                                    <span class="hl">建议选中完整的短语</span>（如“晴朗的天气”），而不是拆开的词语（如只选“天气”）。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- 输入区域 -->
                     <div
                         style="background: #f8fafc; border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 15px 20px">
-                        <textarea v-model="textInput" class="form-control" rows="5" placeholder="在此输入希望听到的文本"
+                        <textarea ref="ttsTextArea" v-model="textInput" class="form-control" rows="5"
+                            placeholder="在此输入希望听到的文本"
                             style="resize: vertical; background: #ffffff; border-radius: 8px; border: 1px solid #d1d5db">
                         </textarea>
 
                         <!-- 导入按钮 -->
                         <label class="btn-file btn-secondary-srt mt-2" style="display: inline-block">
                             <span class="btn btn-sm btn-secondary" style="border-radius: 6px; padding: 5px;">导入文本文件 (
-                                txt、srt )</span>
-                            <input type="file" accept=".srt,.txt"
+                                txt , docx )</span>
+                            <input type="file" accept=".txt,.srt,.docx,.doc"
                                 class="position-absolute start-0 top-0 end-0 bottom-0 opacity-0"
                                 @change="uploadSrtFile" />
                         </label>
@@ -317,6 +349,7 @@ import {
     getModelStatus,
     toggleModelStatus,
     uploadAudioFile,
+    readTextFile,
     runTTS,
     runSTS
 } from '@/voiceclone/api/tts';
@@ -373,6 +406,7 @@ export default {
             // ====== 界面提示 ======
             warningMessage: '', // 警告信息
             tipsMessage: '', // 过程提示
+            showRepeatTooltip: false,  // 控制说明气泡的显示/隐藏
 
             // ====== 文本输入 ======
             textInput: '', // 待合成的文本内容
@@ -488,6 +522,67 @@ export default {
         setTips(msg) {
             this.tipsMessage = msg;
             this.warningMessage = '';
+        },
+        /* 将当前在文本框中选中的内容用【】包裹起来 */
+        markSelectionWithBrackets() {
+            const el = this.$refs.ttsTextArea;
+            if (!el) return;
+
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+
+            // 1）没有选中文本 → 用弹窗提示后返回
+            if (start === end) {
+                this.$message({
+                    message: '请先在下面的文本框中选中出现问题的片段，再点击标记问题按钮。',
+                    type: 'warning',
+                    duration: 3000
+                });
+                this.showRepeatTooltip = true;  // 顺便展开气泡说明
+                return;
+            }
+
+            const value = this.textInput || '';
+            const before = value.slice(0, start);
+            const middle = value.slice(start, end);
+            const after = value.slice(end);
+
+            const trimmed = middle.trim();
+            if (!trimmed) {
+                this.$message({
+                    message: '选中的内容为空白，无法标记，请重新选择具体的文字片段。',
+                    type: 'warning',
+                    duration: 3000
+                });
+                return;
+            }
+
+            // 2）如果已经是【...】了，就不重复包裹
+            if (trimmed.startsWith('【') && trimmed.endsWith('】')) {
+                this.$message({
+                    message: '该片段已经用【】标记过了，无需重复操作。',
+                    type: 'info',
+                    duration: 2000
+                });
+                return;
+            }
+
+            // 3）执行包裹：before + 【middle】 + after
+            this.textInput = before + '【' + middle + '】' + after;
+
+            // 4）更新光标位置到标记段之后
+            this.$nextTick(() => {
+                const pos = (before + '【' + middle + '】').length;
+                el.focus();
+                el.selectionStart = el.selectionEnd = pos;
+            });
+
+            // 完成提示
+            this.$message({
+                message: '已标记该片段，后续合成会单独处理此段以改善合成效果。',
+                type: 'success',
+                duration: 3000
+            });
         },
         buildFormData() {
             const fd = new FormData();
@@ -689,17 +784,78 @@ export default {
             }
         },
 
-        uploadSrtFile(event) {
-            const file = event.target.files[0];
+        async uploadSrtFile(event) {
+            const file = event.target.files[0]
             if (!file) {
-                this.$alert(this.langlist['lang9'], '提示');
-                return;
+                this.$message({
+                    message: (this.langlist && this.langlist.lang9) || '未选择文件',
+                    type: 'warning',
+                    duration: 3000
+                })
+                return
             }
-            const reader = new FileReader();
-            reader.onload = () => {
-                this.textInput = reader.result;
-            };
-            reader.readAsText(file, 'utf-8');
+
+            const name = file.name || ''
+            const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : ''
+
+            // 1) txt / srt：FileReader 逻辑
+            if (ext === 'txt' || ext === 'srt') {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    this.textInput = reader.result
+                    this.$message({
+                        message: '文件导入成功',
+                        type: 'success',
+                        duration: 2000
+                    })
+                }
+                reader.readAsText(file, 'utf-8')
+                event.target.value = ''
+                return
+            }
+
+            // 2) doc / docx：走后端接口 read_text_file
+            if (ext === 'docx' || ext === 'doc') {
+                const fd = new FormData()
+                fd.append('file', file)
+
+                try {
+                    const resp = await readTextFile(fd)
+                    const data = resp.data || {}
+
+                    if (data.code === 0) {
+                        this.textInput = data.text || ''
+                        this.$message({
+                            message: '文件导入成功',
+                            type: 'success',
+                            duration: 2000
+                        })
+                    } else {
+                        this.$message({
+                            message: data.msg || '文件解析失败',
+                            type: 'error',
+                            duration: 4000
+                        })
+                    }
+                } catch (err) {
+                    this.$message({
+                        message: String(err),
+                        type: 'error',
+                        duration: 4000
+                    })
+                } finally {
+                    event.target.value = ''
+                }
+                return
+            }
+
+            // 3) 其它不支持的格式
+            this.$message({
+                message: `不支持的文件类型：${ext || '未知'}`,
+                type: 'warning',
+                duration: 3000
+            })
+            event.target.value = ''
         },
 
         //  删除音色
@@ -1307,6 +1463,107 @@ export default {
 
 
 <style scoped>
+/* 顶部卡片整体样式 */
+.voice-tip {
+    border-radius: 12px;
+    background: linear-gradient(90deg,
+            rgba(208, 235, 255, 0.22),
+            rgba(230, 242, 255, 0.22) 66.07%,
+            rgba(205, 229, 252, 0.22) 132.14%),
+        #ffffff;
+
+    border: 1px solid #e5e7eb;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+/* 图标容器 */
+.voice-tip-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 图标图片 */
+.voice-tip-icon-img {
+    width: 95%;
+    height: 95%;
+    object-fit: contain;
+    display: block;
+}
+
+/* 右侧文字区域 */
+.voice-tip-body {
+    line-height: 1.5;
+}
+
+/* 主标题 */
+.voice-tip-title {
+    margin-bottom: 4px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* 说明文字 */
+.voice-tip-desc {
+    margin-bottom: 0;
+    font-size: 15px;
+    color: #6b7280;
+}
+
+.mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.mode-switch-item {
+    position: relative;
+    border: none;
+    background: transparent;
+    border-radius: 999px;
+    padding: 7px 22px;
+    font-size: 17px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.12s ease;
+}
+
+.mode-switch-item:not(.is-active):hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #111827;
+}
+
+.mode-switch-item.is-active {
+    background: linear-gradient(135deg,
+            #0ea5e9 0%,
+            #3b82f6 45%,
+            #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+}
+
+.mode-switch-item:active {
+    transform: translateY(1px);
+}
+
 .custom-text {
     font-size: 18px;
     font-weight: 500;
@@ -1432,6 +1689,128 @@ export default {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+textarea.form-control,
+input.form-control,
+select.form-select {
+    border-radius: 6px;
+    border-color: #d1d5db;
+    transition: border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        background-color 0.16s ease;
+}
+
+/*  focus 状态：统一为柔和的阴影  */
+textarea.form-control:focus,
+input.form-control:focus,
+select.form-select:focus,
+::v-deep .el-input__inner:focus,
+::v-deep .el-textarea__inner:focus,
+::v-deep .el-input.is-focus .el-input__inner,
+::v-deep .el-select .el-input.is-focus .el-input__inner {
+    outline: none;
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 1.3px rgba(148, 163, 184, 0.35);
+    background-color: #f9fbff;
+}
+
+/* focus / is-focus / is-active：统一成淡灰蓝，不允许深蓝再盖回来 */
+::v-deep .el-input__inner:focus,
+::v-deep .el-textarea__inner:focus,
+::v-deep .el-input.is-focus .el-input__inner,
+::v-deep .el-input.is-active .el-input__inner,
+::v-deep .el-select .el-input__inner:focus,
+::v-deep .el-select .el-input.is-focus .el-input__inner,
+::v-deep .el-select .el-input.is-active .el-input__inner {
+    outline: none;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35) !important;
+    background-color: #f9fbff;
+}
+
+/* 外层包裹，用来定位气泡 */
+.repeat-helper-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* 标记复读按钮 */
+.mark-repeat-btn {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 6px;
+    border: 1px solid #93c5fd;
+    background: #f0f6ff;
+    color: #2563eb;
+    font-size: 1rem;
+    padding: 6px 12px;
+    line-height: 1;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* 按钮内图标与文字 */
+.mark-repeat-btn .icon {
+    margin-right: 4px;
+    font-size: 14px;
+}
+
+.mark-repeat-btn .text {
+    font-size: 14px;
+}
+
+/* 右侧小圆圈问号 */
+.mark-repeat-btn .help-circle {
+    margin-left: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #93c5fd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.mark-repeat-btn:hover {
+    background: #e6f0ff;
+    box-shadow: 0 0 0 1px #bfdbfe;
+    transform: translateY(-0.5px);
+}
+
+.repeat-tooltip {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 10px);
+    min-width: 260px;
+    max-width: 420px;
+    background: #f9fafb;
+    color: #374151;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.55;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+}
+
+/* tooltip“小三角”= 指向按钮的箭头 */
+.repeat-tooltip::after {
+    content: "";
+    position: absolute;
+    right: 28px;
+    top: 100%;
+    border-width: 8px 8px 0 8px;
+    border-style: solid;
+    border-color: #f9fafb transparent transparent transparent;
+    filter: drop-shadow(0 -1px 1px rgba(0, 0, 0, 0.05));
+}
+
+.repeat-tooltip-body .hl {
+    color: #2563eb;
+    font-weight: 500;
 }
 
 /* 生成语音 */

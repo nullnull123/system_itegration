@@ -184,36 +184,101 @@
       </div>
     </el-dialog>
 
-    <!-- 优化内容展示对话框 -->
+    <!-- === 修正：提示词编辑对话框 === -->
     <el-dialog
-      title="优化后教案内容"
-      :visible.sync="showOptimizedContentDialog"
+      title="编辑优化提示词"
+      :visible.sync="promptPreviewDialogVisible"
       width="70%"
       top="5vh"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
-      :show-close="true"
     >
       <div>
-        <p>优化后的教案内容如下：</p>
+        <p>请检查并编辑优化提示词。此提示词将用于生成优化版教案：</p>
         <el-input
           type="textarea"
-          :value="optimizedContentToShow"
+          v-model="promptContent"
           :rows="20"
-          readonly
           :autosize="{ minRows: 10, maxRows: 25 }"
           style="margin-bottom: 10px;"
         ></el-input>
-        <el-button
-          size="mini"
-          type="primary"
-          @click="copyOptimizedContent"
-        >
-          复制内容
-        </el-button>
+        <div class="prompt-hint">
+          <small>提示：您可以调整教学重点、修改知识点描述或添加特定要求</small>
+        </div>
       </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="showOptimizedContentDialog = false">关闭</el-button>
+        <el-button @click="promptPreviewDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          @click="OptimizedLesson"
+          :loading="promptLoading"
+        >
+          确认并生成优化教案
+        </el-button>
+      </span>
+    </el-dialog>
+
+    <!-- === 修正：优化成功提示对话框 === -->
+    <el-dialog
+      title="优化成功"
+      :visible.sync="optimizationSuccessDialog"
+      width="30%"
+    >
+      <p>教案 "{{ optimizedLessonTitle }}" 已成功优化！原始内容已被覆盖。</p>
+      <div class="save-options">
+        <router-link :to="{ name: 'LessonplanList' }">
+          <el-button type="primary">查看教案列表</el-button>
+        </router-link>
+        <el-button @click="showOptimizationResult">查看优化内容与建议</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- === 新增：展示优化结果对话框 === -->
+    <el-dialog
+      title="优化结果"
+      :visible.sync="showOptimizationResultDialog"
+      width="80%"
+      top="5vh"
+    >
+      <div v-if="optimizationResult">
+        <h3>优化后教案内容</h3>
+        <el-input
+          type="textarea"
+          :value="optimizationResult.lesson_plan.original_content"
+          :rows="15"
+          :autosize="{ minRows: 10, maxRows: 20 }"
+          readonly
+        ></el-input>
+
+        <h3 style="margin-top: 20px;">教学建议</h3>
+        <div>
+          <h4>讲授性部分</h4>
+          <el-input
+            type="textarea"
+            :value="optimizationResult.teaching_suggestion.lecture_suggestions"
+            :rows="6"
+            readonly
+          ></el-input>
+
+          <h4 style="margin-top: 10px;">吸引学生兴趣部分</h4>
+          <el-input
+            type="textarea"
+            :value="optimizationResult.teaching_suggestion.engagement_suggestions"
+            :rows="6"
+            readonly
+          ></el-input>
+
+          <h4 style="margin-top: 10px;">教师提升部分</h4>
+          <el-input
+            type="textarea"
+            :value="optimizationResult.teaching_suggestion.teacher_resources"
+            :rows="6"
+            readonly
+          ></el-input>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showOptimizationResultDialog = false">关闭</el-button>
       </span>
     </el-dialog>
 
@@ -225,7 +290,7 @@ import { mapActions, mapState } from 'vuex'
 
 export default {
   name: 'LessonplanUpload', // 与路由配置完全一致的名称
-  
+
   data() {
     return {
       lessonForm: {
@@ -259,7 +324,19 @@ export default {
       optimizedContentToShow: '',
       // 新增：课程ID和名称
       courseDisplayId: null,
-      courseName: ''
+      courseName: '',
+
+      // === 修正：两步式优化流程相关状态 ===
+      promptPreviewDialogVisible: false, // 控制提示词编辑对话框显示
+      promptContent: '', // 存储可编辑的提示词内容
+      promptLoading: false, // 提示词对话框中的加载状态
+      optimizationSuccessDialog: false, // 优化成功提示对话框
+      optimizedLessonTitle: '', // 用于显示成功消息的教案标题
+      currentDisplayId: null, // 当前正在处理的教案display_id
+
+      // === 新增：展示优化结果相关状态 ===
+      showOptimizationResultDialog: false, // 控制优化结果对话框显示
+      optimizationResult: null // 存储完整的优化结果数据
     }
   },
   computed: {
@@ -289,8 +366,12 @@ export default {
     }
   },
   methods: {
-    ...mapActions('smartPrep', ['createLessonPlan', 'generateOptimizedLesson_id']),
-    
+    ...mapActions('smartPrep', [
+      'createLessonPlan',
+      'fetchOptimizationPrompt',
+      'applyOptimizedLesson' // Vuex action 需要能处理 POST 请求和 custom_prompt
+    ]),
+
     formatDate(dateString) {
       if (!dateString) return 'N/A'
       const date = new Date(dateString)
@@ -328,70 +409,47 @@ export default {
             const response = await this.createLessonPlan(lessonData)
 
             // 获取并保存教案名用于提示
-            this.createdLessonTitle = response.data?.title || this.lessonForm.title
+            this.createdLessonTitle = response.title || response.data?.title || this.lessonForm.title
 
             // 如果用户选择生成优化版教案
             if (this.optimizeEnabled) {
               this.processing = false;
-              this.optimizing = true;
               loading.close();
 
               try {
                 // 从响应中获取 display_id
                 const responseData = response;
-
-                // 直接访问 display_id 属性
-                let displayId = responseData?.display_id;
-
-                // 如果直接访问失败，尝试其他可能的ID字段
-                if (displayId === undefined || displayId === null) {
-                  displayId = responseData?.display_id ||
-                             responseData?.id ||
-                             responseData?.lesson_id;
-                }
+                let displayId = responseData?.display_id ||
+                               responseData?.id ||
+                               responseData?.data?.id;
 
                 if (!displayId) {
                   console.error('API响应中未找到 display_id 或其他ID字段:', responseData);
                   throw new Error('无法从API响应中获取教案 display_id。响应结构: ' + JSON.stringify(responseData, null, 2));
                 }
 
-                // 重新打开加载提示
-                const optimizeLoading = this.$loading({
-                  lock: true,
-                  text: '正在生成优化版教案并覆盖原始内容...',
-                  spinner: 'el-icon-loading',
-                  background: 'rgba(0, 0, 0, 0.7)'
-                })
+                this.currentDisplayId = displayId;
 
-                // 调用优化方法 - 传入 display_id
-                const optimizedData = await this.generateOptimizedLesson_id(displayId.toString());
+                // === 修正：使用POST方法获取提示词 ===
+                const promptData = await this.fetchOptimizationPrompt({ display_id: displayId });
 
-                // 关键修改：更新表单内容以显示优化后的内容
-                this.lessonForm.original_content = optimizedData.original_content;
-
-                // --- 新增：设置优化后的内容并显示对话框 ---
-                this.optimizedContentToShow = optimizedData.original_content;
-                this.optimizedLesson = optimizedData; // 更新状态
-                this.showOptimizedContentDialog = true; // 显示对话框
-                // ------------------------------------------
-
-                optimizeLoading.close();
-
-                this.$message({
-                  type: 'success',
-                  message: '教案创建并优化成功！原始内容已被覆盖',
-                  duration: 3000
-                });
-
-              } catch (optimizeError) {
-                // 即使优化失败，也显示警告但不中断流程
+                // 修正：正确检查返回数据结构
+                if (promptData && promptData.data && promptData.data.prompt) {
+                  this.promptContent = promptData.data.prompt;
+                  this.promptPreviewDialogVisible = true; // 显示编辑对话框
+                } else {
+                  throw new Error('获取的提示词格式不正确');
+                }
+              } catch (promptError) {
+                // 即使提示词获取失败，也显示警告但不中断流程
                 this.$message({
                   type: 'warning',
-                  message: optimizeError.message || '教案优化失败，但原始教案已保存',
+                  message: promptError.message || '教案优化提示词获取失败，但原始教案已保存',
                   duration: 5000
                 });
-              } finally {
-                this.optimizing = false;
+
+                // 显示创建成功对话框
+                this.createSuccessDialog = true;
               }
             } else {
               this.optimizedLesson = null;
@@ -400,10 +458,6 @@ export default {
                 message: '教案创建成功！',
                 duration: 3000
               });
-            }
-
-            // 只有在未启用优化或优化流程完全结束（无论成功失败）后才显示成功对话框
-            if (!this.optimizeEnabled || !this.optimizing) {
               this.createSuccessDialog = true;
             }
 
@@ -416,7 +470,6 @@ export default {
             })
           } finally {
             this.processing = false;
-            this.optimizing = false;
             // 确保关闭所有加载提示
             if (this.$loading) {
               try {
@@ -428,6 +481,84 @@ export default {
           this.$message.warning('请检查表单中的错误');
         }
       })
+    },
+
+    // === 修正：优化教案 (Vuex action 应处理 POST 和 custom_prompt) ===
+    async OptimizedLesson() {
+      if (!this.currentDisplayId || !this.promptContent) {
+        this.$message.warning('缺少必要参数');
+        return;
+      }
+
+      this.promptLoading = true;
+      try {
+        console.log('[Frontend] 调用 Vuex action applyOptimizedLesson...');
+        // 调用API应用优化 - Vuex action 需要接收 display_id, custom_prompt, overwrite
+        const resultFromAction = await this.applyOptimizedLesson({
+          display_id: this.currentDisplayId,
+          custom_prompt: this.promptContent
+        });
+        console.log('[Frontend] Vuex action 返回结果 (resultFromAction):', resultFromAction); // 添加日志
+
+        // --- 添加防御性检查 ---
+        if (!resultFromAction) {
+          console.error('[Frontend] Vuex action applyOptimizedLesson 返回了 undefined 或 null');
+          this.$message.error('教案优化失败：API 未返回有效数据');
+          return;
+        }
+
+        // 保存完整结果
+        this.optimizationResult = resultFromAction; // 使用 resultFromAction
+
+        // 更新表单内容以显示优化后的内容 (可选)
+        // this.lessonForm.original_content = resultFromAction.lesson_plan.original_content; // 如果需要
+        this.optimizedLessonTitle = this.createdLessonTitle;
+
+        // --- 添加防御性检查 ---
+        if (!resultFromAction.lesson_plan) {
+          console.error('[Frontend] 返回的数据中缺少 lesson_plan 字段:', resultFromAction);
+          this.$message.error('教案优化失败：API 返回数据格式错误 (缺少 lesson_plan)');
+          return;
+        }
+
+        this.optimizedLesson = resultFromAction.lesson_plan; // 从 resultFromAction 获取
+
+        // 关闭提示词编辑对话框
+        this.promptPreviewDialogVisible = false;
+
+        // 显示优化成功提示
+        this.optimizationSuccessDialog = true;
+
+        this.$message({
+          type: 'success',
+          message: '教案优化成功！原始内容已被覆盖',
+          duration: 3000
+        });
+      } catch (error) {
+        console.error('[Frontend] 应用优化教案时捕获到错误:', error);
+        this.$message({
+          type: 'error',
+          message: error.message || '教案优化失败',
+          duration: 5000
+        });
+      } finally {
+        this.promptLoading = false;
+      }
+    },
+
+    // === 新增：显示优化结果 ===
+    showOptimizationResult() {
+      this.optimizationSuccessDialog = false; // 关闭优化成功提示
+      this.showOptimizationResultDialog = true; // 显示优化结果
+    },
+
+    // 关闭优化成功对话框并重置状态
+    closeOptimizationSuccess() {
+      this.optimizationSuccessDialog = false;
+      // 重置优化相关状态
+      this.currentDisplayId = null;
+      this.promptContent = '';
+      this.createSuccessDialog = true;
     },
 
     resetForm() {
@@ -443,6 +574,18 @@ export default {
       // 重置新增状态
       this.showOptimizedContentDialog = false;
       this.optimizedContentToShow = '';
+
+      // 重置两步式优化相关状态
+      this.promptPreviewDialogVisible = false;
+      this.promptContent = '';
+      this.promptLoading = false;
+      this.optimizationSuccessDialog = false;
+      this.optimizedLessonTitle = '';
+      this.currentDisplayId = null;
+
+      // 重置优化结果相关状态
+      this.showOptimizationResultDialog = false;
+      this.optimizationResult = null;
     },
 
     resetFormAndClose() {
@@ -461,7 +604,7 @@ export default {
         });
       }
     },
-    
+
     // 新增：获取课程名称
     async fetchCourseName(courseId) {
       try {
@@ -478,14 +621,14 @@ export default {
   created() {
     // 从路由参数获取课程ID
     const passedCourseDisplayId = this.$route.query.course_display_id;
-    
+
     if (passedCourseDisplayId) {
       const numId = Number(passedCourseDisplayId);
       if (!isNaN(numId) && numId > 0) {
         this.courseDisplayId = numId;
         this.lessonForm.course_display_id = numId;
         console.log(`从路由参数获取并设置默认课程ID: ${numId}`);
-        
+
         // 尝试获取课程名称
         this.fetchCourseName(numId);
       } else {
@@ -568,6 +711,16 @@ export default {
   font-size: 13px;
   margin-left: 10px;
   font-style: italic;
+}
+
+/* 新增：提示词编辑样式 */
+.prompt-hint {
+  margin-top: 8px;
+  color: #909399;
+  font-size: 13px;
+  background-color: #f5f7fa;
+  padding: 8px;
+  border-radius: 4px;
 }
 
 /* 响应式设计 */

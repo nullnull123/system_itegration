@@ -1,175 +1,180 @@
 <template>
   <div class="college-detail-container">
-    <!-- 学院用户详情部分 -->
-    <div class="user-detail-container">
-      <div class="user-header">
-        <div class="avatar">
-          <i class="el-icon-office-building"></i>
-        </div>
-        <h1>学院用户详情</h1>
-        <div class="user-tag">
-          <el-tag type="warning" effect="dark">学院用户</el-tag>
-        </div>
-      </div>
 
-      <el-card v-if="displayUserData" class="user-card">
-        <div class="user-basic-info">
-          <h2>基本信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">用户名</span>
-              <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+    <el-tabs v-model="activeTab" type="border-card" class="detail-tabs">
+      <!-- 基本信息标签页 -->
+      <el-tab-pane label="基本信息" name="basic">
+        <div class="tab-content">
+          <!-- 学院用户详情部分 -->
+          <div class="user-detail-container">
+            <div class="user-header">
+              <div class="avatar">
+                <i class="el-icon-office-building"></i>
+              </div>
+              <h1>学院用户详情</h1>
+              <div class="user-tag">
+                <el-tag type="warning" effect="dark">学院用户</el-tag>
+              </div>
             </div>
-            <div class="info-item">
-              <span class="info-label">显示ID</span>
-              <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+
+            <el-card v-if="displayUserData" class="user-card">
+              <div class="user-basic-info">
+                <h2>基本信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">用户名</span>
+                    <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">显示ID</span>
+                    <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">状态</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
+                        {{ displayUserData.is_active ? '活跃' : '非活跃' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">创建时间</span>
+                    <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">最后更新</span>
+                    <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-organization-info">
+                <h2>组织信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">所属学校</span>
+                    <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属学院</span>
+                    <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-contact-info">
+                <h2>联系信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">电子邮箱</span>
+                    <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-account-info">
+                <h2>账户信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">初始设置</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
+                        {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </el-card>
+            
+            <!-- 添加加载状态显示 -->
+            <div v-if="loading && !displayUserData" class="loading-container">
+              <div class="custom-spinner" style="
+                width: 32px;
+                height: 32px;
+                border: 3px solid #e0e0e0;
+                borderTopColor: #409EFF;
+                borderRadius: 50%;
+                animation: system-admin-rotate 1.2s linear infinite;
+                margin: 0 auto;
+              "></div>
+              <div class="loading-text">加载学院信息中...</div>
             </div>
-            <div class="info-item">
-              <span class="info-label">状态</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
-                  {{ displayUserData.is_active ? '活跃' : '非活跃' }}
-                </el-tag>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">创建时间</span>
-              <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">最后更新</span>
-              <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+            
+            <!-- 添加错误处理 -->
+            <div v-if="error && !displayUserData" class="error-container">
+              <el-alert
+                title="加载失败"
+                type="error"
+                :description="error"
+                show-icon>
+              </el-alert>
+              <el-button type="primary" @click="loadUserData" class="retry-button">
+                重试
+              </el-button>
             </div>
           </div>
         </div>
+      </el-tab-pane>
 
-        <div class="user-organization-info">
-          <h2>组织信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">所属学校</span>
-              <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+      <!-- 课程组管理标签页 -->
+      <el-tab-pane label="课程组管理" name="courseGroups">
+        <div class="tab-content">
+          <!-- 课程组管理区域 -->
+          <management-section 
+            title="课程组管理" 
+            icon="el-icon-collection"
+            :loading="courseGroupLoading"
+            :error="courseGroupError"
+            @retry="loadCourseGroups">
+            
+            <div class="management-toolbar">
+              <el-button type="primary" icon="el-icon-plus" @click="showCreateCourseGroupDialog = true" class="create-btn">
+                创建课程组
+              </el-button>
             </div>
-            <div class="info-item">
-              <span class="info-label">所属学院</span>
-              <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
-            </div>
-          </div>
+            
+            <el-table :data="courseGroups" border stripe>
+              <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
+              <el-table-column prop="name" label="课程组名称"></el-table-column>
+              <el-table-column prop="college_name" label="所属学院"></el-table-column>
+              <el-table-column prop="user_count" label="用户数" width="100"></el-table-column>
+              <el-table-column prop="has_active_users" label="状态" width="100">
+                <template slot-scope="{row}">
+                  <el-tag :type="row.has_active_users ? 'success' : 'info'">
+                    {{ row.has_active_users ? '有用户' : '无用户' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="160">
+                <template slot-scope="{row}">
+                  <el-button size="mini" @click="viewCourseGroupDetail(row)">详情</el-button>
+                  <el-popconfirm
+                    v-if="!row.has_active_users"
+                    title="确定删除该课程组吗？"
+                    @confirm="delete_CourseGroup(row)"
+                    style="margin-left: 5px;">
+                    <el-button slot="reference" size="mini" type="danger">删除</el-button>
+                  </el-popconfirm>
+                  <el-tooltip v-else content="课程组内有用户，无法直接删除" placement="top">
+                    <el-button size="mini" type="danger" disabled style="margin-left: 5px;">删除</el-button>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <el-pagination
+              class="pagination"
+              @current-change="handleCourseGroupPageChange"
+              :current-page="courseGroupPagination.page"
+              :page-size="courseGroupPagination.pageSize"
+              :total="courseGroupPagination.total"
+              layout="total, prev, pager, next, jumper">
+            </el-pagination>
+          </management-section>
         </div>
-
-        <div class="user-contact-info">
-          <h2>联系信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">电子邮箱</span>
-              <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="user-account-info">
-          <h2>账户信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">初始设置</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
-                  {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
-                </el-tag>
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-      
-      <!-- 添加加载状态显示 -->
-      <div v-if="loading && !displayUserData" class="loading-container">
-        <div class="custom-spinner" style="
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          borderTopColor: #409EFF;
-          borderRadius: 50%;
-          animation: system-admin-rotate 1.2s linear infinite;
-          margin: 0 auto;
-        "></div>
-        <div class="loading-text">加载学院信息中...</div>
-      </div>
-      
-      <!-- 添加错误处理 -->
-      <div v-if="error && !displayUserData" class="error-container">
-        <el-alert
-          title="加载失败"
-          type="error"
-          :description="error"
-          show-icon>
-        </el-alert>
-        <el-button type="primary" @click="loadUserData" class="retry-button">
-          重试
-        </el-button>
-      </div>
-    </div>
-    
-    <!-- 课程组管理区域 -->
-    <management-section 
-      title="课程组管理" 
-      icon="el-icon-collection"
-      :loading="courseGroupLoading"
-      :error="courseGroupError"
-      @retry="loadCourseGroups">
-      
-      <div class="management-toolbar">
-        <el-input 
-          v-model="courseGroupSearchQuery" 
-          placeholder="搜索课程组名称/ID" 
-          style="width: 240px;"
-          clearable
-          @keyup.enter.native="searchCourseGroups">
-          <el-button slot="append" icon="el-icon-search" @click="searchCourseGroups"></el-button>
-        </el-input>
-        <el-button type="primary" icon="el-icon-plus" @click="showCreateCourseGroupDialog = true" class="create-btn">
-          创建课程组
-        </el-button>
-      </div>
-      
-      <el-table :data="courseGroups" border stripe>
-        <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
-        <el-table-column prop="name" label="课程组名称"></el-table-column>
-        <el-table-column prop="college_name" label="所属学院"></el-table-column>
-        <el-table-column prop="user_count" label="用户数" width="100"></el-table-column>
-        <el-table-column prop="has_active_users" label="状态" width="100">
-          <template slot-scope="{row}">
-            <el-tag :type="row.has_active_users ? 'success' : 'info'">
-              {{ row.has_active_users ? '有用户' : '无用户' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="160">
-          <template slot-scope="{row}">
-            <el-button size="mini" @click="viewCourseGroupDetail(row)">详情</el-button>
-            <el-popconfirm
-              v-if="!row.has_active_users"
-              title="确定删除该课程组吗？"
-              @confirm="deleteCourseGroup(row)"
-              style="margin-left: 5px;">
-              <el-button slot="reference" size="mini" type="danger">删除</el-button>
-            </el-popconfirm>
-            <el-tooltip v-else content="课程组内有用户，无法直接删除" placement="top">
-              <el-button size="mini" type="danger" disabled style="margin-left: 5px;">删除</el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <el-pagination
-        class="pagination"
-        @current-change="handleCourseGroupPageChange"
-        :current-page="courseGroupPagination.page"
-        :page-size="courseGroupPagination.pageSize"
-        :total="courseGroupPagination.total"
-        layout="total, prev, pager, next, jumper">
-      </el-pagination>
-    </management-section>
+      </el-tab-pane>
+    </el-tabs>
     
     <!-- 创建课程组对话框 -->
     <el-dialog title="创建新课程组" :visible.sync="showCreateCourseGroupDialog" width="400px">
@@ -216,6 +221,45 @@
         <el-button type="primary" @click="closeCourseGroupDetail">关闭</el-button>
       </div>
     </el-dialog>
+
+
+    <!-- 创建结果对话框 -->
+    <el-dialog 
+      :title="getResultDialogTitle" 
+      :visible.sync="showCreateResultDialog" 
+      width="700px"
+      append-to-body>
+      
+      <el-alert
+        :type="createResultType === 'course_group' ? 'info' : 'success'"
+        :title="getResultAlertTitle"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 20px;">
+      </el-alert>
+      
+      <el-table :data="createResultData" border stripe max-height="400">
+        <el-table-column 
+          v-for="(col, index) in createResultColumns" 
+          :key="index"
+          :prop="col.prop"
+          :label="col.label"
+          :width="col.width || ''">
+        </el-table-column>
+      </el-table>
+      
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="showCreateResultDialog = false">关闭</el-button>
+        <el-button 
+          type="primary" 
+          @click="exportResults" 
+          icon="el-icon-download">
+          导出结果
+        </el-button>
+      </div>
+    </el-dialog>
+
+
   </div>
 </template>
 
@@ -287,11 +331,21 @@ export default {
     displayUserData() {
       // 优先使用从sessionStorage获取的登录用户数据
       return this.loginUserData || this.userData;
-    }
+    },
+
+    // 添加这两个计算属性
+    getResultDialogTitle() {
+      return '课程组创建结果';
+    },
+
+    getResultAlertTitle() {
+      return '成功创建 1 个课程组';
+    },
   },
   
   data() {
     return {
+      activeTab: 'basic',
       error: null,
       loading: true,
       loginUserData: null, // 存储从sessionStorage获取的登录用户数据
@@ -299,7 +353,7 @@ export default {
       // 课程组管理相关
       courseGroupPagination: {
         page: 1,
-        pageSize: 10,
+        pageSize: 5,
         total: 0
       },
       courseGroupSearchQuery: '',
@@ -315,7 +369,11 @@ export default {
         ]
       },
       selectedCourseGroup: null,
-      courseGroupDetailDialogVisible: false
+      courseGroupDetailDialogVisible: false,
+      showCreateResultDialog: false,  // 控制结果对话框显示
+      createResultData: [],           // 存储创建结果数据
+      createResultType: '',           // 区分是教师还是学生
+      createResultColumns: []         // 动态列配置
     };
   },
   
@@ -363,9 +421,9 @@ export default {
       return null;
     },
     
-    async loadCourseGroups() {
+    async loadCourseGroups(page = this.courseGroupPagination.page) {
       try {
-        const result = await this.getCourseGroups(this.courseGroupPagination.page);
+        const result = await this.getCourseGroups(page);
         if (result && typeof result.total === 'number') {
           this.courseGroupPagination.total = result.total;
         } else {
@@ -375,16 +433,20 @@ export default {
       } catch (error) {
         console.error('[CollegeDetail] 获取课程组列表失败:', error);
         this.courseGroupError = error.message || '获取课程组列表失败';
+        this.courseGroupPagination.total = 0;
       }
     },
     
+    
     handleCourseGroupPageChange(page) {
       this.courseGroupPagination.page = page;
-      this.loadCourseGroups();
+      this.loadCourseGroups(page);
     },
     
     searchCourseGroups() {
       console.log('搜索课程组:', this.courseGroupSearchQuery);
+      this.courseGroupPagination.page = 1;
+      this.loadCourseGroups(1);
     },
     
     viewCourseGroupDetail(courseGroup) {
@@ -451,13 +513,22 @@ export default {
         
         console.log('[CollegeDetail] 发送创建课程组请求:', payload);
         
-        await this.createCourseGroup(payload);
+        const result = await this.createCourseGroup(payload);
+
+        // 处理成功响应 - 关键修改点
+        if (result.course_group_admin) {
+          this._showCreationResults('course_group', result.course_group_admin);
+        }
         
         this.$message({
           type: 'success',
           message: '课程组创建成功',
           duration: 2000
         });
+
+        // ✅ 新增：重置分页状态并刷新列表
+        this.courseGroupPagination.page = 1; // 重置到第一页（新学校通常在第一页）
+        await this.loadCourseGroups();       // 重新获取数据（更新total和列表）
         
         this.closeCreateCourseGroupDialog();
       } catch (error) {
@@ -491,7 +562,7 @@ export default {
       }
     },
     
-    async deleteCourseGroup(courseGroup) {
+    async delete_CourseGroup(courseGroup) {
       try {
         this.courseGroupLoading = true;
         
@@ -510,6 +581,10 @@ export default {
           message: '课程组删除成功',
           duration: 2000
         });
+
+        // ✅ 新增：重置分页状态并刷新列表
+        this.courseGroupPagination.page = 1; // 重置到第一页（新学校通常在第一页）
+        await this.loadCourseGroups();       // 重新获取数据（更新total和列表）
       } catch (error) {
         this.courseGroupError = error.message || '删除课程组失败';
         this.$message({
@@ -535,7 +610,53 @@ export default {
       } catch {
         return '格式错误';
       }
+    },
+
+
+    // 辅助方法：显示创建结果
+    _showCreationResults(type, data) {
+      this.createResultType = type;
+      this.createResultData = (type === 'course_group') ? [data] : data;
+      
+      this.createResultColumns = [
+        { label: '用户名', prop: 'username' },
+        { label: '初始密码', prop: 'initial_password' }
+        // 可选：也可以包含 message
+        // { label: '提示信息', prop: 'message' }
+      ];
+      
+      this.showCreateResultDialog = true;
+    },
+
+    // 导出结果为CSV
+    exportResults() {
+      const type = this.createResultType;
+      const fileName = `${type}创建结果_${new Date().toISOString().slice(0,10)}`;
+      
+      // 创建CSV内容
+      const headers = this.createResultColumns.map(col => col.label).join(',');
+      const rows = this.createResultData.map(item => 
+        this.createResultColumns.map(col => 
+          col.prop === 'initial_password' ? 
+            `"${item[col.prop]}"` : 
+            item[col.prop]
+        ).join(',')
+      );
+      
+      const csvContent = [headers, ...rows].join('\n');
+      
+      // 创建并下载文件
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${fileName}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
+
   }
 };
 </script>

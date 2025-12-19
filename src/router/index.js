@@ -3,7 +3,7 @@ import Router from 'vue-router';
 
 Vue.use(Router);
 
-export default new Router({
+const router = new Router({
     routes: [
         {
             path: '/',
@@ -86,11 +86,57 @@ export default new Router({
                     component: () => import(/* webpackChunkName: "upload" */ '../components/page/Dashboard_.vue'),
                     meta: { title: '大纲匹配' }
                 },
+
+
+                {
+                    path: '/Roles',
+                    component: () => import(/* webpackChunkName: "upload" */ '@/aiclass/views/Roles/index.vue'),
+                    meta: { title: '角色详情', requiresAuth: true },
+                    children: [
+                        {
+                            path: 'systemadmindetail',
+                            name: 'SystemAdminDetail',
+                            component: () => import(/* webpackChunkName: "roles-system-admin" */ '@/aiclass/views/Roles/Details/SystemAdminDetail.vue'),
+                            meta: { title: '系统管理员详情' }
+                        },
+                        {
+                            path: 'schooldetail',
+                            name: 'SchoolDetail',
+                            component: () => import(/* webpackChunkName: "roles-school" */ '@/aiclass/views/Roles/Details/SchoolDetail.vue'),
+                            meta: { title: '学校用户详情' }
+                        },
+                        {
+                            path: 'collegedetail',
+                            name: 'CollegeDetail',
+                            component: () => import(/* webpackChunkName: "roles-college" */ '@/aiclass/views/Roles/Details/CollegeDetail.vue'),
+                            meta: { title: '学院用户详情' }
+                        },
+                        {
+                            path: 'coursegroupdetail',
+                            name: 'CourseGroupDetail',
+                            component: () => import(/* webpackChunkName: "roles-course-group" */ '@/aiclass/views/Roles/Details/CourseGroupDetail.vue'),
+                            meta: { title: '课程组用户详情' }
+                        },
+                        {
+                            path: 'teacherdetail',
+                            name: 'TeacherDetail',
+                            component: () => import(/* webpackChunkName: "roles-teacher" */ '@/aiclass/views/Roles/Details/TeacherDetail.vue'),
+                            meta: { title: '教师用户详情' }
+                        },
+                        {
+                            path: 'studentdetail',
+                            name: 'StudentDetail',
+                            component: () => import(/* webpackChunkName: "roles-student" */ '@/aiclass/views/Roles/Details/StudentDetail.vue'),
+                            meta: { title: '学生用户详情' }
+                        }
+                    ]
+                },
+
                 {
                     // 智能备课
                     path: '/SmartPrep',
                     component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/SmartPrep/index.vue'),
-                    meta: { title: '智能备课' },
+                    meta: { title: '智能备课', requiresAuth: true  },
                     children: [
                             // --- 首页 ---
                             {
@@ -214,11 +260,12 @@ export default new Router({
                             },
                     ]
                 },
+                
                 {
                     // 笔记补全
                     path: '/NoteCompletion',
                     component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/NoteCompletion/index.vue'),
-                    meta: { title: '笔记补全' },
+                    meta: { title: '笔记补全', requiresAuth: true },
                     children: [
                             {
                                 path: '',
@@ -245,11 +292,12 @@ export default new Router({
                             }
                             ]
                 },
+
                 {
                     // 习题测评
                     path: '/ExerciseAssessment',
                     component: () => import(/* webpackChunkName: "upload" */ '../aiclass/views/ExerciseAssessment/index.vue'),
-                    meta: { title: '习题测评' },
+                    meta: { title: '习题测评', requiresAuth: true },
                     children: [
                             {
                                 path: '',
@@ -258,26 +306,31 @@ export default new Router({
                             },
                             {
                                 path: 'list',
+                                name: 'ExerciseList',
                                 component: () => import('../aiclass/views/ExerciseAssessment/List.vue'),
                                 meta: { title: '习题列表',}
                             },
                             {
                                 path: 'create',
+                                name: 'ExerciseCreate',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Create.vue'),
                                 meta: { title: '创建习题',}
                             },
                             {
                                 path: 'submissions',
+                                name: 'ExerciseSubmissions',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Submissions.vue'),
                                 meta: { title: '提交记录',}
                             },
                             {
                                 path: 'detail/:display_id',
+                                name: 'ExerciseDetail',
                                 component: () => import('../aiclass/views/ExerciseAssessment/Detail.vue'),
                                 meta: { title: '习题详情',}
                             }
                             ]
                 },
+
                 {
                     // 课堂到课率和抬头率
                     path: '/car',
@@ -315,10 +368,10 @@ export default new Router({
                     meta: { title: '视频裁剪' }
                 },
                 {
-                    // 视频裁剪S
+                    // 视频裁剪快捷
                     path: '/VideoCutS',
                     component: () => import(/* webpackChunkName: "VideoCut" */ '../videocut/VideoCutsimple.vue'),
-                    meta: { title: '视频裁剪S' }
+                    meta: { title: '视频裁剪快捷' }
                 },
                 {
                     // PPT2Video
@@ -339,6 +392,14 @@ export default new Router({
             ]
         },
         {
+            path: '/ai-workshop-login',
+            component: () => import(/* webpackChunkName: "ai-workshop-login" */ '../components/common/AIWorkshopLogin.vue'),
+            meta: { 
+              title: '智课工坊登录',
+              requiresAuth: false // 必须明确设置为false
+            }
+        },
+        {
             path: '/login',
             component: () => import(/* webpackChunkName: "login" */ '../job/views/LoginRegister.vue'),
             meta: { title: '登录' }
@@ -355,3 +416,196 @@ export default new Router({
         }
     ]
 });
+
+router.beforeEach(async (to, from, next) => {
+    console.log('===== localStorage诊断 =====');
+    console.log('ai_class_workshop_token存在:', !!localStorage.getItem('ai_class_workshop_token'));
+    console.log('token存在:', !!localStorage.getItem('token'));
+    console.log('完整localStorage:', { ...localStorage });
+    console.log('===== 路由信息 =====');
+    console.log(`导航: ${from.path} → ${to.path}`);
+    console.log('需要认证:', to.matched.some(r => r.meta.requiresAuth));
+    console.log('==================');
+    
+    // 关键修复3: 检查所有可能的token
+    const hasToken = !!localStorage.getItem('ai_class_workshop_token') || 
+                    !!localStorage.getItem('token');
+    
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    const isLoginPage = to.path === '/ai-workshop-login';
+    const isForceLogout = to.query.forceLogout === 'true';
+    
+    // 关键修复4: 检测重定向循环
+    const isRedirectCycle = from.path === '/SmartPrep' && 
+                            to.path === '/ai-workshop-login' && 
+                            hasToken;
+    
+    if (isRedirectCycle) {
+      console.log('[路由守卫] 检测到重定向循环，强制清除所有token');
+      localStorage.removeItem('ai_class_workshop_token');
+      localStorage.removeItem('token');
+      return next();
+    }
+    
+    // 1. 专门处理强制退出请求
+    if (isForceLogout) {
+      console.log('[路由守卫] 处理强制退出请求');
+      localStorage.removeItem('ai_class_workshop_token');
+      localStorage.removeItem('token');
+      
+      return next({
+        path: '/ai-workshop-login',
+        query: { 
+          loggedOut: 'true',
+          redirect: to.query.redirect || from.fullPath 
+        },
+        replace: true
+      });
+    }
+    
+    // 2. 需要认证但无token
+    if (requiresAuth && !hasToken) {
+      console.log('[路由守卫] 需要认证但无token');
+      
+      if (from.path === '/ai-workshop-login') {
+        return next();
+      }
+      
+      return next({
+        path: '/ai-workshop-login',
+        query: { 
+          redirect: to.fullPath,
+          fromAuthCheck: 'true'
+        }
+      });
+    } 
+    
+    // 3. 已登录访问登录页
+    if (isLoginPage && hasToken) {
+      console.log('[路由守卫] 已登录访问登录页');
+      
+      // 关键修复5: 如果是退出操作但token仍存在，强制清除
+      if (isForceLogout || to.query.loggedOut === 'true') {
+        console.log('[路由守卫] 检测到退出操作但token存在，强制清除');
+        localStorage.removeItem('ai_class_workshop_token');
+        localStorage.removeItem('token');
+        return next();
+      }
+      
+      // 安全验证重定向路径
+      let redirectPath = to.query.redirect || '/SmartPrep';
+      
+      try {
+        const resolved = router.resolve(redirectPath);
+        if (!resolved.route.matched.length) {
+          console.warn('[路由守卫] 无效的重定向路径，使用默认路径');
+          redirectPath = '/';
+        }
+      } catch (e) {
+        console.error('[路由守卫] 验证重定向路径出错', e);
+        redirectPath = '/';
+      }
+      
+      console.log(`[路由守卫] 重定向到: ${redirectPath}`);
+      return next(redirectPath);
+    }
+    
+    // ===== 新增：角色验证逻辑 =====
+    // 定义角色路由映射
+    const roleRoutes = {
+      'SystemAdminDetail': 'system_admin',
+      'SchoolDetail': 'school',
+      'CollegeDetail': 'college',
+      'CourseGroupDetail': 'course_group',
+      'TeacherDetail': 'teacher',
+      'StudentDetail': 'student'
+    };
+    
+    // 检查是否是角色详情页面
+    const requiredRole = roleRoutes[to.name];
+    if (requiredRole) {
+      try {
+        console.log(`[路由守卫] 正在验证角色详情页面: ${to.name} (需要角色: ${requiredRole})`);
+        
+        // 尝试从localStorage获取用户数据
+        const userDataJson = localStorage.getItem('user_data');
+        let currentUser;
+        
+        if (userDataJson) {
+          try {
+            currentUser = JSON.parse(userDataJson);
+            console.log('[路由守卫] 从localStorage获取到用户数据:', currentUser);
+          } catch (e) {
+            console.error('[路由守卫] 解析用户数据失败:', e);
+            throw new Error('用户数据格式错误');
+          }
+        } else {
+          // 如果localStorage中没有user_data，但有token，尝试从API获取
+          const token = localStorage.getItem('ai_class_workshop_token');
+          if (token) {
+            console.log('[路由守卫] localStorage中没有user_data，尝试从API获取');
+            
+            const response = await fetch('/ai_class_workshop/api/v1/users/users/me/', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              currentUser = await response.json();
+              localStorage.setItem('user_data', JSON.stringify(currentUser));
+              console.log('[路由守卫] 从API获取到用户数据:', currentUser);
+            } else {
+              console.error('[路由守卫] API请求失败:', response.status, response.statusText);
+              throw new Error('无法获取用户信息');
+            }
+          } else {
+            console.error('[路由守卫] 无token，无法获取用户信息');
+            throw new Error('缺少认证token');
+          }
+        }
+        
+        if (!currentUser) {
+          console.error('[路由守卫] 无法获取当前用户信息');
+          throw new Error('无法获取当前用户信息');
+        }
+        
+        // 检查角色是否匹配
+        console.log(`[路由守卫] 当前用户角色: ${currentUser.role}`);
+        if (currentUser.role !== requiredRole) {
+          console.warn(`[路由守卫] 角色不匹配: 需要 ${requiredRole}，当前为 ${currentUser.role}`);
+          
+          // 重定向到正确的角色页面
+          const correctRouteName = Object.keys(roleRoutes).find(key => 
+            roleRoutes[key] === currentUser.role
+          );
+          
+          if (correctRouteName) {
+            console.log(`[路由守卫] 重定向到正确的角色页面: ${correctRouteName}`);
+            return next({ name: correctRouteName });
+          } else {
+            console.warn('[路由守卫] 无法确定正确的角色页面，重定向到首页');
+            return next('/');
+          }
+        }
+      } catch (error) {
+        console.error('[路由守卫] 角色验证失败:', error);
+        // 清除可能无效的token
+        localStorage.removeItem('ai_class_workshop_token');
+        localStorage.removeItem('user_data');
+        return next({
+          path: '/ai-workshop-login',
+          query: { 
+            redirect: to.fullPath,
+            roleError: 'true'
+          }
+        });
+      }
+    }
+    
+    next();
+  });
+
+export default router;

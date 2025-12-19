@@ -22,7 +22,10 @@ const state = {
     courseGroupError: null, // 新增：课程组错误信息
     teachers: [], // 新增：教师列表
     teacherLoading: false, // 新增：教师加载状态
-    teacherError: null // 新增：教师错误信息
+    teacherError: null, // 新增：教师错误信息
+    // --- 新增 Course 相关状态 ---
+    courses: [], // 存储课程列表
+    currentCourse: null, // 存储当前课程详情
 }
 
 const mutations = {
@@ -89,6 +92,14 @@ const mutations = {
     SET_TEACHER_ERROR: (state, error) => { // 新增：设置教师错误信息
         state.teacherError = error;
     },
+
+    // --- 新增 Course 相关 mutations ---
+    SET_COURSES: (state, courses) => {
+        state.courses = courses
+    },
+    SET_CURRENT_COURSE: (state, course) => {
+        state.currentCourse = course && typeof course === 'object' ? course : null
+    },
 }
 
 const actions = {
@@ -117,16 +128,19 @@ const actions = {
         }
     },
     
-    async getUsers({ commit, dispatch }, page = 1) {
+    async getUsers({ commit, dispatch }, pageOrUrl = 1) {
         commit('SET_USER_LOADING', true);
         commit('SET_USER_ERROR', null);
         
         try {
-            console.log(`[Roles] 开始获取用户列表 (page: ${page})...`);
+            console.log(`[Roles] 开始获取用户列表 ...: ${pageOrUrl}`);
+            
+            // 如果传入的是完整URL，直接使用；否则构造
+            const requestUrl = `${AC_URL}/api/v1/users/users/?page=${pageOrUrl}`;
             
             const response = await dispatch('get', {
-                url: `${AC_URL}/api/v1/users/users/?page=${page}`,
-                isWorkshop: true
+            url: requestUrl,
+            isWorkshop: true
             }, { root: true });
             
             console.log('[Roles] User API响应数据:', response.data);
@@ -193,17 +207,21 @@ const actions = {
         }
     },
     
-    async getSchools({ commit, dispatch }) {
+    async getSchools({ commit, dispatch }, pageOrUrl = 1) {
         commit('SET_SCHOOL_LOADING', true);
         commit('SET_SCHOOL_ERROR', null);
         
         try {
-            console.log('[Roles] 开始获取学校列表...');
+            console.log(`[Roles] 开始获取学校列表... :${pageOrUrl}`);
+
+            // 如果传入的是完整URL，直接使用；否则构造
+            const requestUrl = `${AC_URL}/api/v1/users/schools/?page=${pageOrUrl}`;
             
             const response = await dispatch('get', {
-                url: `${AC_URL}/api/v1/users/schools/`,
-                isWorkshop: true
+            url: requestUrl,
+            isWorkshop: true
             }, { root: true });
+
             
             console.log('[Roles] School API响应数据:', response.data);
             
@@ -222,7 +240,12 @@ const actions = {
             
             commit('SET_SCHOOLS', schools);
             commit('SET_SCHOOL_ERROR', null);
-            return schools;
+            return {
+                schools,  // 学校数据
+                total: response.data.count,  // 总记录数
+                next: response.data.next,
+                previous: response.data.previous
+              };
         } catch (error) {
             console.error('[Roles] 获取学校列表失败:', error);
             
@@ -424,16 +447,20 @@ const actions = {
     },
       
       // 新增：获取学院列表
-    async getColleges({ commit, dispatch }, page = 1) {
+    async getColleges({ commit, dispatch }, pageOrUrl = 1) {
         commit('SET_COLLEGE_LOADING', true);
         commit('SET_COLLEGE_ERROR', null);
         
         try {
-            console.log(`[Roles] 开始获取学院列表 (page: ${page})...`);
+            console.log(`[Roles] 开始获取学院列表 (page: ${pageOrUrl})...`);
+
+
+            // 如果传入的是完整URL，直接使用；否则构造
+            const requestUrl = `${AC_URL}/api/v1/users/colleges/?page=${pageOrUrl}`;
             
             const response = await dispatch('get', {
-                url: `${AC_URL}/api/v1/users/colleges/?page=${page}`,
-                isWorkshop: true
+            url: requestUrl,
+            isWorkshop: true
             }, { root: true });
             
             console.log('[Roles] College API响应数据:', response.data);
@@ -879,79 +906,81 @@ const actions = {
     },
 
     // 新增：获取课程组列表
-    async getCourseGroups({ commit, dispatch }, page = 1) {
+    async getCourseGroups({ commit, dispatch }, pageOrUrl = 1) {
         commit('SET_COURSE_GROUP_LOADING', true);
         commit('SET_COURSE_GROUP_ERROR', null);
         
         try {
-        console.log(`[Roles] 开始获取课程组列表 (page: ${page})...`);
-        
-        const response = await dispatch('get', {
-            url: `${AC_URL}/api/v1/users/course-groups/?page=${page}`,
-            isWorkshop: true
-        }, { root: true });
-        
-        console.log('[Roles] CourseGroup API响应数据:', response.data);
-        
-        // 处理分页数据结构
-        let courseGroups = [];
-        if (response.data.results) {
-            courseGroups = response.data.results;
-        } else if (Array.isArray(response.data)) {
-            courseGroups = response.data;
-        } else {
-            console.warn('[Roles] CourseGroup 数据格式不识别:', response.data);
-            courseGroups = [];
-        }
-        
-        console.log('[Roles] 处理后的课程组数组:', courseGroups);
-        
-        commit('SET_COURSE_GROUPS', courseGroups);
-        commit('SET_COURSE_GROUP_ERROR', null);
-        
-        // 返回分页信息
-        return {
-            courseGroups,
-            total: response.data.count,
-            next: response.data.next,
-            previous: response.data.previous
-        };
-        } catch (error) {
-        console.error('[Roles] 获取课程组列表失败:', error);
-        
-        // 详细错误处理
-        if (error.response) {
-            if (error.response.status === 401) {
-            const detail = error.response.data?.detail || '';
-            console.warn('[Roles] 401错误详情:', detail);
+            console.log(`[Roles] 开始获取课程组列表 (page: ${pageOrUrl})...`);
+
+
+            // 如果传入的是完整URL，直接使用；否则构造
+            const requestUrl = `${AC_URL}/api/v1/users/course-groups/?page=${pageOrUrl}`;
             
-            if (detail.includes('身份认证信息未提供') || 
-                detail.includes('认证失败') || 
-                detail.includes('令牌无效')) {
-                console.log('[Roles] 检测到认证问题，不在此处清除token');
+            const response = await dispatch('get', {
+            url: requestUrl,
+            isWorkshop: true
+            }, { root: true });
+            
+            // 处理分页数据结构
+            let courseGroups = [];
+            if (response.data.results) {
+                courseGroups = response.data.results;
+            } else if (Array.isArray(response.data)) {
+                courseGroups = response.data;
             } else {
+                console.warn('[Roles] CourseGroup 数据格式不识别:', response.data);
+                courseGroups = [];
+            }
+            
+            console.log('[Roles] 处理后的课程组数组:', courseGroups);
+            
+            commit('SET_COURSE_GROUPS', courseGroups);
+            commit('SET_COURSE_GROUP_ERROR', null);
+            
+            // 返回分页信息
+            return {
+                courseGroups,
+                total: response.data.count,
+                next: response.data.next,
+                previous: response.data.previous
+            };
+        } catch (error) {
+            console.error('[Roles] 获取课程组列表失败:', error);
+            
+            // 详细错误处理
+            if (error.response) {
+                if (error.response.status === 401) {
+                const detail = error.response.data?.detail || '';
+                console.warn('[Roles] 401错误详情:', detail);
+                
+                if (detail.includes('身份认证信息未提供') || 
+                    detail.includes('认证失败') || 
+                    detail.includes('令牌无效')) {
+                    console.log('[Roles] 检测到认证问题，不在此处清除token');
+                } else {
+                    commit('SET_COURSE_GROUP_ERROR', '您没有权限访问此资源');
+                }
+                } else if (error.response.status === 403) {
                 commit('SET_COURSE_GROUP_ERROR', '您没有权限访问此资源');
-            }
-            } else if (error.response.status === 403) {
-            commit('SET_COURSE_GROUP_ERROR', '您没有权限访问此资源');
+                } else {
+                const errorMessage = error.response.data?.message || 
+                                    error.response.data?.error || 
+                                    '获取课程组列表失败';
+                commit('SET_COURSE_GROUP_ERROR', errorMessage);
+                }
+            } else if (error.request) {
+                console.error('[Roles] 请求已发送但无响应:', error.request);
+                commit('SET_COURSE_GROUP_ERROR', '网络请求超时或服务器无响应');
             } else {
-            const errorMessage = error.response.data?.message || 
-                                error.response.data?.error || 
-                                '获取课程组列表失败';
-            commit('SET_COURSE_GROUP_ERROR', errorMessage);
+                console.error('[Roles] 请求设置出错:', error.message);
+                commit('SET_COURSE_GROUP_ERROR', '请求设置出错: ' + error.message);
             }
-        } else if (error.request) {
-            console.error('[Roles] 请求已发送但无响应:', error.request);
-            commit('SET_COURSE_GROUP_ERROR', '网络请求超时或服务器无响应');
-        } else {
-            console.error('[Roles] 请求设置出错:', error.message);
-            commit('SET_COURSE_GROUP_ERROR', '请求设置出错: ' + error.message);
-        }
-        
-        commit('SET_COURSE_GROUPS', []);
+            
+            commit('SET_COURSE_GROUPS', []);
         throw error;
         } finally {
-        commit('SET_COURSE_GROUP_LOADING', false);
+            commit('SET_COURSE_GROUP_LOADING', false);
         }
     },
   
@@ -1067,16 +1096,19 @@ const actions = {
 
 
     // 新增：获取教师列表
-    async getTeachers({ commit, dispatch }, page = 1) {
+    async getTeachers({ commit, dispatch }, pageOrUrl = 1) {
         commit('SET_TEACHER_LOADING', true);
         commit('SET_TEACHER_ERROR', null);
         
         try {
-        console.log(`[Roles] 开始获取教师列表 (page: ${page})...`);
-        
+        console.log(`[Roles] 开始获取教师列表 (page: ${pageOrUrl})...`);
+
+        // 如果传入的是完整URL，直接使用；否则构造
+        const requestUrl = `${AC_URL}/api/v1/users/course-groups/teachers/?page=${pageOrUrl}`;
+            
         const response = await dispatch('get', {
-            url: `${AC_URL}/api/v1/users/course-groups/teachers/?page=${page}`,
-            isWorkshop: true
+        url: requestUrl,
+        isWorkshop: true
         }, { root: true });
         
         console.log('[Roles] Teacher API响应数据:', response.data);
@@ -1185,6 +1217,55 @@ const actions = {
           commit('SET_LOADING', false);
         }
     },
+
+
+
+    // --- 新增 Course 相关 actions ---
+    async fetchCourseList({ commit, dispatch }, params) {
+        commit('SET_LOADING', true)
+        try {
+        console.log('[SmartPrep] 开始获取课程列表...');
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
+        const response = await dispatch('get', {
+            url: `${AC_URL}/api/v1/prep/course/`,
+            params,
+            isWorkshop: true  // 标记为智课工坊请求
+        }, { root: true })
+
+        console.log('[SmartPrep] Course API响应数据:', response.data)
+
+        let courses = []
+        if (response.data.results) {
+            courses = response.data.results
+        } else if (Array.isArray(response.data.data)) {
+            courses = response.data.data
+        } else if (Array.isArray(response.data)) {
+            courses = response.data
+        } else {
+            console.warn('[SmartPrep] Course 数据格式不识别:', response.data)
+            courses = []
+        }
+
+        console.log('[SmartPrep] 处理后的课程数组:', courses)
+
+        commit('SET_COURSES', courses)
+        commit('SET_ERROR', null)
+        return courses
+        } catch (error) {
+        console.error('[SmartPrep] 获取课程列表失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                            error.response?.data?.detail ||
+                            error.message ||
+                            '获取课程列表失败'
+        commit('SET_ERROR', errorMessage)
+        commit('SET_COURSES', [])
+        throw error
+        } finally {
+        commit('SET_LOADING', false)
+        }
+    },
+
 }
 
 export default {

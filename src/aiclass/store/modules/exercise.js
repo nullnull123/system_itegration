@@ -1,14 +1,22 @@
-import {AC_URL} from '@/api/request'
+// src/store/modules/exercise.js
+
+// 直接定义AC_URL，避免可能的导入循环
+const AC_URL = '/ai_class_workshop';
+
 const state = {
     exercises: [],          // 习题列表
     currentExercise: null,  // 当前习题
     submissions: [],        // 提交记录
     submissionResult: null, // 提交结果
     loading: false,
-    error: null
-  }
+    error: null,
+
+    // --- 新增 Course 相关状态 ---
+    courses: [], // 存储课程列表
+    currentCourse: null, // 存储当前课程详情
+}
   
-  const mutations = {
+const mutations = {
     SET_EXERCISES(state, exercises) {
       state.exercises = Array.isArray(exercises) ? exercises : []
     },
@@ -31,19 +39,31 @@ const state = {
     
     SET_ERROR: (state, error) => {
       state.error = error
-    }
-  }
+    },
+
+    // --- 新增 Course 相关 mutations ---
+    SET_COURSES: (state, courses) => {
+      state.courses = courses
+    },
+    SET_CURRENT_COURSE: (state, course) => {
+      state.currentCourse = course && typeof course === 'object' ? course : null
+    },
+}
   
-  const actions = {
+const actions = {
     async fetchList({ commit, dispatch }, params) {
       commit('SET_LOADING', true)
       try {
+        console.log('[Exercise] 开始获取习题列表...');
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
         const response = await dispatch('get', { 
-          url: AC_URL + '/api/v1/exercises/', 
-          params 
+          url: `${AC_URL}/api/v1/exercises/`, 
+          params,
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
-        console.log('API响应数据:', response.data)
+        console.log('[Exercise] API响应数据:', response.data)
         
         // 处理分页数据结构
         let exercises = []
@@ -61,14 +81,18 @@ const state = {
           exercises = []
         }
         
-        console.log('处理后的习题数组:', exercises)
+        console.log('[Exercise] 处理后的习题数组:', exercises)
         
         commit('SET_EXERCISES', exercises)
         commit('SET_ERROR', null)
         return exercises
       } catch (error) {
-        console.error('获取习题列表失败:', error)
-        commit('SET_ERROR', error.message || '获取习题列表失败')
+        console.error('[Exercise] 获取习题列表失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '获取习题列表失败'
+        commit('SET_ERROR', errorMessage)
         commit('SET_EXERCISES', [])
         throw error
       } finally {
@@ -79,23 +103,31 @@ const state = {
     async fetchDetail({ commit, dispatch }, display_id) {
       commit('SET_LOADING', true)
       try {
+        console.log(`[Exercise] 开始获取习题详情 (display_id: ${display_id})...`);
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
         const response = await dispatch('get', { 
-          url: AC_URL + `/api/v1/exercises/${display_id}/` 
+          url: `${AC_URL}/api/v1/exercises/${display_id}/`,
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
         // 获取单个习题对象
         const exercise = response.data.data || response.data
 
-        console.log('获取到的习题详情:', exercise)
+        console.log('[Exercise] 获取到的习题详情:', exercise)
         
-        // 设置当前习题（应该有专门的mutation）
+        // 设置当前习题
         commit('SET_CURRENT_EXERCISE', exercise)
         commit('SET_ERROR', null)
         
         return exercise
       } catch (error) {
-        console.error('获取习题失败:', error)
-        commit('SET_ERROR', error.message || '获取习题失败')
+        console.error('[Exercise] 获取习题失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '获取习题失败'
+        commit('SET_ERROR', errorMessage)
         throw error
       } finally {
         commit('SET_LOADING', false)
@@ -105,18 +137,25 @@ const state = {
     async createExercise({ commit, dispatch }, data) {
       commit('SET_LOADING', true)
       try {
+        console.log('[Exercise] 开始创建习题...', data);
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/create/', 
-          data 
+          url: `${AC_URL}/api/v1/exercises/create/`, 
+          data,
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
         // 创建习题通常返回创建的单个对象
         const newExercise = response.data.data || response.data
         
+        console.log('[Exercise] 创建习题响应:', newExercise)
+        
         // 重新获取习题列表以确保数据一致性
         try {
           const listResponse = await dispatch('get', { 
-            url: AC_URL + '/api/v1/exercises/' 
+            url: `${AC_URL}/api/v1/exercises/`,
+            isWorkshop: true  // 标记为智课工坊请求
           }, { root: true })
           
           let exercises = []
@@ -129,7 +168,8 @@ const state = {
           }
           
           commit('SET_EXERCISES', exercises)
-        } catch {
+        } catch (listError) {
+          console.error('[Exercise] 重新获取习题列表失败:', listError)
           // 如果重新获取失败，至少添加新创建的习题
           const state = this.state.exercise
           const existingExercises = Array.isArray(state.exercises) ? state.exercises : []
@@ -139,9 +179,80 @@ const state = {
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
-        console.error('创建习题失败:', error)
-        commit('SET_ERROR', error.message || '创建习题失败')
+        console.error('[Exercise] 创建习题失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '创建习题失败'
+        commit('SET_ERROR', errorMessage)
         commit('SET_EXERCISES', [])
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+
+
+    async updateExercise({ commit, dispatch }, { display_id, data }) {
+      commit('SET_LOADING', true)
+      try {
+        console.log(`[Exercise] 开始更新习题 (display_id: ${display_id})...`, data);
+        
+        // 关键修改：使用根store的put方法，并标记为智课工坊请求
+        const response = await dispatch('put', { 
+          url: `${AC_URL}/api/v1/exercises/update/${display_id}/`, 
+          data,
+          isWorkshop: true  // 标记为智课工坊请求
+        }, { root: true })
+        
+        // 更新习题通常返回更新后的单个对象
+        const updatedExercise = response.data.data || response.data
+        
+        console.log('[Exercise] 更新习题响应:', updatedExercise)
+        
+        // 重新获取习题列表以确保数据一致性
+        try {
+          const listResponse = await dispatch('get', { 
+            url: `${AC_URL}/api/v1/exercises/`,
+            isWorkshop: true  // 标记为智课工坊请求
+          }, { root: true })
+          
+          let exercises = []
+          if (listResponse.data.results) {
+            exercises = listResponse.data.results
+          } else if (Array.isArray(listResponse.data)) {
+            exercises = listResponse.data
+          } else {
+            exercises = Array.isArray(listResponse.data.data) ? listResponse.data.data : []
+          }
+          
+          commit('SET_EXERCISES', exercises)
+        } catch (listError) {
+          console.error('[Exercise] 重新获取习题列表失败:', listError)
+          // 如果重新获取失败，更新本地列表中的对应习题
+          const state = this.state.exercise
+          const existingExercises = Array.isArray(state.exercises) ? state.exercises : []
+          const updatedExercises = existingExercises.map(exercise => 
+            exercise.display_id === display_id ? updatedExercise : exercise
+          )
+          commit('SET_EXERCISES', updatedExercises)
+        }
+        
+        // 同时更新当前习题（如果正在编辑的是当前显示的习题）
+        const currentExercise = this.state.exercise.currentExercise
+        if (currentExercise && currentExercise.display_id === display_id) {
+          commit('SET_CURRENT_EXERCISE', updatedExercise)
+        }
+        
+        commit('SET_ERROR', null)
+        return response.data
+      } catch (error) {
+        console.error('[Exercise] 更新习题失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '更新习题失败'
+        commit('SET_ERROR', errorMessage)
         throw error
       } finally {
         commit('SET_LOADING', false)
@@ -151,12 +262,16 @@ const state = {
     async fetchSubmissions({ commit, dispatch }, params) {
       commit('SET_LOADING', true)
       try {
+        console.log('[Exercise] 开始获取提交记录...');
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
         const response = await dispatch('get', { 
-          url: AC_URL + '/api/v1/exercises/submissions/', 
-          params 
+          url: `${AC_URL}/api/v1/exercises/submissions/`, 
+          params,
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
-        console.log('提交记录API响应数据:', response.data)
+        console.log('[Exercise] 提交记录API响应数据:', response.data)
         
         // 处理分页数据结构
         let submissions = []
@@ -174,14 +289,18 @@ const state = {
           submissions = []
         }
         
-        console.log('处理后的提交记录数组:', submissions)
+        console.log('[Exercise] 处理后的提交记录数组:', submissions)
         
         commit('SET_SUBMISSIONS', submissions)
         commit('SET_ERROR', null)
         return submissions
       } catch (error) {
-        console.error('获取提交记录失败:', error)
-        commit('SET_ERROR', error.message || '获取提交记录失败')
+        console.error('[Exercise] 获取提交记录失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '获取提交记录失败'
+        commit('SET_ERROR', errorMessage)
         commit('SET_SUBMISSIONS', [])
         throw error
       } finally {
@@ -192,14 +311,18 @@ const state = {
     async fetchSubmissionDetail({ commit, dispatch }, display_id) {
       commit('SET_LOADING', true)
       try {
+        console.log(`[Exercise] 开始获取提交记录详情 (display_id: ${display_id})...`);
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
         const response = await dispatch('get', { 
-          url: AC_URL + `/api/v1/exercises/submissions/${display_id}/` 
+          url: `${AC_URL}/api/v1/exercises/submissions/${display_id}/`,
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
         // 获取单个提交记录对象
         const submission = response.data.data || response.data
     
-        console.log('获取到的提交记录详情:', submission)
+        console.log('[Exercise] 获取到的提交记录详情:', submission)
         
         // 设置当前提交记录
         commit('SET_SUBMISSION_RESULT', submission)
@@ -207,31 +330,44 @@ const state = {
         
         return submission
       } catch (error) {
-        console.error('获取提交记录失败:', error)
-        commit('SET_ERROR', error.message || '获取提交记录失败')
+        console.error('[Exercise] 获取提交记录失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '获取提交记录失败'
+        commit('SET_ERROR', errorMessage)
         throw error
       } finally {
         commit('SET_LOADING', false)
       }
     },
     
-    // exercise.js
     async submitAnswer({ commit, dispatch }, { display_id, data }) {
       commit('SET_LOADING', true);
       try {
-        // URL 中包含 display_id
+        console.log(`[Exercise] 开始提交答案 (display_id: ${display_id})...`, data);
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', {
-          url: AC_URL + `/api/v1/exercises/submit/${display_id}/`, // ✅ 正确路径
-          data // 只包含 { answer: "..." }
+          url: `${AC_URL}/api/v1/exercises/submit/${display_id}/`,
+          data, // 只包含 { answer: "..." }
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true });
 
         const submissionResult = response.data.data || response.data;
+        
+        console.log('[Exercise] 提交答案响应:', submissionResult);
+
         commit('SET_SUBMISSION_RESULT', submissionResult);
         commit('SET_ERROR', null);
         return submissionResult;
       } catch (error) {
-        console.error('提交答案失败:', error);
-        commit('SET_ERROR', error.message || '提交失败');
+        console.error('[Exercise] 提交答案失败:', error);
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '提交失败';
+        commit('SET_ERROR', errorMessage);
         throw error;
       } finally {
         commit('SET_LOADING', false);
@@ -239,20 +375,27 @@ const state = {
     },
 
 
-        // 全删除方法
+    // 全删除方法
     async deleteAllExercises({ commit, dispatch }) {
       commit('SET_LOADING', true)
       try {
+        console.log('[Exercise] 开始删除所有习题...');
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/delete-all/', 
+          url: `${AC_URL}/api/v1/exercises/delete-all/`, 
           data: {
-            confirm: true  // 修正：添加 data 对象
-          } 
+            confirm: true
+          },
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
+        console.log('[Exercise] 删除所有习题响应:', response.data)
+
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
+        console.error('[Exercise] 删除所有习题失败:', error)
         const errorMessage = error.response?.data?.message || 
                             error.response?.data?.error || 
                             error.message || 
@@ -268,14 +411,21 @@ const state = {
     async bulkDeleteExercises({ commit, dispatch }, displayIds) {
       commit('SET_LOADING', true)
       try {
+        console.log(`[Exercise] 开始批量删除习题 (${displayIds.length}个)...`, displayIds);
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/bulk-delete/', 
-          data: { display_ids: displayIds } // 注意这里是 display_ids 数组
+          url: `${AC_URL}/api/v1/exercises/bulk-delete/`, 
+          data: { display_ids: displayIds },
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
+        console.log('[Exercise] 批量删除习题响应:', response.data)
+
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
+        console.error('[Exercise] 批量删除习题失败:', error)
         const errorMessage = error.response?.data?.message || 
                             error.response?.data?.error || 
                             error.message || 
@@ -290,16 +440,23 @@ const state = {
     async deleteAllSubmissions({ commit, dispatch }) {
       commit('SET_LOADING', true)
       try {
+        console.log('[Exercise] 开始删除所有提交记录...');
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/submissions/delete-all/', 
+          url: `${AC_URL}/api/v1/exercises/submissions/delete-all/`, 
           data: {
             confirm: true
-          } 
+          },
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
+        console.log('[Exercise] 删除所有提交记录响应:', response.data)
+
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
+        console.error('[Exercise] 删除提交记录失败:', error)
         const errorMessage = error.response?.data?.message || 
                             error.response?.data?.error || 
                             error.message || 
@@ -315,14 +472,21 @@ const state = {
     async bulkDeleteSubmissions({ commit, dispatch }, displayIds) {
       commit('SET_LOADING', true)
       try {
+        console.log(`[Exercise] 开始批量删除提交记录 (${displayIds.length}个)...`, displayIds);
+        
+        // 关键修改：使用根store的post方法，并标记为智课工坊请求
         const response = await dispatch('post', { 
-          url: AC_URL + '/api/v1/exercises/submissions/bulk-delete/', 
-          data: { display_ids: displayIds }
+          url: `${AC_URL}/api/v1/exercises/submissions/bulk-delete/`, 
+          data: { display_ids: displayIds },
+          isWorkshop: true  // 标记为智课工坊请求
         }, { root: true })
         
+        console.log('[Exercise] 批量删除提交记录响应:', response.data)
+
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
+        console.error('[Exercise] 批量删除提交记录失败:', error)
         const errorMessage = error.response?.data?.message || 
                             error.response?.data?.error || 
                             error.message || 
@@ -332,13 +496,44 @@ const state = {
       } finally {
         commit('SET_LOADING', false)
       }
-    }
+    },
 
-  }
+
+    async fetchCourseDetail({ commit, dispatch }, display_id) {
+      commit('SET_LOADING', true)
+      try {
+        console.log(`[SmartPrep] 开始获取课程详情 (display_id: ${display_id})...`);
+        
+        // 关键修改：使用根store的get方法，并标记为智课工坊请求
+        const response = await dispatch('get', {
+          url: `${AC_URL}/api/v1/prep/course/${display_id}/`,
+          isWorkshop: true  // 标记为智课工坊请求
+        }, { root: true })
   
-  export default {
+        const course = response.data.data || response.data
+        console.log('[SmartPrep] 获取到的课程详情:', course)
+  
+        commit('SET_CURRENT_COURSE', course)
+        commit('SET_ERROR', null)
+  
+        return course
+      } catch (error) {
+        console.error('[SmartPrep] 获取课程详情失败:', error)
+        const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.detail ||
+                             error.message ||
+                             '获取课程详情失败'
+        commit('SET_ERROR', errorMessage)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+}
+
+export default {
     namespaced: true,
     state,
     mutations,
     actions
-  }
+}

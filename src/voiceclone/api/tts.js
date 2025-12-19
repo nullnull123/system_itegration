@@ -58,6 +58,11 @@ export const downloadZip = (filenames, user_id, batch_id) =>
     params: { user_id, batch_id }
   });
 
-
+// ====================== 读取文本文件内容（txt/srt/docx/doc） ======================
+export const readTextFile = fd =>
+  axios.post(`${BASE_URL}read_text_file/`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  
 /* ========= 日志 ========= */
 export const writeLog = data => axios.post(`${BASE_URL}log/`, data)

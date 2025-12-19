@@ -1,177 +1,189 @@
 <template>
   <div class="course-group-detail-container">
-    <!-- 课程组用户详情部分 -->
-    <div class="user-detail-container">
-      <div class="user-header">
-        <div class="avatar">
-          <i class="el-icon-collection"></i>
-        </div>
-        <h1>课程组用户详情</h1>
-        <div class="user-tag">
-          <el-tag type="primary" effect="dark">课程组用户</el-tag>
-        </div>
-      </div>
+    <el-tabs v-model="activeTab" type="border-card" class="detail-tabs">
+      <!-- 基本信息标签页 -->
+      <el-tab-pane label="基本信息" name="basic">
+        <div class="tab-content">
+          <!-- 课程组用户详情部分 -->
+          <div class="user-detail-container">
+            <div class="user-header">
+              <div class="avatar">
+                <i class="el-icon-collection"></i>
+              </div>
+              <h1>课程组用户详情</h1>
+              <div class="user-tag">
+                <el-tag type="primary" effect="dark">课程组用户</el-tag>
+              </div>
+            </div>
 
-      <el-card v-if="displayUserData" class="user-card">
-        <div class="user-basic-info">
-          <h2>基本信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">用户名</span>
-              <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+            <el-card v-if="displayUserData" class="user-card">
+              <div class="user-basic-info">
+                <h2>基本信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">用户名</span>
+                    <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">显示ID</span>
+                    <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">状态</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
+                        {{ displayUserData.is_active ? '活跃' : '非活跃' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">创建时间</span>
+                    <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">最后更新</span>
+                    <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-organization-info">
+                <h2>组织信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">所属学校</span>
+                    <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属学院</span>
+                    <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属课程组</span>
+                    <span class="info-value">{{ displayUserData.course_group_name || '未设置' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-contact-info">
+                <h2>联系信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">电子邮箱</span>
+                    <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-account-info">
+                <h2>账户信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">初始设置</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
+                        {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </el-card>
+            
+            <!-- 添加加载状态显示 -->
+            <div v-if="loading && !displayUserData" class="loading-container">
+              <div class="custom-spinner" style="
+                width: 32px;
+                height: 32px;
+                border: 3px solid #e0e0e0;
+                borderTopColor: #409EFF;
+                borderRadius: 50%;
+                animation: system-admin-rotate 1.2s linear infinite;
+                margin: 0 auto;
+              "></div>
+              <div class="loading-text">加载课程组信息中...</div>
             </div>
-            <div class="info-item">
-              <span class="info-label">显示ID</span>
-              <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">状态</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
-                  {{ displayUserData.is_active ? '活跃' : '非活跃' }}
-                </el-tag>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">创建时间</span>
-              <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">最后更新</span>
-              <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+            
+            <!-- 添加错误处理 -->
+            <div v-if="error && !displayUserData" class="error-container">
+              <el-alert
+                title="加载失败"
+                type="error"
+                :description="error"
+                show-icon>
+              </el-alert>
+              <el-button type="primary" @click="loadUserData" class="retry-button">
+                重试
+              </el-button>
             </div>
           </div>
         </div>
+      </el-tab-pane>
 
-        <div class="user-organization-info">
-          <h2>组织信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">所属学校</span>
-              <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+      <!-- 课程与教师标签页 -->
+      <el-tab-pane label="课程与教师" name="courseAndTeachers">
+        <div class="tab-content">
+          <!-- 课程详情区域 -->
+          <management-section 
+            title="课程详情" 
+            icon="el-icon-notebook-2"
+            :loading="false"
+            :error="null">
+            
+            <div class="course-detail-container">
+              <p>当前课程组关联的课程详情：</p>
+              <el-button 
+                type="primary" 
+                icon="el-icon-document" 
+                @click="viewCourseDetail">
+                查看课程详情
+              </el-button>
             </div>
-            <div class="info-item">
-              <span class="info-label">所属学院</span>
-              <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">所属课程组</span>
-              <span class="info-value">{{ displayUserData.course_group_name || '未设置' }}</span>
-            </div>
-          </div>
+          </management-section>
+          
+          <!-- 教师管理区域 -->
+          <management-section 
+            title="教师管理" 
+            icon="el-icon-user-solid"
+            :loading="teacherLoading"
+            :error="teacherError"
+            @retry="loadTeachers">
+            
+            <el-table :data="teachers" border stripe>
+              <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
+              <el-table-column prop="username" label="用户名"></el-table-column>
+              <el-table-column prop="email" label="电子邮箱"></el-table-column>
+              <el-table-column prop="created_at" label="创建时间" width="180">
+                <template slot-scope="{row}">
+                  {{ formatDate(row.created_at) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="is_active" label="状态" width="100">
+                <template slot-scope="{row}">
+                  <el-tag :type="row.is_active ? 'success' : 'info'">
+                    {{ row.is_active ? '活跃' : '非活跃' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="100">
+                <template slot-scope="{row}">
+                  <el-button size="mini" @click="viewTeacherDetail(row)">详情</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <el-pagination
+              class="pagination"
+              @current-change="handleTeacherPageChange"
+              :current-page="teacherPagination.page"
+              :page-size="teacherPagination.pageSize"
+              :total="teacherPagination.total"
+              layout="total, prev, pager, next, jumper">
+            </el-pagination>
+          </management-section>
         </div>
-
-        <div class="user-contact-info">
-          <h2>联系信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">电子邮箱</span>
-              <span class="info-value">{{ displayUserData.email || '未设置' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="user-account-info">
-          <h2>账户信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">初始设置</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
-                  {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
-                </el-tag>
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-      
-      <!-- 添加加载状态显示 -->
-      <div v-if="loading && !displayUserData" class="loading-container">
-        <div class="custom-spinner" style="
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          borderTopColor: #409EFF;
-          borderRadius: 50%;
-          animation: system-admin-rotate 1.2s linear infinite;
-          margin: 0 auto;
-        "></div>
-        <div class="loading-text">加载课程组信息中...</div>
-      </div>
-      
-      <!-- 添加错误处理 -->
-      <div v-if="error && !displayUserData" class="error-container">
-        <el-alert
-          title="加载失败"
-          type="error"
-          :description="error"
-          show-icon>
-        </el-alert>
-        <el-button type="primary" @click="loadUserData" class="retry-button">
-          重试
-        </el-button>
-      </div>
-    </div>
-    
-    <!-- 课程详情区域 -->
-    <management-section 
-      title="课程详情" 
-      icon="el-icon-notebook-2"
-      :loading="false"
-      :error="null">
-      
-      <div class="course-detail-container">
-        <p>当前课程组关联的课程详情：</p>
-        <el-button 
-          type="primary" 
-          icon="el-icon-document" 
-          @click="viewCourseDetail">
-          查看课程详情
-        </el-button>
-      </div>
-    </management-section>
-    
-    <!-- 教师管理区域 -->
-    <management-section 
-      title="教师管理" 
-      icon="el-icon-user-solid"
-      :loading="teacherLoading"
-      :error="teacherError"
-      @retry="loadTeachers">
-      
-      <el-table :data="teachers" border stripe>
-        <el-table-column prop="display_id" label="显示ID" width="100"></el-table-column>
-        <el-table-column prop="username" label="用户名"></el-table-column>
-        <el-table-column prop="email" label="电子邮箱"></el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
-          <template slot-scope="{row}">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="is_active" label="状态" width="100">
-          <template slot-scope="{row}">
-            <el-tag :type="row.is_active ? 'success' : 'info'">
-              {{ row.is_active ? '活跃' : '非活跃' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100">
-          <template slot-scope="{row}">
-            <el-button size="mini" @click="viewTeacherDetail(row)">详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <el-pagination
-        class="pagination"
-        @current-change="handleTeacherPageChange"
-        :current-page="teacherPagination.page"
-        :page-size="teacherPagination.pageSize"
-        :total="teacherPagination.total"
-        layout="total, prev, pager, next, jumper">
-      </el-pagination>
-    </management-section>
+      </el-tab-pane>
+    </el-tabs>
     
     <!-- 教师详情对话框 -->
     <el-dialog title="教师详情" :visible.sync="teacherDetailDialogVisible" width="600px">
@@ -285,6 +297,7 @@ export default {
   
   data() {
     return {
+      activeTab: 'basic',
       error: null,
       loading: true,
       loginUserData: null, // 存储从sessionStorage获取的登录用户数据
@@ -292,7 +305,7 @@ export default {
       // 教师管理相关
       teacherPagination: {
         page: 1,
-        pageSize: 10,
+        pageSize: 5,
         total: 0
       },
       selectedTeacher: null,
@@ -342,9 +355,9 @@ export default {
       return null;
     },
     
-    async loadTeachers() {
+    async loadTeachers(page = this.teacherPagination.page) {
       try {
-        const result = await this.getTeachers(this.teacherPagination.page);
+        const result = await this.getTeachers(page);
         if (result && typeof result.total === 'number') {
           this.teacherPagination.total = result.total;
         } else {
@@ -354,12 +367,14 @@ export default {
       } catch (error) {
         console.error('[CourseGroupDetail] 获取教师列表失败:', error);
         this.teacherError = error.message || '获取教师列表失败';
+        this.teacherPagination.total = 0;
       }
     },
+
     
     handleTeacherPageChange(page) {
       this.teacherPagination.page = page;
-      this.loadTeachers();
+      this.loadTeachers(page);
     },
     
     viewTeacherDetail(teacher) {

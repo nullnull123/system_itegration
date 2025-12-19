@@ -1929,6 +1929,11 @@ export default {
     },
     async send(){
 
+      if(this.clickmsg === "打出点"){
+          this.$message.error("请先打出点后再提交裁剪")
+          return;
+      }
+
       const loadingInstance = this.$loading({
         lock: true,
         text: '视频裁剪中，请等候',

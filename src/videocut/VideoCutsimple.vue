@@ -58,7 +58,7 @@
         </div> 
         <!-- 选择视频按钮 -->
         <div class="container1">  
-          <el-button type="primary" class="upload-btn" @click="downloadSpecifiedVideos" :loading="isFetching">下载视频</el-button>  
+          <el-button type="primary" class="upload-btn" @click="downloadSpecifiedVideos" :loading="isFetching" :disabled="cut_files.length === 0">下载视频</el-button>  
         </div> 
         <div class="container1">
           <!-- 触发按钮 -->
@@ -276,7 +276,10 @@ export default {
       message: '',
       messageType: '',
 
-      writing: false
+      writing: false,
+
+      task_file_id:'',
+      cut_files:[],
     };
   },
   created() {
@@ -433,8 +436,11 @@ export default {
 
         if (response.data.success) {
           this.showMessage(response.data.message, 'success');
-
-          this.video_name = this.selectedFile.name
+          this.cutCoverList = [];
+          this.clickmsg = "打入点"
+          this.backTostart();
+          this.task_file_id = response.data.task_file_id;
+          this.video_name = this.selectedFile.name;
           const localFileUrl = URL.createObjectURL(this.selectedFile);
           this.tempLocalFileUrl = localFileUrl; // 保存引用以便后续清理
           this.videoSrc = localFileUrl;
@@ -469,6 +475,10 @@ export default {
         const response = await request({
           url: VCS_URL + '/get_videos',
           method: 'get',
+          params: {
+            task_file_id: this.task_file_id,
+            cut_files: this.cut_files,
+          },
           responseType: 'blob',
         });
         // ------------------------------------------
@@ -492,7 +502,30 @@ export default {
             window.URL.revokeObjectURL(url);
 
             console.log("ZIP 文件下载已触发");
+            //后续变量复原
+            this.task_file_id = '';
+            this.cut_files = [],
+            this.video_name = '';
+            this.videoSrc = '';
+            const videoElement = this.$refs.videoPlayer; // 假设你有一个 ref="videoPlayer"
+            // 3. 如果元素存在，执行更彻底的清理
+            if (videoElement) {
+                // a. 设置 src 为空 (再次确认)
+                videoElement.src = '';
 
+                // b. 重置所有播放状态
+                videoElement.pause(); // 确保暂停
+                videoElement.load(); // 重新加载视频元素，这是关键一步！
+                // load() 方法会清除当前的播放状态、缓冲区，并重新初始化元素。
+                // c. （可选）如果知道视频源是某个特定的 blob URL，可以尝试撤销
+                if (this.tempLocalFileUrl) {
+                    console.log("正在撤销本地文件 URL:", this.tempLocalFileUrl);
+                    URL.revokeObjectURL(this.tempLocalFileUrl);
+                    this.tempLocalFileUrl = null;
+                }
+            }
+            this.cutCoverList = [];
+            this.backTostart();
         } else {
             // 如果后端返回了非 ZIP 的错误信息（例如 JSON），处理它
             // 因为我们用了 responseType: 'blob'，错误信息也可能是 Blob
@@ -511,6 +544,7 @@ export default {
 
       } catch (err) {
         console.error("下载视频失败:", err);
+        this.$message.error('下载视频失败');
       } finally {
         this.isFetching = false;
       }
@@ -1676,6 +1710,10 @@ export default {
       );
     },
     async send(){
+      if(this.clickmsg === "打出点"){
+          this.$message.error("请先打出点后再提交裁剪")
+          return;
+      }
 
       const loadingInstance = this.$loading({
         lock: true,
@@ -1687,7 +1725,8 @@ export default {
       try {
       const requestData = {
         video_name:'',
-        segments:[]
+        segments:[],
+        task_file_id:this.task_file_id
       };
       requestData.video_name = this.video_name;
       for(var i = 0; i < this.cutCoverList.length; i++)
@@ -1700,6 +1739,7 @@ export default {
       console.log("requestData",requestData)
       const response = await request.post(VCS_URL + '/cut-video', requestData);
       if (response.data.success) {
+        this.cut_files = response.data.cut_files;
         this.$message.success('视频剪辑成功！');
       } else {
         this.$message.error(response.data.message || '视频剪辑失败');

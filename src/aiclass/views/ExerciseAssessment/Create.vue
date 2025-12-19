@@ -149,8 +149,6 @@
     </el-card>
     
     <!-- AI生成表单 -->
-
-
     <el-card class="create-card" v-else>
       <h2>AI生成习题</h2>
       
@@ -211,16 +209,57 @@
           ></el-rate>
         </el-form-item>
         
-        <el-form-item label="题目要求" prop="ai_content">
+        <!-- 新增：通过课程知识点创建功能 -->
+        <el-form-item label="生成方式">
+          <el-checkbox v-model="useKnowledgePoints" @change="handleKnowledgePointsToggle">
+            通过课程知识点创建
+          </el-checkbox>
+        </el-form-item>
+        
+        <!-- 知识点选择区域 -->
+        <div v-if="useKnowledgePoints" class="knowledge-points-section">
+          <div v-if="loadingKnowledgePoints" class="loading-knowledge">
+            <i class="el-icon-loading"></i> 加载知识点...
+          </div>
+          <div v-else-if="knowledgePoints.length === 0" class="no-knowledge">
+            暂无知识点，请先创建课程知识点
+          </div>
+          <div v-else>
+            <p class="knowledge-tip">请选择最多3个知识点：</p>
+            <el-checkbox-group 
+              v-model="selectedKnowledgePoints" 
+              :max="3"
+              @change="handleKnowledgePointsSelection"
+            >
+              <el-checkbox 
+                v-for="point in knowledgePoints" 
+                :label="point" 
+                :key="point.display_id"
+                class="knowledge-point-item"
+              >
+                {{ point.content }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </div>
+        
+        <el-form-item 
+          label="题目内容" 
+          prop="ai_content"
+          :class="{ 'highlighted': useKnowledgePoints && selectedKnowledgePoints.length > 0 }"
+        >
           <el-input
             type="textarea"
             v-model="aiForm.ai_content"
             :rows="6"
-            placeholder="请输入用于AI生成习题的题目要求，例如：《静夜思》是唐代诗人李白创作的一首五言绝句..."
+            :placeholder="useKnowledgePoints ? '选中的知识点内容将自动填充到这里' : '请输入用于AI生成习题的题目要求，例如：《静夜思》是唐代诗人李白创作的一首五言绝句...'"
+            :readonly="useKnowledgePoints && selectedKnowledgePoints.length > 0"
           ></el-input>
+          <div v-if="useKnowledgePoints && selectedKnowledgePoints.length > 0" class="knowledge-hint">
+            <i class="el-icon-info"></i> 
+            选中的知识点内容已自动填充，您可在此基础上修改
+          </div>
         </el-form-item>
-        
-        <!-- 删除原来的生成要求输入框 -->
         
         <el-form-item>
           <el-button 
@@ -275,6 +314,7 @@ export default {
   data() {
     return {
       useAI: false, // false为手动创建，true为AI生成
+      courseDisplayId: this.$route.query.coursedisplayId || null, // 从路由参数获取课程ID
       
       exerciseForm: {
         title: '',
@@ -295,6 +335,12 @@ export default {
         difficulty: 2,
         ai_content: ''
       },
+      
+      // 新增知识点相关状态
+      useKnowledgePoints: false,
+      knowledgePoints: [],
+      selectedKnowledgePoints: [],
+      loadingKnowledgePoints: false,
       
       rules: {
         title: [
@@ -328,9 +374,8 @@ export default {
           { required: true, message: '请选择题型', trigger: 'change' }
         ],
         ai_content: [
-          { required: true, message: '请输入题目要求', trigger: 'blur' }
+          { required: true, message: '请输入题目内容', trigger: 'blur' }
         ]
-        // 删除ai_requirements的验证规则
       },
 
       // 添加用于存储生成结果的数据
@@ -378,24 +423,82 @@ export default {
       'fetchDetail',
       'fetchSubmissions',
       'submitAnswer',
-      'setCurrentExercise'
+      'setCurrentExercise',
+      'fetchCourseDetail'
     ]),
     
     toggleAI(useAI) {
       this.useAI = useAI
       this.generatedExercise = null
+      
+      // 重置知识点相关状态
+      if (!useAI) {
+        this.useKnowledgePoints = false
+        this.selectedKnowledgePoints = []
+        this.knowledgePoints = []
+      }
+    },
+    
+    // 处理知识点选择切换
+    async handleKnowledgePointsToggle(checked) {
+      if (checked && this.courseDisplayId) {
+        this.loadingKnowledgePoints = true
+        try {
+          const courseData = await this.fetchCourseDetail(this.courseDisplayId)
+          
+          // 从课程详情中提取知识点
+          let knowledgePoints = []
+          
+          if (courseData && courseData.knowledge_list && Array.isArray(courseData.knowledge_list.points)) {
+            knowledgePoints = courseData.knowledge_list.points
+          } else if (courseData && Array.isArray(courseData.knowledge_list)) {
+            knowledgePoints = courseData.knowledge_list
+          } else if (courseData && Array.isArray(courseData)) {
+            knowledgePoints = courseData
+          }
+          
+          // 过滤掉无效的知识点
+          knowledgePoints = knowledgePoints.filter(point => point && point.content)
+          
+          // 保存知识点数据
+          this.knowledgePoints = knowledgePoints
+          
+          if (this.knowledgePoints.length === 0) {
+            this.$message.warning('该课程暂无知识点，请先创建知识点')
+          }
+        } catch (error) {
+          this.$message.error('获取知识点失败，请重试或联系管理员')
+          this.knowledgePoints = []
+        } finally {
+          this.loadingKnowledgePoints = false
+        }
+      } else {
+        // 取消勾选时清空选择
+        this.selectedKnowledgePoints = []
+      }
+    },
+    
+    // 处理知识点选择
+    handleKnowledgePointsSelection(selected) {
+      if (selected.length > 0) {
+        // 合并选中的知识点内容
+        const content = selected.map(point => point.content).join('\n\n')
+        this.aiForm.ai_content = content
+      } else {
+        this.aiForm.ai_content = ''
+      }
     },
     
     // 添加获取学科标签的方法
     getSubjectLabel(value) {
-      const subject = this.subjects.find(s => s.value === value);
-      return subject ? subject.label : value;
+      const subject = this.subjects.find(s => s.value === value)
+      return subject ? subject.label : value
     },
     
     // 添加获取题型标签的方法
     getQuestionTypeLabel(value) {
-      const type = this.questionTypes.find(t => t.value === value);
-      return type ? type.label : value;
+      const type = this.questionTypes.find(t => t.value === value)
+      return type ? type.label : value
     },
     
     addOption() {
@@ -419,22 +522,18 @@ export default {
       this.$refs.exerciseForm.validate(async valid => {
         if (valid) {
           try {
-            // 处理正确答案格式 - 修正逻辑
+            // 处理正确答案格式
             let correctAnswer = this.exerciseForm.correct_answer
             
             if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
-              // 如果是数组索引，转换为实际的选项内容
               if (typeof correctAnswer[0] === 'number') {
-                // 索引转换为实际选项内容
                 correctAnswer = correctAnswer
                   .map(index => this.exerciseForm.options[index])
                   .filter(answer => answer !== undefined)
               } else {
-                // 如果已经是选项内容，直接使用
                 correctAnswer = correctAnswer.join(',') // 多选题用逗号分隔
               }
             } else if (typeof correctAnswer === 'number') {
-              // 单个索引转换
               correctAnswer = this.exerciseForm.options[correctAnswer] || ''
             }
             
@@ -445,7 +544,14 @@ export default {
             
             const formData = {
               ...this.exerciseForm,
-              correct_answer: correctAnswer
+              correct_answer: correctAnswer,
+              course_display_id: this.courseDisplayId ? parseInt(this.courseDisplayId) : null
+            }
+            
+            // 确保course_display_id是必填字段
+            if (!formData.course_display_id) {
+              this.$message.error('课程ID缺失，请从课程页面进入')
+              return
             }
             
             await this.createExercise(formData)
@@ -462,7 +568,6 @@ export default {
             })
             
           } catch (error) {
-            console.error('提交错误:', error)
             this.$message({
               type: 'error',
               message: error.message || '习题创建失败'
@@ -479,24 +584,36 @@ export default {
         if (valid) {
           try {
             // 自动生成要求信息
-            const questionTypeLabel = this.getQuestionTypeLabel(this.aiForm.question_type);
-            const difficultyLabel = this.difficultyLabels[this.aiForm.difficulty - 1];
-            const autoRequirements = `生成一道${questionTypeLabel}，难度为${this.aiForm.difficulty}（${difficultyLabel}）`;
+            const questionTypeLabel = this.getQuestionTypeLabel(this.aiForm.question_type)
+            const difficultyLabel = this.difficultyLabels[this.aiForm.difficulty - 1]
+            const autoRequirements = `生成一道${questionTypeLabel}，难度为${this.aiForm.difficulty}（${difficultyLabel}）`
             
             const aiData = {
               use_ai_generation: true,
               ...this.aiForm,
-              ai_requirements: autoRequirements // 自动添加生成要求
+              ai_requirements: autoRequirements,
+              // 新增：标记是否使用知识点创建
+              use_knowledge_points: this.useKnowledgePoints,
+              selected_knowledge_points: this.selectedKnowledgePoints.map(p => p.display_id),
+              course_display_id: this.courseDisplayId ? parseInt(this.courseDisplayId) : null
             }
             
-            console.log('=== AI生成数据 ===')
-            console.log(aiData)
+            // 确保course_display_id是必填字段
+            if (!aiData.course_display_id) {
+              this.$message.error('课程ID缺失，请从课程页面进入')
+              return
+            }
             
             // 调用API生成习题
             const result = await this.createExercise(aiData)
             
+            // 安全检查
+            if (!result || (!result.data && !result)) {
+              throw new Error('AI生成的习题数据无效')
+            }
+            
             // 保存生成的习题结果
-            this.generatedExercise = result.data || result;
+            this.generatedExercise = result.data || result
             
             this.$message({
               type: 'success',
@@ -504,7 +621,6 @@ export default {
             })
             
           } catch (error) {
-            console.error('AI生成错误:', error)
             this.$message({
               type: 'error',
               message: error.message || 'AI习题生成失败'
@@ -514,7 +630,7 @@ export default {
           this.$message({
             type: 'warning',
             message: '请完善所有必填信息'
-          });
+          })
           return false
         }
       })
@@ -534,7 +650,7 @@ export default {
       }
 
       // 清空生成结果
-      this.generatedExercise = null;
+      this.generatedExercise = null
       
       // 如果表单引用存在，则重置
       if (this.$refs.exerciseForm) {
@@ -555,8 +671,13 @@ export default {
         ai_content: ''
       }
       
+      // 重置知识点相关状态
+      this.useKnowledgePoints = false
+      this.selectedKnowledgePoints = []
+      this.knowledgePoints = []
+      
       // 清空生成结果
-      this.generatedExercise = null;
+      this.generatedExercise = null
       
       // 如果表单引用存在，则重置
       if (this.$refs.aiFormRef) {
@@ -575,13 +696,16 @@ export default {
           duration: 3000
         })
       }
-    },
-    
-    
+    }
   },
   
-  mounted() {
-    
+  async mounted() {
+    // 如果是从课程页面跳转且是AI模式，尝试自动加载知识点
+    if (this.courseDisplayId && this.useAI) {
+      this.$nextTick(async () => {
+        await this.handleKnowledgePointsToggle(this.useKnowledgePoints)
+      })
+    }
   }
 }
 </script>
@@ -625,6 +749,66 @@ export default {
   margin-top: 5px;
   font-size: 12px;
 }
+
+/* 知识点选择区域样式 */
+.knowledge-points-section {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ebeef5;
+}
+
+.knowledge-tip {
+  margin-bottom: 10px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.knowledge-point-item {
+  display: block;
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid #ebeef5;
+  transition: all 0.3s;
+}
+
+.knowledge-point-item:hover {
+  border-color: #409EFF;
+  background-color: #ecf5ff;
+}
+
+.loading-knowledge, .no-knowledge {
+  text-align: center;
+  padding: 15px;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 题目内容输入框高亮样式 */
+.highlighted {
+  animation: highlight 1s ease;
+}
+
+@keyframes highlight {
+  0% { background-color: #fffbe6; }
+  100% { background-color: #fff; }
+}
+
+.knowledge-hint {
+  margin-top: 8px;
+  color: #e6a23c;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.knowledge-hint i {
+  margin-right: 5px;
+}
+
 /* 添加生成结果的样式 */
 .generated-result {
   margin-top: 30px;

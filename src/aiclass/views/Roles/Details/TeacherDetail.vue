@@ -1,265 +1,277 @@
 <template>
   <div class="teacher-detail-container">
-    <!-- 教师用户详情部分 -->
-    <div class="user-detail-container">
-      <div class="user-header">
-        <div class="avatar">
-          <i class="el-icon-user-solid"></i>
-        </div>
-        <h1>教师用户详情</h1>
-        <div class="user-tag">
-          <el-tag type="success" effect="dark">教师用户</el-tag>
-        </div>
-      </div>
+    <el-tabs v-model="activeTab" type="border-card" class="detail-tabs">
+      <!-- 基本信息标签页 -->
+      <el-tab-pane label="基本信息" name="basic">
+        <div class="tab-content">
+          <!-- 教师用户详情部分 -->
+          <div class="user-detail-container">
+            <div class="user-header">
+              <div class="avatar">
+                <i class="el-icon-user-solid"></i>
+              </div>
+              <h1>教师用户详情</h1>
+              <div class="user-tag">
+                <el-tag type="success" effect="dark">教师用户</el-tag>
+              </div>
+            </div>
 
-      <el-card v-if="displayUserData" class="user-card">
-        <div class="user-basic-info">
-          <h2>基本信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">用户名</span>
-              <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">显示ID</span>
-              <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">状态</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
-                  {{ displayUserData.is_active ? '活跃' : '非活跃' }}
-                </el-tag>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">创建时间</span>
-              <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">最后更新</span>
-              <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
-            </div>
-          </div>
-        </div>
+            <el-card v-if="displayUserData" class="user-card">
+              <div class="user-basic-info">
+                <h2>基本信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">用户名</span>
+                    <span class="info-value">{{ displayUserData.username || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">显示ID</span>
+                    <span class="info-value">#{{ displayUserData.display_id || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">状态</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.is_active ? 'success' : 'info'">
+                        {{ displayUserData.is_active ? '活跃' : '非活跃' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">创建时间</span>
+                    <span class="info-value">{{ formatDate(displayUserData.created_at) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">最后更新</span>
+                    <span class="info-value">{{ formatDate(displayUserData.updated_at) }}</span>
+                  </div>
+                </div>
+              </div>
 
-        <div class="user-organization-info">
-          <h2>组织信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">所属学校</span>
-              <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">所属学院</span>
-              <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">所属课程组</span>
-              <span class="info-value">{{ displayUserData.course_group_name || '未设置' }}</span>
-            </div>
-          </div>
-        </div>
+              <div class="user-organization-info">
+                <h2>组织信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">所属学校</span>
+                    <span class="info-value">{{ displayUserData.school_name || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属学院</span>
+                    <span class="info-value">{{ displayUserData.college_name || '未设置' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属课程组</span>
+                    <span class="info-value">{{ displayUserData.course_group_name || '未设置' }}</span>
+                  </div>
+                </div>
+              </div>
 
-        <div class="user-professional-info">
-          <div class="section-header">
-            <h2>专业信息</h2>
-            <div v-if="isEditingProfessional">
-              <el-button 
-                type="warning" 
-                icon="el-icon-refresh" 
-                size="small"
-                @click="cancelEditing('professional')">
-                取消
+              <div class="user-professional-info">
+                <div class="section-header">
+                  <h2>专业信息</h2>
+                  <div v-if="isEditingProfessional">
+                    <el-button 
+                      type="warning" 
+                      icon="el-icon-refresh" 
+                      size="small"
+                      @click="cancelEditing('professional')">
+                      取消
+                    </el-button>
+                    <el-button 
+                      type="success" 
+                      icon="el-icon-check" 
+                      size="small"
+                      :loading="savingProfessional"
+                      @click="saveProfessionalInfo">
+                      保存
+                    </el-button>
+                  </div>
+                  <el-button 
+                    v-else 
+                    type="primary" 
+                    icon="el-icon-edit" 
+                    size="small"
+                    @click="startEditing('professional')">
+                    编辑
+                  </el-button>
+                </div>
+                
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">工号</span>
+                    <span class="info-value" v-if="!isEditingProfessional">
+                      {{ displayUserData.employee_id || '未设置' }}
+                    </span>
+                    <el-input 
+                      v-else 
+                      v-model="editedProfessional.employee_id" 
+                      placeholder="请输入工号">
+                    </el-input>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">职称</span>
+                    <span class="info-value" v-if="!isEditingProfessional">
+                      {{ formatTitle(displayUserData.title) || '未设置' }}
+                    </span>
+                    <el-select 
+                      v-else 
+                      v-model="editedProfessional.title" 
+                      placeholder="请选择职称"
+                      style="width: 100%">
+                      <el-option
+                        v-for="(label, value) in titleOptions"
+                        :key="value"
+                        :label="label"
+                        :value="value">
+                      </el-option>
+                    </el-select>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">研究方向</span>
+                    <span class="info-value" v-if="!isEditingProfessional">
+                      {{ displayUserData.research_interests || '未设置' }}
+                    </span>
+                    <el-input 
+                      v-else 
+                      v-model="editedProfessional.research_interests" 
+                      type="textarea"
+                      :rows="3"
+                      placeholder="请输入研究方向">
+                    </el-input>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-contact-info">
+                <div class="section-header">
+                  <h2>联系信息</h2>
+                  <div v-if="isEditingContact">
+                    <el-button 
+                      type="warning" 
+                      icon="el-icon-refresh" 
+                      size="small"
+                      @click="cancelEditing('contact')">
+                      取消
+                    </el-button>
+                    <el-button 
+                      type="success" 
+                      icon="el-icon-check" 
+                      size="small"
+                      :loading="savingContact"
+                      @click="saveContactInfo">
+                      保存
+                    </el-button>
+                  </div>
+                  <el-button 
+                    v-else 
+                    type="primary" 
+                    icon="el-icon-edit" 
+                    size="small"
+                    @click="startEditing('contact')">
+                    编辑
+                  </el-button>
+                </div>
+                
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">电子邮箱</span>
+                    <span class="info-value" v-if="!isEditingContact">
+                      {{ displayUserData.email || '未设置' }}
+                    </span>
+                    <el-input 
+                      v-else 
+                      v-model="editedContact.email" 
+                      placeholder="请输入电子邮箱">
+                    </el-input>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-account-info">
+                <h2>账户信息</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">初始设置</span>
+                    <span class="info-value">
+                      <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
+                        {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </el-card>
+            
+            <!-- 添加加载状态显示 -->
+            <div v-if="loading && !displayUserData" class="loading-container">
+              <div class="custom-spinner" style="
+                width: 32px;
+                height: 32px;
+                border: 3px solid #e0e0e0;
+                borderTopColor: #409EFF;
+                borderRadius: 50%;
+                animation: system-admin-rotate 1.2s linear infinite;
+                margin: 0 auto;
+              "></div>
+              <div class="loading-text">加载教师信息中...</div>
+            </div>
+            
+            <!-- 添加错误处理 -->
+            <div v-if="error && !displayUserData" class="error-container">
+              <el-alert
+                title="加载失败"
+                type="error"
+                :description="error"
+                show-icon>
+              </el-alert>
+              <el-button type="primary" @click="loadUserData" class="retry-button">
+                重试
               </el-button>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+
+      <!-- 课程与习题标签页 -->
+      <el-tab-pane label="课程与习题" name="courseAndExercises">
+        <div class="tab-content">
+          <!-- 课程详情区域 -->
+          <management-section 
+            title="课程详情" 
+            icon="el-icon-notebook-2"
+            :loading="false"
+            :error="null">
+            
+            <div class="course-detail-container">
+              <p>您可以查看当前课程组关联的课程详情：</p>
               <el-button 
-                type="success" 
-                icon="el-icon-check" 
-                size="small"
-                :loading="savingProfessional"
-                @click="saveProfessionalInfo">
-                保存
+                type="primary" 
+                icon="el-icon-document" 
+                @click="viewCourseDetail">
+                查看课程详情
               </el-button>
             </div>
-            <el-button 
-              v-else 
-              type="primary" 
-              icon="el-icon-edit" 
-              size="small"
-              @click="startEditing('professional')">
-              编辑
-            </el-button>
-          </div>
+          </management-section>
           
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">工号</span>
-              <span class="info-value" v-if="!isEditingProfessional">
-                {{ displayUserData.employee_id || '未设置' }}
-              </span>
-              <el-input 
-                v-else 
-                v-model="editedProfessional.employee_id" 
-                placeholder="请输入工号">
-              </el-input>
-            </div>
-            <div class="info-item">
-              <span class="info-label">职称</span>
-              <span class="info-value" v-if="!isEditingProfessional">
-                {{ formatTitle(displayUserData.title) || '未设置' }}
-              </span>
-              <el-select 
-                v-else 
-                v-model="editedProfessional.title" 
-                placeholder="请选择职称"
-                style="width: 100%">
-                <el-option
-                  v-for="(label, value) in titleOptions"
-                  :key="value"
-                  :label="label"
-                  :value="value">
-                </el-option>
-              </el-select>
-            </div>
-            <div class="info-item">
-              <span class="info-label">研究方向</span>
-              <span class="info-value" v-if="!isEditingProfessional">
-                {{ displayUserData.research_interests || '未设置' }}
-              </span>
-              <el-input 
-                v-else 
-                v-model="editedProfessional.research_interests" 
-                type="textarea"
-                :rows="3"
-                placeholder="请输入研究方向">
-              </el-input>
-            </div>
-          </div>
-        </div>
-
-        <div class="user-contact-info">
-          <div class="section-header">
-            <h2>联系信息</h2>
-            <div v-if="isEditingContact">
+          <!-- 习题管理区域 -->
+          <management-section 
+            title="习题管理" 
+            icon="el-icon-notebook-1"
+            :loading="false"
+            :error="null">
+            
+            <div class="exercise-management-container">
+              <p>您可以管理习题和评估：</p>
               <el-button 
-                type="warning" 
-                icon="el-icon-refresh" 
-                size="small"
-                @click="cancelEditing('contact')">
-                取消
-              </el-button>
-              <el-button 
-                type="success" 
-                icon="el-icon-check" 
-                size="small"
-                :loading="savingContact"
-                @click="saveContactInfo">
-                保存
+                type="primary" 
+                icon="el-icon-tickets" 
+                @click="viewExerciseList">
+                习题列表
               </el-button>
             </div>
-            <el-button 
-              v-else 
-              type="primary" 
-              icon="el-icon-edit" 
-              size="small"
-              @click="startEditing('contact')">
-              编辑
-            </el-button>
-          </div>
-          
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">电子邮箱</span>
-              <span class="info-value" v-if="!isEditingContact">
-                {{ displayUserData.email || '未设置' }}
-              </span>
-              <el-input 
-                v-else 
-                v-model="editedContact.email" 
-                placeholder="请输入电子邮箱">
-              </el-input>
-            </div>
-          </div>
+          </management-section>
         </div>
-
-        <div class="user-account-info">
-          <h2>账户信息</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">初始设置</span>
-              <span class="info-value">
-                <el-tag :type="displayUserData.needs_initial_setup ? 'warning' : 'success'">
-                  {{ displayUserData.needs_initial_setup ? '需要' : '已完成' }}
-                </el-tag>
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-      
-      <!-- 添加加载状态显示 -->
-      <div v-if="loading && !displayUserData" class="loading-container">
-        <div class="custom-spinner" style="
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          borderTopColor: #409EFF;
-          borderRadius: 50%;
-          animation: system-admin-rotate 1.2s linear infinite;
-          margin: 0 auto;
-        "></div>
-        <div class="loading-text">加载教师信息中...</div>
-      </div>
-      
-      <!-- 添加错误处理 -->
-      <div v-if="error && !displayUserData" class="error-container">
-        <el-alert
-          title="加载失败"
-          type="error"
-          :description="error"
-          show-icon>
-        </el-alert>
-        <el-button type="primary" @click="loadUserData" class="retry-button">
-          重试
-        </el-button>
-      </div>
-    </div>
-    
-    <!-- 课程详情区域 -->
-    <management-section 
-      title="课程详情" 
-      icon="el-icon-notebook-2"
-      :loading="false"
-      :error="null">
-      
-      <div class="course-detail-container">
-        <p>您可以查看当前课程组关联的课程详情：</p>
-        <el-button 
-          type="primary" 
-          icon="el-icon-document" 
-          @click="viewCourseDetail">
-          查看课程详情
-        </el-button>
-      </div>
-    </management-section>
-    
-    <!-- 习题管理区域 -->
-    <management-section 
-      title="习题管理" 
-      icon="el-icon-notebook-1"
-      :loading="false"
-      :error="null">
-      
-      <div class="exercise-management-container">
-        <p>您可以管理习题和评估：</p>
-        <el-button 
-          type="primary" 
-          icon="el-icon-tickets" 
-          @click="viewExerciseList">
-          习题列表
-        </el-button>
-      </div>
-    </management-section>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -346,6 +358,7 @@ export default {
   
   data() {
     return {
+      activeTab: 'basic',
       error: null,
       loading: true,
       
@@ -460,8 +473,20 @@ export default {
     
     // 新增：跳转到习题列表
     viewExerciseList() {
-      // 跳转到习题列表页面
-      this.$router.push('/ExerciseAssessment/List');
+      const courseDisplayId = this.displayUserData.course_group_display_id || this.displayUserData.course_group?.display_id;
+      const userRole = this.displayUserData.role
+
+      if (courseDisplayId && userRole) {
+        this.$router.push({
+          name: 'ExerciseList',
+          query: { 
+            coursedisplayId: courseDisplayId,
+            role: userRole
+           }
+        });
+      } else {
+        this.$message.error('无法获取课程ID');
+      }
     },
     
     // 开始编辑

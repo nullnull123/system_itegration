@@ -6,11 +6,18 @@
       <div class="card-header">
         <h2>习题管理</h2>
         <div class="button-group">
-
-          <el-button type="primary" @click="goToCreate">创建新习题</el-button>
+          <!-- 只有教师显示创建按钮 -->
+          <el-button 
+            v-if="userRole === 'teacher'" 
+            type="primary" 
+            @click="goToCreate"
+          >
+            创建新习题
+          </el-button>
 
           <!-- 提交记录按钮 -->
           <el-button
+            v-if="userRole === 'teacher'"
             size="mini"
             type="primary"
             @click="goSubmissions"
@@ -42,12 +49,11 @@
         </div>
       </div>
 
-
-      
       <!-- 表格容器 -->
       <div class="table-wrapper">
+        <!-- 使用计算属性 filteredAndSortedExercises 作为表格的数据源 -->
         <el-table 
-          :data="exercises" 
+          :data="filteredAndSortedExercises" 
           v-loading="loading"
           style="width: 100%"
           @selection-change="handleSelectionChange"
@@ -60,26 +66,30 @@
 
           <!-- 添加显示 Display ID 的列 -->
           <el-table-column prop="display_id" label="显示ID" width="80"></el-table-column>
+          
+          <!-- 添加课程显示ID列 -->
+          <el-table-column prop="course_display_id" label="课程ID" width="100"></el-table-column>
+          
           <el-table-column prop="title" label="标题" min-width="200"></el-table-column>
           <el-table-column prop="subject" label="学科" width="100"></el-table-column>
           <el-table-column prop="grade" label="年级" width="100"></el-table-column>
           <el-table-column prop="question_type" label="题型" width="100">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ getQuestionTypeLabel(scope.row.question_type) }}
             </template>
           </el-table-column>
           <el-table-column prop="difficulty" label="难度" width="100">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ getDifficultyLabel(scope.row.difficulty) }}
             </template>
           </el-table-column>
           <el-table-column prop="created_at" label="创建时间" width="180">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ formatDate(scope.row.created_at) }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
-            <template slot-scope="scope">
+            <template #default="scope">
               <!-- 修改：传递 display_id -->
               <el-button 
                 size="mini" 
@@ -104,9 +114,6 @@
           background>
         </el-pagination>
       </div>
-
-
-      </el-table>
     </el-card>
   </div>
 </template>
@@ -117,7 +124,39 @@ import { mapState, mapActions } from 'vuex'
 export default {
   name: 'ExerciseListPage',
   computed: {
-    ...mapState('exercise', ['exercises', 'loading', 'error'])
+    ...mapState('exercise', ['exercises', 'loading', 'error']),
+    // 新增一个计算属性来处理排序和过滤逻辑
+    filteredAndSortedExercises() {
+      if (!this.exercises || this.exercises.length === 0) {
+        return [];
+      }
+
+      let filteredExercises = [];
+      console.log(this.userRole);
+      if (this.userRole === 'student') {
+        // 学生只看当前课程的习题
+        filteredExercises = this.exercises.filter(exercise => 
+          exercise.course_display_id === parseInt(this.courseDisplayId)
+        );
+      } else {
+        // 教师看所有习题
+        filteredExercises = [...this.exercises];
+      }
+
+      // 按照 course_display_id 从小到大排序
+      filteredExercises.sort((a, b) => a.course_display_id - b.course_display_id);
+
+      // 将与传入的coursedisplayId相同的习题移到最前面
+      const targetCourseExercises = filteredExercises.filter(exercise => 
+        exercise.course_display_id === parseInt(this.courseDisplayId)
+      );
+      const otherExercises = filteredExercises.filter(exercise => 
+        exercise.course_display_id !== parseInt(this.courseDisplayId)
+      );
+
+      // 合并数组：先放目标课程的习题，再放其他课程的习题
+      return [...targetCourseExercises, ...otherExercises];
+    }
   },
   data() {
     return {
@@ -126,7 +165,9 @@ export default {
       pageSize: 10,
       total: 0,  // 添加这行 - 你已经在用了但没声明
       // 添加表格高度相关数据
-      tableHeight: 500
+      tableHeight: 500,
+      courseDisplayId: null, // 存储从路由获取的课程ID
+      userRole: null // 存储用户角色
     }
   },
   methods: {
@@ -152,15 +193,24 @@ export default {
       return date.toLocaleString()
     },
     goToCreate() {
-      this.$router.push('/ExerciseAssessment/create')
+      this.$router.push({
+          name: 'ExerciseCreate',
+          query: { coursedisplayId: this.courseDisplayId }
+        });
     },
     goSubmissions() {
-      this.$router.push('/ExerciseAssessment/submissions')
+      this.$router.push({
+          name: 'ExerciseSubmissions'
+        });
     },
     // 修改：参数名改为 displayId 以明确其含义
     viewExercise(displayId) {
-      // 修改：路由路径中使用 displayId
-      this.$router.push(`/ExerciseAssessment/detail/${displayId}`)
+      // 修改：将 displayId 作为 params 传递，并保留 role 作为 query 参数
+      this.$router.push({
+        name: 'ExerciseDetail',
+        params: { display_id: displayId }, // 使用 params 传递路径参数
+        query: { role: this.userRole }         // 保留 query 传递用户角色
+      });
     },
     
     // 全删除方法
@@ -222,7 +272,6 @@ export default {
       this.currentPage = val
       this.fetchList({ page: this.currentPage, size: this.pageSize })
     }
-
   },
   mounted() {
     // 动态计算表格高度
@@ -233,13 +282,19 @@ export default {
     })
   },
   created() {
-    this.fetchList()
-  }
+    // 从路由参数中获取课程ID和用户角色
+    this.courseDisplayId = this.$route.query.coursedisplayId;
+    this.userRole = this.$route.query.role;
+    
+    // 获取习题列表
+    this.fetchList();
+  },
+  // 移除了 watch 部分，逻辑已移至计算属性
 }
 </script>
 
 <style scoped>
-.smart-prep-list {
+.exercise-list {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
@@ -267,10 +322,6 @@ export default {
 /* 添加或修改表格包装器样式 */
 .table-wrapper {
   margin-bottom: 20px;
-  /* 确保包装器本身有明确的高度或允许内容撑开 */
-  /* 如果需要固定高度，可以设置 height */
-  /* height: 500px; */ 
-  /* 但通常让 el-table 的 height 属性控制滚动更合适 */
 }
 
 /* 确保表格填满容器 */
@@ -285,6 +336,10 @@ export default {
   justify-content: center;
   padding: 20px 0;
 }
+
+/* 高亮目标课程习题的样式 (如果需要，可以使用行的类名) */
+/* 例如，如果想给特定行加样式，可以使用 :row-class-name */
+/* .table-wrapper .el-table >>> .target-course-row { background-color: #f0f9ff !important; } */
 
 /* 响应式设计 */
 @media (max-width: 768px) {

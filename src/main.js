@@ -15,7 +15,6 @@ import 'babel-polyfill';
 import jobstore from './job/store'
 import store from './aiclass/store'
 import request from './api/request'
-
 // localStorage.removeItem('token');
 
 Vue.config.productionTip = false;
@@ -46,6 +45,7 @@ new Vue({
     store,
     render: h => h(App)
 }).$mount('#app');
+
 
 new Vue({
   created() {
